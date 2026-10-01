@@ -1,0 +1,7 @@
+{
+  "name": "Apex Ledger — Expense & Investment Portfolio Suite",
+  "description": "Full-stack personal finance and investment management system featuring net worth analytics, income and expense tracking, multi-asset portfolio monitoring, budget limits, and relational database architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

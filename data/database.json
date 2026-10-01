@@ -1,0 +1,96 @@
+{
+  "categories": [
+    {
+      "id": "cat_3f67fa8f99b3",
+      "name": "Frist inverstment",
+      "type": "EXPENSE",
+      "icon": "Tag",
+      "color": "#b710b1",
+      "isDefault": false,
+      "createdAt": "2026-10-01T19:46:53.821Z"
+    },
+    {
+      "id": "cat_9fb6da71d08e",
+      "name": "Thinks",
+      "type": "EXPENSE",
+      "icon": "Tag",
+      "color": "#1b10b7",
+      "isDefault": false,
+      "createdAt": "2026-10-01T19:47:34.889Z"
+    },
+    {
+      "id": "cat_1cf830bc8a2f",
+      "name": "Dhinu Transport",
+      "type": "EXPENSE",
+      "icon": "Tag",
+      "color": "#10b769",
+      "isDefault": false,
+      "createdAt": "2026-10-01T19:48:12.264Z"
+    },
+    {
+      "id": "cat_81072ea8afac",
+      "name": "Dhinu Salary",
+      "type": "EXPENSE",
+      "icon": "Tag",
+      "color": "#acb710",
+      "isDefault": false,
+      "createdAt": "2026-10-01T19:48:39.465Z"
+    },
+    {
+      "id": "cat_118ed819c54b",
+      "name": "Utilities",
+      "type": "EXPENSE",
+      "icon": "Tag",
+      "color": "#108db7",
+      "isDefault": false,
+      "createdAt": "2026-10-01T20:05:16.564Z"
+    }
+  ],
+  "incomes": [],
+  "expenses": [
+    {
+      "id": "exp_4e1d3f54e616",
+      "categoryId": "cat_118ed819c54b",
+      "amount": 5000,
+      "date": "2026-10-01",
+      "description": "Loyer Document Charges",
+      "paymentMethod": "CASH",
+      "tags": [],
+      "createdAt": "2026-10-01T20:06:04.179Z",
+      "updatedAt": "2026-10-01T20:06:04.179Z"
+    },
+    {
+      "id": "exp_75faaa68bec0",
+      "categoryId": "cat_1cf830bc8a2f",
+      "amount": 1000,
+      "date": "2026-10-01",
+      "description": "Thinks Hatton to Radhalla",
+      "paymentMethod": "CASH",
+      "tags": [],
+      "createdAt": "2026-10-01T20:03:51.519Z",
+      "updatedAt": "2026-10-01T20:03:51.519Z"
+    },
+    {
+      "id": "exp_a9108c1f01ff",
+      "categoryId": "cat_9fb6da71d08e",
+      "amount": 56000,
+      "date": "2026-10-01",
+      "description": "first 40 connection thinks - iyar",
+      "paymentMethod": "CASH",
+      "tags": [],
+      "createdAt": "2026-10-01T20:02:57.744Z",
+      "updatedAt": "2026-10-01T20:02:57.744Z"
+    },
+    {
+      "id": "exp_200d256b55ff",
+      "categoryId": "cat_3f67fa8f99b3",
+      "amount": 350000,
+      "date": "2026-10-01",
+      "description": "First Area Parchacing For The Dalas",
+      "paymentMethod": "CASH",
+      "tags": [],
+      "createdAt": "2026-10-01T20:01:26.067Z",
+      "updatedAt": "2026-10-01T20:01:26.067Z"
+    }
+  ]
+}
