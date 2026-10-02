@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  type      String
+  icon      String   @default("Tag")
+  color     String   @default("#10B981")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("categories")
+}
+
+model Income {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  categoryId    String   @db.ObjectId
+  amount        Float
+  date          String
+  description   String
+  paymentMethod String   @default("BANK_TRANSFER")
+  tags          String[]
+  createdAt     DateTime @default(now())
+
+  @@map("incomes")
+}
+
+model Expense {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  categoryId    String   @db.ObjectId
+  amount        Float
+  date          String
+  description   String
+  paymentMethod String   @default("CASH")
+  tags          String[]
+  createdAt     DateTime @default(now())
+
+  @@map("expenses")
+}

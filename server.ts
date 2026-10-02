@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
+import { prisma } from './server/db.js';
 import { router as apiRouter } from './server/routes.js';
 
 dotenv.config();
@@ -12,7 +12,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(express.json());
 
-// Connect to Database from process.env.DATABASE_URL
+// Connect & Verify Prisma Database Connection
 async function connectDatabase() {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
@@ -20,10 +20,10 @@ async function connectDatabase() {
     return;
   }
   try {
-    await mongoose.connect(dbUrl);
-    console.log('✅ Connected successfully to MongoDB database via DATABASE_URL');
+    await prisma.$connect();
+    console.log('✅ Connected successfully to MongoDB database via Prisma ORM');
   } catch (err: any) {
-    console.error('❌ Failed to connect to MongoDB database:', err.message);
+    console.error('❌ Failed to connect to MongoDB database via Prisma:', err.message);
   }
 }
 
@@ -31,12 +31,23 @@ async function connectDatabase() {
 app.use('/api', apiRouter);
 
 // Health check endpoint
-app.get('/api/health', (_req, res) => {
-  res.json({
-    status: 'healthy',
-    dbState: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    timestamp: new Date().toISOString()
-  });
+app.get('/api/health', async (_req, res) => {
+  try {
+    await prisma.category.findFirst();
+    res.json({
+      status: 'healthy',
+      dbState: 'connected',
+      orm: 'prisma',
+      timestamp: new Date().toISOString()
+    });
+  } catch (err: any) {
+    res.json({
+      status: 'degraded',
+      dbState: 'disconnected',
+      orm: 'prisma',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 async function startServer() {

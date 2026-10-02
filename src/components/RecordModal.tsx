@@ -5,6 +5,8 @@ import {
 } from '../types/finance.js';
 import { api } from '../api/client.js';
 import { X, Sparkles } from 'lucide-react';
+import { useToast } from './Toast.tsx';
+import { Spinner } from './Spinner.tsx';
 
 interface RecordModalProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
   categories,
   onSuccess,
 }) => {
+  const toast = useToast();
   const [txType, setTxType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
   const [txAmount, setTxAmount] = useState('');
   const [txDescription, setTxDescription] = useState('');
@@ -48,9 +51,12 @@ export const RecordModal: React.FC<RecordModalProps> = ({
     setIsFixingSpelling(true);
     try {
       const fixed = await api.fixSpelling(txDescription);
-      if (fixed) setTxDescription(fixed);
+      if (fixed) {
+        setTxDescription(fixed);
+        toast.ai('English spelling corrected with AI ✨');
+      }
     } catch (e) {
-      // ignore
+      toast.error('AI spell-check failed');
     } finally {
       setIsFixingSpelling(false);
     }
@@ -87,6 +93,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
           paymentMethod: txPaymentMethod,
           tags: parsedTags,
         });
+        toast.success('Income record added successfully!');
       } else {
         await api.createExpense({
           amount: amt,
@@ -96,6 +103,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
           paymentMethod: txPaymentMethod,
           tags: parsedTags,
         });
+        toast.success('Expense record added successfully!');
       }
 
       setTxAmount('');
@@ -104,7 +112,9 @@ export const RecordModal: React.FC<RecordModalProps> = ({
       onSuccess();
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to record entry');
+      const msg = err.message || 'Failed to record entry';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -214,7 +224,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
                   disabled={isFixingSpelling}
                   className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
-                  <Sparkles className="w-3 h-3" />
+                  {isFixingSpelling ? <Spinner size="sm" /> : <Sparkles className="w-3 h-3" />}
                   <span>{isFixingSpelling ? 'Correcting...' : 'Fix English with AI ✨'}</span>
                 </button>
               )}
@@ -260,9 +270,10 @@ export const RecordModal: React.FC<RecordModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2 px-4 text-xs font-semibold text-neutral-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors disabled:opacity-50"
+              className="w-full py-2 px-4 text-xs font-semibold text-neutral-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isSubmitting ? 'Submitting...' : 'Save Record'}
+              {isSubmitting && <Spinner size="sm" className="text-neutral-950" />}
+              <span>{isSubmitting ? 'Saving Record...' : 'Save Record'}</span>
             </button>
           </div>
         </form>

@@ -18,6 +18,8 @@ import {
   Sparkles,
   X
 } from 'lucide-react';
+import { useToast } from './Toast.tsx';
+import { Spinner } from './Spinner.tsx';
 
 interface TransactionsViewProps {
   incomes: IncomeRecord[];
@@ -639,20 +641,18 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => handleOpenEditCategory(c)}
-                      className="text-neutral-400 hover:text-emerald-400 transition-colors"
+                      className="text-neutral-400 hover:text-emerald-400 transition-colors p-1.5 rounded hover:bg-neutral-900"
                       title="Edit Category"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    {!c.isDefault && (
-                      <button
-                        onClick={() => handleDeleteCategory(c.id)}
-                        className="text-neutral-500 hover:text-rose-400 transition-colors"
-                        title="Delete Category"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleDeleteCategory(c.id)}
+                      className="text-neutral-400 hover:text-rose-400 transition-colors p-1.5 rounded hover:bg-neutral-900"
+                      title="Delete Category"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}

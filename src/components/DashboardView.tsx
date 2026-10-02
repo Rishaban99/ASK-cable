@@ -13,6 +13,7 @@ import {
   ArrowRight,
   PieChart as PieIcon
 } from 'lucide-react';
+import { Spinner } from './Spinner.tsx';
 
 interface DashboardViewProps {
   analytics: AnalyticsOverview | null;
@@ -22,6 +23,39 @@ interface DashboardViewProps {
   isLoading: boolean;
 }
 
+const defaultAnalytics: AnalyticsOverview = {
+  netWorth: 0,
+  totalLiquidCash: 0,
+  monthlyCashFlow: {
+    periodMonth: new Date().toISOString().slice(0, 7),
+    totalIncome: 0,
+    totalExpense: 0,
+    netSavings: 0,
+    savingsRatePct: 0,
+    incomeTransactionsCount: 0,
+    expenseTransactionsCount: 0,
+  },
+  recentIncomes: [],
+  recentExpenses: [],
+  topExpenseCategories: [],
+  monthlyCashflowHistory: [
+    { month: 'Jan', income: 0, expense: 0, net: 0 },
+    { month: 'Feb', income: 0, expense: 0, net: 0 },
+    { month: 'Mar', income: 0, expense: 0, net: 0 },
+    { month: 'Apr', income: 0, expense: 0, net: 0 },
+    { month: 'May', income: 0, expense: 0, net: 0 },
+    { month: 'Jun', income: 0, expense: 0, net: 0 },
+  ],
+  netWorthHistory: [
+    { month: 'Jan', value: 0 },
+    { month: 'Feb', value: 0 },
+    { month: 'Mar', value: 0 },
+    { month: 'Apr', value: 0 },
+    { month: 'May', value: 0 },
+    { month: 'Jun', value: 0 },
+  ],
+};
+
 export const DashboardView: React.FC<DashboardViewProps> = ({
   analytics,
   currency,
@@ -29,21 +63,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigateToTab,
   isLoading,
 }) => {
-  if (isLoading || !analytics) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 rounded-lg bg-neutral-900/60 border border-neutral-800 animate-pulse" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-72 rounded-lg bg-neutral-900/60 border border-neutral-800 animate-pulse" />
-          <div className="h-72 rounded-lg bg-neutral-900/60 border border-neutral-800 animate-pulse" />
-        </div>
-      </div>
-    );
-  }
+  const data = analytics || defaultAnalytics;
 
   const {
     netWorth,
@@ -51,10 +71,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     monthlyCashFlow,
     recentIncomes = [],
     recentExpenses = [],
-    topExpenseCategories,
-    monthlyCashflowHistory,
+    topExpenseCategories = [],
+    monthlyCashflowHistory = [],
     netWorthHistory = [],
-  } = analytics;
+  } = data;
 
   const isNetSavingsPositive = monthlyCashFlow.netSavings >= 0;
 
@@ -77,6 +97,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-2.5">
+          {isLoading && (
+            <span className="flex items-center gap-1.5 text-[11px] text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 rounded-md font-medium">
+              <Spinner size="sm" />
+              <span>Syncing live data...</span>
+            </span>
+          )}
           <button
             onClick={onOpenRecordModal}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-950 bg-emerald-400 rounded-md hover:bg-emerald-300 transition-colors"

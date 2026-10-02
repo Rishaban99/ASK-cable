@@ -16,7 +16,7 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<'dashboard' | 'transactions'>('dashboard');
   const currency: SupportedCurrency = 'LKR';
 
-  // Application Data States
+  // Application Data States - Strictly fetched from DB
   const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
   const [incomes, setIncomes] = useState<IncomeRecord[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
@@ -26,7 +26,19 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
 
-  // Load all app data (Incomes, Expenses, Categories, Analytics)
+  // Clear legacy mock data cache if any existed
+  useEffect(() => {
+    try {
+      localStorage.removeItem('ask_cable_analytics_cache');
+      localStorage.removeItem('ask_cable_incomes_cache');
+      localStorage.removeItem('ask_cable_expenses_cache');
+      localStorage.removeItem('ask_cable_categories_cache');
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Load live DB data from Prisma API
   const loadData = useCallback(async () => {
     try {
       const [analyticsData, incs, exps, cats] = await Promise.all([
@@ -35,6 +47,7 @@ export default function App() {
         api.getExpenses(),
         api.getCategories(),
       ]);
+
       setAnalytics(analyticsData);
       setIncomes(incs);
       setExpenses(exps);

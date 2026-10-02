@@ -83,62 +83,74 @@ Return ONLY the corrected, clean English title-cased phrase without quotes, expl
 // 2. CATEGORIES ROUTES
 // ==========================================
 
-router.get('/categories', (_req, res) => {
-  const categories = db.getCategories();
-  res.json({ categories });
+router.get('/categories', async (_req, res) => {
+  try {
+    const categories = await db.getCategories();
+    res.json({ categories });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch categories' });
+  }
 });
 
-router.post('/categories', (req, res) => {
+router.post('/categories', async (req, res) => {
   try {
     const { name, type, icon, color } = req.body;
     if (!name || !type) {
       return res.status(400).json({ error: 'Category name and type (INCOME or EXPENSE) are required' });
     }
-    const cat = db.createCategory({ name, type, icon, color });
+    const cat = await db.createCategory({ name, type, icon, color });
     res.status(201).json({ category: cat });
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'Failed to create category' });
   }
 });
 
-router.put('/categories/:id', (req, res) => {
+router.put('/categories/:id', async (req, res) => {
   try {
-    const cat = db.updateCategory(req.params.id, req.body);
+    const cat = await db.updateCategory(req.params.id, req.body);
     res.json({ category: cat });
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'Failed to update category' });
   }
 });
 
-router.delete('/categories/:id', (req, res) => {
-  const success = db.deleteCategory(req.params.id);
-  if (!success) {
-    return res.status(404).json({ error: 'Category not found' });
+router.delete('/categories/:id', async (req, res) => {
+  try {
+    const success = await db.deleteCategory(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    res.json({ message: 'Category deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
-  res.json({ message: 'Category deleted successfully' });
 });
 
 // ==========================================
 // 3. INCOMES ROUTES
 // ==========================================
 
-router.get('/incomes', (req, res) => {
-  const { categoryId, search } = req.query;
-  const incomes = db.getIncomes({
-    categoryId: categoryId as string,
-    search: search as string,
-  });
-  res.json({ incomes });
+router.get('/incomes', async (req, res) => {
+  try {
+    const { categoryId, search } = req.query;
+    const incomes = await db.getIncomes({
+      categoryId: categoryId as string,
+      search: search as string,
+    });
+    res.json({ incomes });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch incomes' });
+  }
 });
 
-router.post('/incomes', (req, res) => {
+router.post('/incomes', async (req, res) => {
   try {
     const { categoryId, amount, date, description, paymentMethod, tags } = req.body;
     if (!categoryId || amount === undefined || !date || !description) {
       return res.status(400).json({ error: 'Missing required income fields' });
     }
 
-    const income = db.createIncome({
+    const income = await db.createIncome({
       categoryId,
       amount: Number(amount),
       date,
@@ -152,44 +164,52 @@ router.post('/incomes', (req, res) => {
   }
 });
 
-router.put('/incomes/:id', (req, res) => {
+router.put('/incomes/:id', async (req, res) => {
   try {
-    const income = db.updateIncome(req.params.id, req.body);
+    const income = await db.updateIncome(req.params.id, req.body);
     res.json({ income });
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'Failed to update income record' });
   }
 });
 
-router.delete('/incomes/:id', (req, res) => {
-  const success = db.deleteIncome(req.params.id);
-  if (!success) {
-    return res.status(404).json({ error: 'Income record not found' });
+router.delete('/incomes/:id', async (req, res) => {
+  try {
+    const success = await db.deleteIncome(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: 'Income record not found' });
+    }
+    res.json({ message: 'Income record deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
-  res.json({ message: 'Income record deleted successfully' });
 });
 
 // ==========================================
 // 4. EXPENSES ROUTES
 // ==========================================
 
-router.get('/expenses', (req, res) => {
-  const { categoryId, search } = req.query;
-  const expenses = db.getExpenses({
-    categoryId: categoryId as string,
-    search: search as string,
-  });
-  res.json({ expenses });
+router.get('/expenses', async (req, res) => {
+  try {
+    const { categoryId, search } = req.query;
+    const expenses = await db.getExpenses({
+      categoryId: categoryId as string,
+      search: search as string,
+    });
+    res.json({ expenses });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch expenses' });
+  }
 });
 
-router.post('/expenses', (req, res) => {
+router.post('/expenses', async (req, res) => {
   try {
     const { categoryId, amount, date, description, paymentMethod, tags } = req.body;
     if (!categoryId || amount === undefined || !date || !description) {
       return res.status(400).json({ error: 'Missing required expense fields' });
     }
 
-    const expense = db.createExpense({
+    const expense = await db.createExpense({
       categoryId,
       amount: Number(amount),
       date,
@@ -203,53 +223,69 @@ router.post('/expenses', (req, res) => {
   }
 });
 
-router.put('/expenses/:id', (req, res) => {
+router.put('/expenses/:id', async (req, res) => {
   try {
-    const expense = db.updateExpense(req.params.id, req.body);
+    const expense = await db.updateExpense(req.params.id, req.body);
     res.json({ expense });
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'Failed to update expense record' });
   }
 });
 
-router.delete('/expenses/:id', (req, res) => {
-  const success = db.deleteExpense(req.params.id);
-  if (!success) {
-    return res.status(404).json({ error: 'Expense record not found' });
+router.delete('/expenses/:id', async (req, res) => {
+  try {
+    const success = await db.deleteExpense(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: 'Expense record not found' });
+    }
+    res.json({ message: 'Expense record deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
-  res.json({ message: 'Expense record deleted successfully' });
 });
 
 // ==========================================
 // 5. ANALYTICS ROUTES
 // ==========================================
 
-router.get('/analytics/overview', (_req, res) => {
-  const analytics = db.getAnalyticsOverview();
-  res.json({ analytics });
+router.get('/analytics/overview', async (_req, res) => {
+  try {
+    const analytics = await db.getAnalyticsOverview();
+    res.json({ analytics });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to calculate analytics overview' });
+  }
 });
 
 // CSV Exports
-router.get('/export/incomes-csv', (_req, res) => {
-  const recs = db.getIncomes();
-  let csv = 'ID,Date,Category,Amount,Description,Payment Method\n';
-  for (const r of recs) {
-    csv += `"${r.id}","${r.date}","${r.categoryName || ''}",${r.amount},"${r.description.replace(/"/g, '""')}","${r.paymentMethod}"\n`;
+router.get('/export/incomes-csv', async (_req, res) => {
+  try {
+    const recs = await db.getIncomes();
+    let csv = 'ID,Date,Category,Amount,Description,Payment Method\n';
+    for (const r of recs) {
+      csv += `"${r.id}","${r.date}","${r.categoryName || ''}",${r.amount},"${r.description.replace(/"/g, '""')}","${r.paymentMethod}"\n`;
+    }
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=incomes_${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csv);
+  } catch (error: any) {
+    res.status(500).send('CSV export failed');
   }
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', `attachment; filename=incomes_${new Date().toISOString().split('T')[0]}.csv`);
-  res.send(csv);
 });
 
-router.get('/export/expenses-csv', (_req, res) => {
-  const recs = db.getExpenses();
-  let csv = 'ID,Date,Category,Amount,Description,Payment Method\n';
-  for (const r of recs) {
-    csv += `"${r.id}","${r.date}","${r.categoryName || ''}",${r.amount},"${r.description.replace(/"/g, '""')}","${r.paymentMethod}"\n`;
+router.get('/export/expenses-csv', async (_req, res) => {
+  try {
+    const recs = await db.getExpenses();
+    let csv = 'ID,Date,Category,Amount,Description,Payment Method\n';
+    for (const r of recs) {
+      csv += `"${r.id}","${r.date}","${r.categoryName || ''}",${r.amount},"${r.description.replace(/"/g, '""')}","${r.paymentMethod}"\n`;
+    }
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=expenses_${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csv);
+  } catch (error: any) {
+    res.status(500).send('CSV export failed');
   }
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', `attachment; filename=expenses_${new Date().toISOString().split('T')[0]}.csv`);
-  res.send(csv);
 });
 
 // ==========================================
@@ -294,40 +330,48 @@ CREATE TABLE IF NOT EXISTS expenses (
   res.json({ sql });
 });
 
-router.get('/database/tables', (_req, res) => {
-  const tables = db.getTablesMeta();
-  res.json({ tables });
+router.get('/database/tables', async (_req, res) => {
+  try {
+    const tables = await db.getTablesMeta();
+    res.json({ tables });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-router.get('/database/tables/:tableName', (req, res) => {
+router.get('/database/tables/:tableName', async (req, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 50;
-    const data = db.getTableData(req.params.tableName, page, limit);
+    const data = await db.getTableData(req.params.tableName, page, limit);
     res.json(data);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
 });
 
-router.post('/database/tables/:tableName/rows', (req, res) => {
+router.post('/database/tables/:tableName/rows', async (req, res) => {
   try {
-    const row = db.insertTableRow(req.params.tableName, req.body);
+    const row = await db.insertTableRow(req.params.tableName, req.body);
     res.status(201).json({ row, message: 'Row inserted successfully' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
 });
 
-router.delete('/database/tables/:tableName/rows/:rowId', (req, res) => {
-  const success = db.deleteTableRow(req.params.tableName, req.params.rowId);
-  res.json({ success });
+router.delete('/database/tables/:tableName/rows/:rowId', async (req, res) => {
+  try {
+    const success = await db.deleteTableRow(req.params.tableName, req.params.rowId);
+    res.json({ success });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
-router.post('/database/query', (req, res) => {
+router.post('/database/query', async (req, res) => {
   try {
     const { sql } = req.body;
-    const result = db.executeSql(sql || '');
+    const result = await db.executeSql(sql || '');
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
