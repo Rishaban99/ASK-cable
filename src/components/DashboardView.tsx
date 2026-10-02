@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AnalyticsOverview,
   SupportedCurrency
@@ -63,6 +63,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigateToTab,
   isLoading,
 }) => {
+  const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);
   const data = analytics || defaultAnalytics;
 
   const {
@@ -84,7 +85,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     1000
   );
 
-  const maxNetWorth = Math.max(...netWorthHistory.map((n) => n.value), 10000);
+  // SVG Area Chart Calculations for Cash Balance Trajectory
+  const trajectoryValues = netWorthHistory.map((n) => n.value);
+  let minTrajVal = Math.min(...(trajectoryValues.length ? trajectoryValues : [0]));
+  let maxTrajVal = Math.max(...(trajectoryValues.length ? trajectoryValues : [0]));
+
+  if (minTrajVal === maxTrajVal) {
+    minTrajVal -= 50000;
+    maxTrajVal += 50000;
+  }
+
+  const trajPaddingY = 24;
+  const trajSvgWidth = 500;
+  const trajSvgHeight = 150;
+  const trajRange = maxTrajVal - minTrajVal || 1;
+
+  const trajPoints = netWorthHistory.map((item, idx) => {
+    const totalCount = netWorthHistory.length || 1;
+    const x = totalCount === 1 ? trajSvgWidth / 2 : 25 + (idx / (totalCount - 1)) * (trajSvgWidth - 50);
+    const y = trajSvgHeight - trajPaddingY - ((item.value - minTrajVal) / trajRange) * (trajSvgHeight - 2 * trajPaddingY);
+    return { x, y, month: item.month, value: item.value };
+  });
+
+  const pathD = trajPoints.reduce((acc, p, i) => (i === 0 ? `M ${p.x},${p.y}` : `${acc} L ${p.x},${p.y}`), '');
+  const areaD = trajPoints.length
+    ? `${pathD} L ${trajPoints[trajPoints.length - 1].x},${trajSvgHeight - 5} L ${trajPoints[0].x},${trajSvgHeight - 5} Z`
+    : '';
+
+  const zeroLineY = minTrajVal < 0 && maxTrajVal > 0
+    ? trajSvgHeight - trajPaddingY - ((0 - minTrajVal) / trajRange) * (trajSvgHeight - 2 * trajPaddingY)
+    : null;
+
+  const currentNetWorth = netWorthHistory[netWorthHistory.length - 1]?.value ?? netWorth;
+  const isTrajectoryPositive = currentNetWorth >= 0;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
@@ -239,39 +272,118 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <h2 className="text-base font-semibold text-white">Cash Balance Trajectory</h2>
                 <p className="text-xs text-neutral-400 mt-0.5">Multi-month cumulative cash balance accumulation in LKR</p>
               </div>
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              {isTrajectoryPositive ? (
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <TrendingDown className="w-4 h-4 text-rose-400" />
+              )}
             </div>
 
-            {/* Bar Chart Representation */}
-            <div className="pt-4">
-              <div className="h-44 flex items-end justify-between gap-3 border-b border-neutral-800 pb-2">
-                {netWorthHistory.map((item, idx) => {
-                  const heightPct = Math.max(15, (item.value / maxNetWorth) * 100);
-                  return (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                      <div className="w-full flex items-end justify-center h-36">
-                        <div
-                          style={{ height: `${heightPct}%` }}
-                          className="w-full max-w-[38px] bg-gradient-to-t from-emerald-500/20 to-emerald-400 rounded-t border-t-2 border-emerald-300 relative group-hover:bg-emerald-400 transition-all cursor-pointer"
-                        >
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 left-1/2 -translate-x-1/2 bg-neutral-800 border border-neutral-700 text-white text-[10px] font-mono px-2 py-0.5 rounded shadow whitespace-nowrap z-20 pointer-events-none">
-                            {formatCompactMoney(item.value, currency)}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-xs font-mono text-neutral-400 group-hover:text-white transition-colors">
-                        {item.month}
-                      </span>
+            {/* Dynamic SVG Area Line Chart */}
+            <div className="pt-4 relative">
+              <div className="w-full h-44 relative flex flex-col justify-between">
+                <svg
+                  viewBox={`0 0 ${trajSvgWidth} ${trajSvgHeight}`}
+                  preserveAspectRatio="none"
+                  className="w-full h-36 overflow-visible"
+                >
+                  <defs>
+                    <linearGradient id="trajGradientPos" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10B981" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
+                    </linearGradient>
+                    <linearGradient id="trajGradientNeg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Horizontal Grid lines */}
+                  <line x1="0" y1={trajPaddingY} x2={trajSvgWidth} y2={trajPaddingY} stroke="#262626" strokeDasharray="3 3" />
+                  <line x1="0" y1={trajSvgHeight / 2} x2={trajSvgWidth} y2={trajSvgHeight / 2} stroke="#262626" strokeDasharray="3 3" />
+                  <line x1="0" y1={trajSvgHeight - trajPaddingY} x2={trajSvgWidth} y2={trajSvgHeight - trajPaddingY} stroke="#262626" strokeDasharray="3 3" />
+
+                  {/* Zero reference line */}
+                  {zeroLineY !== null && (
+                    <line x1="0" y1={zeroLineY} x2={trajSvgWidth} y2={zeroLineY} stroke="#EF4444" strokeDasharray="4 2" strokeWidth="1" opacity="0.6" />
+                  )}
+
+                  {/* Gradient Area Fill */}
+                  {areaD && (
+                    <path
+                      d={areaD}
+                      fill={isTrajectoryPositive ? 'url(#trajGradientPos)' : 'url(#trajGradientNeg)'}
+                    />
+                  )}
+
+                  {/* Smooth Trajectory Line */}
+                  {pathD && (
+                    <path
+                      d={pathD}
+                      fill="none"
+                      stroke={isTrajectoryPositive ? '#10B981' : '#F43F5E'}
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+
+                  {/* Interactive Points */}
+                  {trajPoints.map((p, idx) => (
+                    <g key={idx} className="cursor-pointer" onMouseEnter={() => setHoveredPointIdx(idx)} onMouseLeave={() => setHoveredPointIdx(null)}>
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={hoveredPointIdx === idx ? '6' : '4'}
+                        fill={isTrajectoryPositive ? '#10B981' : '#F43F5E'}
+                        stroke="#0A0A0A"
+                        strokeWidth="2"
+                        className="transition-all duration-200"
+                      />
+                    </g>
+                  ))}
+                </svg>
+
+                {/* X-Axis Month Labels */}
+                <div className="flex items-center justify-between text-xs text-neutral-400 font-mono px-2 pt-1 border-t border-neutral-800">
+                  {trajPoints.map((p, idx) => (
+                    <span
+                      key={idx}
+                      onMouseEnter={() => setHoveredPointIdx(idx)}
+                      onMouseLeave={() => setHoveredPointIdx(null)}
+                      className={`cursor-pointer transition-colors ${
+                        hoveredPointIdx === idx ? 'text-white font-bold' : 'hover:text-neutral-200'
+                      }`}
+                    >
+                      {p.month}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Interactive Floating Tooltip */}
+                {hoveredPointIdx !== null && trajPoints[hoveredPointIdx] && (
+                  <div
+                    className="absolute z-20 bg-neutral-900 border border-neutral-700 text-white px-3 py-1.5 rounded shadow-xl text-xs font-mono pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 transition-all"
+                    style={{
+                      left: `${(trajPoints[hoveredPointIdx].x / trajSvgWidth) * 100}%`,
+                      top: `${Math.max(10, Math.min(80, (trajPoints[hoveredPointIdx].y / trajSvgHeight) * 100))}%`,
+                    }}
+                  >
+                    <div className="text-[10px] text-neutral-400 font-sans">{trajPoints[hoveredPointIdx].month} Balance</div>
+                    <div className={`font-semibold ${trajPoints[hoveredPointIdx].value >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {formatMoney(trajPoints[hoveredPointIdx].value, currency)}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           <div className="pt-4 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
             <span>Overall Net Cash Reserve:</span>
-            <span className="font-mono tabular-nums text-emerald-400 font-bold text-sm">
+            <span className={`font-mono tabular-nums font-bold text-sm ${
+              netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'
+            }`}>
               {formatMoney(netWorth, currency)}
             </span>
           </div>

@@ -372,6 +372,18 @@ export class RelationalDatabaseStore {
     const monthlyCashflowHistory: { month: string; income: number; expense: number; net: number }[] = [];
     const netWorthHistory: { month: string; value: number }[] = [];
 
+    // Calculate initial balance prior to the 6-month window
+    const windowStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const windowStartStr = `${windowStart.getFullYear()}-${String(windowStart.getMonth() + 1).padStart(2, '0')}-01`;
+    let runningNet = 0;
+
+    for (const item of allIncomes) {
+      if (item.date < windowStartStr) runningNet += item.amount;
+    }
+    for (const item of allExpenses) {
+      if (item.date < windowStartStr) runningNet -= item.amount;
+    }
+
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -386,6 +398,8 @@ export class RelationalDatabaseStore {
         if (item.date.startsWith(monthKey)) exp += item.amount;
       }
 
+      runningNet += (inc - exp);
+
       monthlyCashflowHistory.push({
         month: monthLabel,
         income: inc,
@@ -395,7 +409,7 @@ export class RelationalDatabaseStore {
 
       netWorthHistory.push({
         month: monthLabel,
-        value: Math.max(0, netBalance),
+        value: runningNet,
       });
     }
 

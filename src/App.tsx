@@ -10,10 +10,11 @@ import { api } from './api/client.js';
 import { Navbar } from './components/Navbar.js';
 import { DashboardView } from './components/DashboardView.js';
 import { TransactionsView } from './components/TransactionsView.js';
+import { SummaryView } from './components/SummaryView.js';
 import { RecordModal } from './components/RecordModal.js';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'transactions'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'transactions' | 'summary'>('dashboard');
   const currency: SupportedCurrency = 'LKR';
 
   // Application Data States - Strictly fetched from DB
@@ -71,6 +72,7 @@ export default function App() {
         onSelectTab={setCurrentTab}
         currency={currency}
         onOpenRecordModal={() => setIsRecordModalOpen(true)}
+        analytics={analytics}
       />
 
       {/* Main Viewport Content */}
@@ -93,6 +95,18 @@ export default function App() {
             currency={currency}
             onRefreshData={loadData}
             onOpenRecordModal={() => setIsRecordModalOpen(true)}
+          />
+        )}
+
+        {currentTab === 'summary' && (
+          <SummaryView
+            analytics={analytics}
+            incomes={incomes}
+            expenses={expenses}
+            categories={categories}
+            currency={currency}
+            onOpenRecordModal={() => setIsRecordModalOpen(true)}
+            isLoading={isLoading}
           />
         )}
       </main>
