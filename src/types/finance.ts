@@ -10,6 +10,19 @@ export interface Category {
   createdAt?: string;
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  nicNo: string;
+  phoneNo: string;
+  address: string;
+  boxNo: string;
+  totalAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  createdAt: string;
+}
+
 export interface IncomeRecord {
   id: string;
   categoryId: string;

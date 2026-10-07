@@ -4,8 +4,8 @@ import { CURRENCY_CONF, formatMoney } from '../api/client.js';
 import { Plus, Wallet } from 'lucide-react';
 
 interface NavbarProps {
-  currentTab: 'dashboard' | 'transactions' | 'summary';
-  onSelectTab: (tab: 'dashboard' | 'transactions' | 'summary') => void;
+  currentTab: 'dashboard' | 'transactions' | 'summary' | 'customers';
+  onSelectTab: (tab: 'dashboard' | 'transactions' | 'summary' | 'customers') => void;
   currency?: SupportedCurrency;
   onOpenRecordModal: () => void;
   analytics?: AnalyticsOverview | null;
@@ -22,6 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'transactions', label: 'Income & Expenses' },
     { id: 'summary', label: 'Total Summary' },
+    { id: 'customers', label: 'Customers' },
   ] as const;
 
   const netWorth = analytics?.netWorth ?? 0;

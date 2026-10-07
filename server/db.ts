@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import {
   Category,
+  Customer,
   IncomeRecord,
   ExpenseRecord,
   CashFlowSummary,
@@ -296,6 +297,186 @@ export class RelationalDatabaseStore {
 
   public async deleteExpense(id: string): Promise<boolean> {
     await prisma.expense.delete({ where: { id } });
+    return true;
+  }
+
+  // -------------------------------------------------------------------
+  // CUSTOMERS TABLE
+  // -------------------------------------------------------------------
+  public async getCustomers(search?: string): Promise<Customer[]> {
+    const whereClause: any = {};
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { nicNo: { contains: search, mode: 'insensitive' } },
+        { phoneNo: { contains: search, mode: 'insensitive' } },
+        { boxNo: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    const custs = await prisma.customer.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+    });
+    return custs.map((c) => ({
+      id: c.id,
+      name: c.name,
+      nicNo: c.nicNo,
+      phoneNo: c.phoneNo,
+      address: c.address,
+      boxNo: c.boxNo,
+      totalAmount: c.totalAmount,
+      paidAmount: c.paidAmount,
+      balanceAmount: c.totalAmount - c.paidAmount,
+      createdAt: c.createdAt.toISOString(),
+    }));
+  }
+
+  private async getOrCreateCustomerIncomeCategory(): Promise<string> {
+    let cat = await prisma.category.findFirst({
+      where: {
+        type: 'INCOME',
+        name: { contains: 'Customer', mode: 'insensitive' }
+      }
+    });
+    if (!cat) {
+      cat = await prisma.category.findFirst({
+        where: { type: 'INCOME' }
+      });
+    }
+    if (!cat) {
+      cat = await prisma.category.create({
+        data: {
+          name: 'Customer Cable Payments',
+          type: 'INCOME',
+          icon: 'Tv',
+          color: '#10B981',
+          isDefault: true,
+        }
+      });
+    }
+    return cat.id;
+  }
+
+  public async createCustomer(dto: {
+    name: string;
+    nicNo: string;
+    phoneNo: string;
+    address: string;
+    boxNo: string;
+    totalAmount: number;
+    paidAmount: number;
+  }): Promise<Customer> {
+    const initialPaid = Math.abs(dto.paidAmount || 0);
+    const cust = await prisma.customer.create({
+      data: {
+        name: dto.name,
+        nicNo: dto.nicNo,
+        phoneNo: dto.phoneNo,
+        address: dto.address,
+        boxNo: dto.boxNo,
+        totalAmount: Math.abs(dto.totalAmount || 0),
+        paidAmount: initialPaid,
+      },
+    });
+
+    // Automatically record paid amount as an Income entry in DB
+    if (initialPaid > 0) {
+      try {
+        const categoryId = await this.getOrCreateCustomerIncomeCategory();
+        const todayStr = new Date().toISOString().split('T')[0];
+        await prisma.income.create({
+          data: {
+            categoryId,
+            amount: initialPaid,
+            date: todayStr,
+            description: `Customer Payment - ${cust.name} (Box: ${cust.boxNo})`,
+            paymentMethod: 'CASH',
+            tags: ['customer', cust.boxNo],
+          }
+        });
+      } catch (e) {
+        console.error('Failed to log customer payment to income ledger:', e);
+      }
+    }
+
+    return {
+      id: cust.id,
+      name: cust.name,
+      nicNo: cust.nicNo,
+      phoneNo: cust.phoneNo,
+      address: cust.address,
+      boxNo: cust.boxNo,
+      totalAmount: cust.totalAmount,
+      paidAmount: cust.paidAmount,
+      balanceAmount: cust.totalAmount - cust.paidAmount,
+      createdAt: cust.createdAt.toISOString(),
+    };
+  }
+
+  public async updateCustomer(id: string, dto: Partial<{
+    name: string;
+    nicNo: string;
+    phoneNo: string;
+    address: string;
+    boxNo: string;
+    totalAmount: number;
+    paidAmount: number;
+  }>): Promise<Customer> {
+    const oldCust = await prisma.customer.findUnique({ where: { id } });
+
+    const dataToUpdate: any = {};
+    if (dto.name !== undefined) dataToUpdate.name = dto.name;
+    if (dto.nicNo !== undefined) dataToUpdate.nicNo = dto.nicNo;
+    if (dto.phoneNo !== undefined) dataToUpdate.phoneNo = dto.phoneNo;
+    if (dto.address !== undefined) dataToUpdate.address = dto.address;
+    if (dto.boxNo !== undefined) dataToUpdate.boxNo = dto.boxNo;
+    if (dto.totalAmount !== undefined) dataToUpdate.totalAmount = Math.abs(dto.totalAmount);
+    if (dto.paidAmount !== undefined) dataToUpdate.paidAmount = Math.abs(dto.paidAmount);
+
+    const cust = await prisma.customer.update({
+      where: { id },
+      data: dataToUpdate,
+    });
+
+    // Automatically record payment difference as an Income entry if paidAmount increased
+    if (oldCust && dto.paidAmount !== undefined) {
+      const paymentDiff = cust.paidAmount - oldCust.paidAmount;
+      if (paymentDiff > 0) {
+        try {
+          const categoryId = await this.getOrCreateCustomerIncomeCategory();
+          const todayStr = new Date().toISOString().split('T')[0];
+          await prisma.income.create({
+            data: {
+              categoryId,
+              amount: paymentDiff,
+              date: todayStr,
+              description: `Customer Balance Payment - ${cust.name} (Box: ${cust.boxNo})`,
+              paymentMethod: 'CASH',
+              tags: ['customer', 'balance-payment', cust.boxNo],
+            }
+          });
+        } catch (e) {
+          console.error('Failed to log customer balance payment to income ledger:', e);
+        }
+      }
+    }
+
+    return {
+      id: cust.id,
+      name: cust.name,
+      nicNo: cust.nicNo,
+      phoneNo: cust.phoneNo,
+      address: cust.address,
+      boxNo: cust.boxNo,
+      totalAmount: cust.totalAmount,
+      paidAmount: cust.paidAmount,
+      balanceAmount: cust.totalAmount - cust.paidAmount,
+      createdAt: cust.createdAt.toISOString(),
+    };
+  }
+
+  public async deleteCustomer(id: string): Promise<boolean> {
+    await prisma.customer.delete({ where: { id } });
     return true;
   }
 

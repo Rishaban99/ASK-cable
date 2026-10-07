@@ -245,6 +245,62 @@ router.delete('/expenses/:id', async (req, res) => {
 });
 
 // ==========================================
+// 4.5. CUSTOMERS ROUTES
+// ==========================================
+
+router.get('/customers', async (req, res) => {
+  try {
+    const { search } = req.query;
+    const customers = await db.getCustomers(search as string);
+    res.json({ customers });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch customers' });
+  }
+});
+
+router.post('/customers', async (req, res) => {
+  try {
+    const { name, nicNo, phoneNo, address, boxNo, totalAmount, paidAmount } = req.body;
+    if (!name || !nicNo || !phoneNo || !boxNo) {
+      return res.status(400).json({ error: 'Customer Name, NIC No, Phone No, and Box No are required' });
+    }
+    const customer = await db.createCustomer({
+      name,
+      nicNo,
+      phoneNo,
+      address: address || '',
+      boxNo,
+      totalAmount: Number(totalAmount || 0),
+      paidAmount: Number(paidAmount || 0),
+    });
+    res.status(201).json({ customer });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to create customer' });
+  }
+});
+
+router.put('/customers/:id', async (req, res) => {
+  try {
+    const customer = await db.updateCustomer(req.params.id, req.body);
+    res.json({ customer });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to update customer' });
+  }
+});
+
+router.delete('/customers/:id', async (req, res) => {
+  try {
+    const success = await db.deleteCustomer(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    res.json({ message: 'Customer deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// ==========================================
 // 5. ANALYTICS ROUTES
 // ==========================================
 

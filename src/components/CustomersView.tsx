@@ -1,0 +1,733 @@
+import React, { useState, useEffect } from 'react';
+import { Customer, SupportedCurrency } from '../types/finance.js';
+import { api, formatMoney } from '../api/client.js';
+import {
+  UserPlus,
+  Users,
+  Search,
+  Edit2,
+  Trash2,
+  X,
+  CreditCard,
+  Phone,
+  MapPin,
+  Box,
+  Calendar,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
+
+interface CustomersViewProps {
+  customers: Customer[];
+  currency: SupportedCurrency;
+  onRefreshData: () => void;
+}
+
+export const CustomersView: React.FC<CustomersViewProps> = ({
+  customers,
+  currency,
+  onRefreshData,
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAiFixing, setIsAiFixing] = useState(false);
+
+  // Registration Form States
+  const [name, setName] = useState('');
+  const [nicNo, setNicNo] = useState('');
+  const [phoneNo, setPhoneNo] = useState('');
+  const [address, setAddress] = useState('');
+  const [boxNo, setBoxNo] = useState('');
+  const [totalAmount, setTotalAmount] = useState('');
+  const [paidAmount, setPaidAmount] = useState('');
+
+  // Fixed Date (cannot be changed)
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Calculated Balance
+  const parsedTotal = parseFloat(totalAmount) || 0;
+  const parsedPaid = parseFloat(paidAmount) || 0;
+  const calculatedBalance = Math.max(0, parsedTotal - parsedPaid);
+
+  // Edit Modal States
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editNicNo, setEditNicNo] = useState('');
+  const [editPhoneNo, setEditPhoneNo] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editBoxNo, setEditBoxNo] = useState('');
+  const [editTotalAmount, setEditTotalAmount] = useState('');
+  const [editPaidAmount, setEditPaidAmount] = useState('');
+
+  const parsedEditTotal = parseFloat(editTotalAmount) || 0;
+  const parsedEditPaid = parseFloat(editPaidAmount) || 0;
+  const calculatedEditBalance = Math.max(0, parsedEditTotal - parsedEditPaid);
+
+  // Pay Balance Modal States
+  const [payBalanceCustomer, setPayBalanceCustomer] = useState<Customer | null>(null);
+  const [payAmount, setPayAmount] = useState('');
+  const [isPaying, setIsPaying] = useState(false);
+
+  const handleOpenPayBalance = (cust: Customer) => {
+    setPayBalanceCustomer(cust);
+    setPayAmount(cust.balanceAmount.toString());
+  };
+
+  const handleConfirmPayBalance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payBalanceCustomer) return;
+    const addPay = parseFloat(payAmount);
+    if (isNaN(addPay) || addPay <= 0) {
+      alert('Please enter a valid positive payment amount.');
+      return;
+    }
+
+    setIsPaying(true);
+    try {
+      const newPaidAmount = payBalanceCustomer.paidAmount + addPay;
+      await api.updateCustomer(payBalanceCustomer.id, {
+        paidAmount: newPaidAmount,
+      });
+
+      setPayBalanceCustomer(null);
+      onRefreshData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to process balance payment');
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
+  // Handle Customer Registration Submit
+  const handleCreateCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    if (!name.trim() || !nicNo.trim() || !phoneNo.trim() || !boxNo.trim()) {
+      setErrorMsg('Name, NIC No, Phone No, and Box No are required.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await api.createCustomer({
+        name: name.trim(),
+        nicNo: nicNo.trim(),
+        phoneNo: phoneNo.trim(),
+        address: address.trim(),
+        boxNo: boxNo.trim(),
+        totalAmount: parsedTotal,
+        paidAmount: parsedPaid,
+      });
+
+      // Clear Form
+      setName('');
+      setNicNo('');
+      setPhoneNo('');
+      setAddress('');
+      setBoxNo('');
+      setTotalAmount('');
+      setPaidAmount('');
+
+      onRefreshData();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to register customer');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Open Edit Modal
+  const handleOpenEdit = (cust: Customer) => {
+    setEditingCustomer(cust);
+    setEditName(cust.name);
+    setEditNicNo(cust.nicNo);
+    setEditPhoneNo(cust.phoneNo);
+    setEditAddress(cust.address);
+    setEditBoxNo(cust.boxNo);
+    setEditTotalAmount(cust.totalAmount.toString());
+    setEditPaidAmount(cust.paidAmount.toString());
+  };
+
+  // Save Edit
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer || !editName.trim() || !editNicNo.trim() || !editPhoneNo.trim() || !editBoxNo.trim()) return;
+
+    try {
+      await api.updateCustomer(editingCustomer.id, {
+        name: editName.trim(),
+        nicNo: editNicNo.trim(),
+        phoneNo: editPhoneNo.trim(),
+        address: editAddress.trim(),
+        boxNo: editBoxNo.trim(),
+        totalAmount: parsedEditTotal,
+        paidAmount: parsedEditPaid,
+      });
+
+      setEditingCustomer(null);
+      onRefreshData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update customer details');
+    }
+  };
+
+  // Delete Customer
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete customer "${name}"? This action cannot be undone.`)) return;
+    try {
+      await api.deleteCustomer(id);
+      onRefreshData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete customer');
+    }
+  };
+
+  // Filtered customers
+  const filteredCustomers = customers.filter((c) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.nicNo.toLowerCase().includes(q) ||
+      c.phoneNo.toLowerCase().includes(q) ||
+      c.boxNo.toLowerCase().includes(q) ||
+      c.address.toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
+            <Users className="w-6 h-6 text-emerald-400" />
+            <span>Customer Registration & Ledger</span>
+          </h1>
+          <p className="text-sm text-neutral-400 mt-1">
+            Register new cable subscribers, track total/paid amounts, balance dues, and box numbers stored in MongoDB.
+          </p>
+        </div>
+      </div>
+
+      {/* Main Grid: Registration Form (Left) & Customer Table (Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* 1. Customer Registration Form Card */}
+        <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 h-fit shadow-xl">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+            <h2 className="text-base font-semibold text-white flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-emerald-400" />
+              <span>Customer Registration</span>
+            </h2>
+            <span className="text-[11px] font-mono text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+              DB Connected
+            </span>
+          </div>
+
+          {errorMsg && (
+            <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-md flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleCreateCustomer} className="space-y-4 text-xs">
+            {/* Customer Name */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-neutral-400 font-medium">Customer Name *</label>
+                {name.trim() && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsAiFixing(true);
+                      const fixed = await api.fixSpelling(name);
+                      if (fixed) setName(fixed);
+                      setIsAiFixing(false);
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>{isAiFixing ? 'Checking...' : 'Fix AI ✨'}</span>
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                required
+                placeholder="e.g. K. Perera, A. Rahman"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+              />
+            </div>
+
+            {/* NIC No & Phone No */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-neutral-400 font-medium mb-1">NIC No *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 199012345678"
+                  value={nicNo}
+                  onChange={(e) => setNicNo(e.target.value)}
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
+                  <Phone className="w-3 h-3 text-neutral-500" />
+                  <span>Phone No *</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 0771234567"
+                  value={phoneNo}
+                  onChange={(e) => setPhoneNo(e.target.value)}
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                />
+              </div>
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-neutral-500" />
+                <span>Address</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 45 Main Street, Jaffna"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+              />
+            </div>
+
+            {/* Box No */}
+            <div>
+              <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
+                <Box className="w-3 h-3 text-neutral-500" />
+                <span>Box No *</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. BOX-1042"
+                value={boxNo}
+                onChange={(e) => setBoxNo(e.target.value)}
+                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono uppercase placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+              />
+            </div>
+
+            {/* Financials: Total Amount & Paid Amount */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
+                  <CreditCard className="w-3 h-3 text-neutral-500" />
+                  <span>Total Amount</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={totalAmount}
+                  onChange={(e) => setTotalAmount(e.target.value)}
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-neutral-400 font-medium mb-1">Paid Amount</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={paidAmount}
+                  onChange={(e) => setPaidAmount(e.target.value)}
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                />
+              </div>
+            </div>
+
+            {/* Calculated Balance Amount Badge */}
+            <div className="p-3 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between">
+              <span className="text-neutral-400 font-medium">Balance Amount Due:</span>
+              <span className={`font-mono font-bold text-sm ${
+                calculatedBalance === 0 ? 'text-emerald-400' : 'text-amber-400'
+              }`}>
+                {formatMoney(calculatedBalance, currency)}
+              </span>
+            </div>
+
+            {/* Registration Date (Read Only - Cannot be changed) */}
+            <div>
+              <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-neutral-500" />
+                <span>Registration Date (Fixed System Date)</span>
+              </label>
+              <input
+                type="text"
+                readOnly
+                disabled
+                value={todayStr}
+                className="w-full px-3 py-2 bg-neutral-950/60 border border-neutral-850 rounded-md text-neutral-400 font-mono cursor-not-allowed select-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-2.5 px-4 text-xs font-semibold text-neutral-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>{isSubmitting ? 'Registering...' : 'Register Customer'}</span>
+            </button>
+          </form>
+        </div>
+
+        {/* 2. Registered Customer Table Card (Right 2 Cols) */}
+        <div className="lg:col-span-2 p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-800 pb-3">
+              <div>
+                <h2 className="text-base font-semibold text-white">Registered Customers ({customers.length})</h2>
+                <p className="text-xs text-neutral-400 mt-0.5">Live database records with edit and delete operations</p>
+              </div>
+
+              {/* Search Filter */}
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Search by name, NIC, phone, box..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700"
+                />
+              </div>
+            </div>
+
+            {/* Customers Table */}
+            <div className="rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono">
+                    <tr>
+                      <th className="px-4 py-3">Customer</th>
+                      <th className="px-4 py-3">NIC & Phone</th>
+                      <th className="px-4 py-3">Box No</th>
+                      <th className="px-4 py-3 text-right">Total</th>
+                      <th className="px-4 py-3 text-right">Paid</th>
+                      <th className="px-4 py-3 text-right">Balance</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-850">
+                    {filteredCustomers.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-10 text-center text-neutral-500">
+                          No customer records found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredCustomers.map((cust) => (
+                        <tr key={cust.id} className="hover:bg-neutral-900/60 transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="font-semibold text-white">{cust.name}</p>
+                            <p className="text-[11px] text-neutral-400 truncate max-w-[150px]">
+                              {cust.address || 'No Address'}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 font-mono">
+                            <p className="text-neutral-200">{cust.nicNo}</p>
+                            <p className="text-neutral-400 text-[11px]">{cust.phoneNo}</p>
+                          </td>
+                          <td className="px-4 py-3 font-mono">
+                            <span className="inline-block px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[11px] font-semibold text-emerald-400">
+                              {cust.boxNo}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-neutral-300">
+                            {formatMoney(cust.totalAmount, currency)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-medium text-emerald-400">
+                            {formatMoney(cust.paidAmount, currency)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-bold">
+                            <span className={`px-2 py-0.5 rounded text-[11px] ${
+                              cust.balanceAmount === 0
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                            }`}>
+                              {formatMoney(cust.balanceAmount, currency)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {cust.balanceAmount > 0 && (
+                                <button
+                                  onClick={() => handleOpenPayBalance(cust)}
+                                  className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
+                                  title="Pay Balance"
+                                >
+                                  <CreditCard className="w-3 h-3" />
+                                  <span>Pay Balance</span>
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleOpenEdit(cust)}
+                                className="p-1.5 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-900 rounded transition-colors"
+                                title="Edit Customer"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(cust.id, cust.name)}
+                                className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-neutral-900 rounded transition-colors"
+                                title="Delete Customer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-neutral-400 gap-2">
+            <span>Total Registered Customers: <strong className="text-white font-mono">{customers.length}</strong></span>
+            <div className="flex items-center gap-4 font-mono text-[11px]">
+              <span>Total Dues: <strong className="text-amber-400">{formatMoney(customers.reduce((sum, c) => sum + c.balanceAmount, 0), currency)}</strong></span>
+              <span>Total Paid: <strong className="text-emerald-400">{formatMoney(customers.reduce((sum, c) => sum + c.paidAmount, 0), currency)}</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* EDIT CUSTOMER MODAL */}
+      {/* ------------------------------------------------------------------- */}
+      {editingCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg rounded-xl bg-neutral-900 border border-neutral-800 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-emerald-400" />
+                <span>Edit Customer Details</span>
+              </h2>
+              <button onClick={() => setEditingCustomer(null)} className="text-neutral-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-neutral-400 font-medium mb-1">Customer Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-400 font-medium mb-1">NIC No *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editNicNo}
+                    onChange={(e) => setEditNicNo(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-neutral-400 font-medium mb-1">Phone No *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editPhoneNo}
+                    onChange={(e) => setEditPhoneNo(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-400 font-medium mb-1">Address</label>
+                  <input
+                    type="text"
+                    value={editAddress}
+                    onChange={(e) => setEditAddress(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-neutral-400 font-medium mb-1">Box No *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editBoxNo}
+                    onChange={(e) => setEditBoxNo(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono uppercase"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-400 font-medium mb-1">Total Amount</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editTotalAmount}
+                    onChange={(e) => setEditTotalAmount(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-neutral-400 font-medium mb-1">Paid Amount</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editPaidAmount}
+                    onChange={(e) => setEditPaidAmount(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between">
+                <span className="text-neutral-400 font-medium">Updated Balance Amount:</span>
+                <span className={`font-mono font-bold text-sm ${
+                  calculatedEditBalance === 0 ? 'text-emerald-400' : 'text-amber-400'
+                }`}>
+                  {formatMoney(calculatedEditBalance, currency)}
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingCustomer(null)}
+                  className="px-3 py-1.5 rounded bg-neutral-800 text-neutral-300 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded bg-emerald-400 font-semibold text-neutral-950 hover:bg-emerald-300"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* PAY BALANCE MODAL */}
+      {/* ------------------------------------------------------------------- */}
+      {payBalanceCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-xl bg-neutral-900 border border-neutral-800 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div>
+                <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-400" />
+                  <span>Pay Customer Balance</span>
+                </h2>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {payBalanceCustomer.name} (Box: <span className="font-mono text-emerald-400">{payBalanceCustomer.boxNo}</span>)
+                </p>
+              </div>
+              <button onClick={() => setPayBalanceCustomer(null)} className="text-neutral-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmPayBalance} className="space-y-4 text-xs">
+              <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800 space-y-1.5">
+                <div className="flex justify-between text-neutral-400">
+                  <span>Total Amount:</span>
+                  <span className="font-mono text-white">{formatMoney(payBalanceCustomer.totalAmount, currency)}</span>
+                </div>
+                <div className="flex justify-between text-neutral-400">
+                  <span>Already Paid:</span>
+                  <span className="font-mono text-emerald-400">{formatMoney(payBalanceCustomer.paidAmount, currency)}</span>
+                </div>
+                <div className="flex justify-between font-bold border-t border-neutral-850 pt-1.5 text-amber-400">
+                  <span>Current Balance Due:</span>
+                  <span className="font-mono text-sm">{formatMoney(payBalanceCustomer.balanceAmount, currency)}</span>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-neutral-400 font-medium">Payment Amount (LKR) *</label>
+                  <button
+                    type="button"
+                    onClick={() => setPayAmount(payBalanceCustomer.balanceAmount.toString())}
+                    className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300"
+                  >
+                    Pay Full Balance
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={payBalanceCustomer.balanceAmount}
+                  required
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono text-sm focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPayBalanceCustomer(null)}
+                  className="px-3.5 py-2 rounded bg-neutral-800 text-neutral-300 hover:text-white font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPaying}
+                  className="px-4 py-2 rounded bg-emerald-400 font-semibold text-neutral-950 hover:bg-emerald-300 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isPaying ? 'Processing...' : 'Confirm Payment'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

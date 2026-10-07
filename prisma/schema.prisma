@@ -44,3 +44,17 @@ model Expense {
 
   @@map("expenses")
 }
+
+model Customer {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  nicNo       String
+  phoneNo     String
+  address     String
+  boxNo       String
+  totalAmount Float
+  paidAmount  Float
+  createdAt   DateTime @default(now())
+
+  @@map("customers")
+}

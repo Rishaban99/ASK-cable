@@ -1,5 +1,6 @@
 import {
   Category,
+  Customer,
   IncomeRecord,
   ExpenseRecord,
   AnalyticsOverview,
@@ -173,6 +174,41 @@ class ApiClient {
 
   async deleteExpense(id: string): Promise<void> {
     await this.request(`/expenses/${id}`, { method: 'DELETE' });
+  }
+
+  // Customers API
+  async getCustomers(search?: string): Promise<Customer[]> {
+    const query = search ? `?search=${encodeURIComponent(search)}` : '';
+    const res = await this.request<{ customers: Customer[] }>(`/customers${query}`);
+    return res.customers;
+  }
+
+  async createCustomer(data: {
+    name: string;
+    nicNo: string;
+    phoneNo: string;
+    address: string;
+    boxNo: string;
+    totalAmount: number;
+    paidAmount: number;
+  }): Promise<Customer> {
+    const res = await this.request<{ customer: Customer }>('/customers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.customer;
+  }
+
+  async updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
+    const res = await this.request<{ customer: Customer }>(`/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return res.customer;
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    await this.request(`/customers/${id}`, { method: 'DELETE' });
   }
 
   // Analytics Overview

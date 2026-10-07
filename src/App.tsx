@@ -3,6 +3,7 @@ import {
   IncomeRecord,
   ExpenseRecord,
   Category,
+  Customer,
   AnalyticsOverview,
   SupportedCurrency
 } from './types/finance.js';
@@ -11,10 +12,11 @@ import { Navbar } from './components/Navbar.js';
 import { DashboardView } from './components/DashboardView.js';
 import { TransactionsView } from './components/TransactionsView.js';
 import { SummaryView } from './components/SummaryView.js';
+import { CustomersView } from './components/CustomersView.js';
 import { RecordModal } from './components/RecordModal.js';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'transactions' | 'summary'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'transactions' | 'summary' | 'customers'>('dashboard');
   const currency: SupportedCurrency = 'LKR';
 
   // Application Data States - Strictly fetched from DB
@@ -22,6 +24,7 @@ export default function App() {
   const [incomes, setIncomes] = useState<IncomeRecord[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   // UI States
   const [isLoading, setIsLoading] = useState(true);
@@ -42,17 +45,19 @@ export default function App() {
   // Load live DB data from Prisma API
   const loadData = useCallback(async () => {
     try {
-      const [analyticsData, incs, exps, cats] = await Promise.all([
+      const [analyticsData, incs, exps, cats, custs] = await Promise.all([
         api.getAnalytics(),
         api.getIncomes(),
         api.getExpenses(),
         api.getCategories(),
+        api.getCustomers(),
       ]);
 
       setAnalytics(analyticsData);
       setIncomes(incs);
       setExpenses(exps);
       setCategories(cats);
+      setCustomers(custs);
     } catch (e) {
       console.error('Failed to load application data:', e);
     } finally {
@@ -107,6 +112,14 @@ export default function App() {
             currency={currency}
             onOpenRecordModal={() => setIsRecordModalOpen(true)}
             isLoading={isLoading}
+          />
+        )}
+
+        {currentTab === 'customers' && (
+          <CustomersView
+            customers={customers}
+            currency={currency}
+            onRefreshData={loadData}
           />
         )}
       </main>
