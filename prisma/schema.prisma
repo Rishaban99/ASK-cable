@@ -84,3 +84,12 @@ model User {
 
   @@map("users")
 }
+
+model Setting {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("settings")
+}

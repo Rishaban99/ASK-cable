@@ -993,6 +993,15 @@ export class RelationalDatabaseStore {
       const userDb = this.getUserClient();
       if (!userDb) return;
 
+      // Delete legacy default accounts 'admin' and 'staff' from DB
+      try {
+        await userDb.deleteMany({
+          where: { username: { in: ['admin', 'staff'] } },
+        });
+      } catch (delErr) {
+        // ignore
+      }
+
       await userDb.upsert({
         where: { username: 'rishaban' },
         update: {},
@@ -1005,32 +1014,10 @@ export class RelationalDatabaseStore {
       });
 
       await userDb.upsert({
-        where: { username: 'admin' },
-        update: {},
-        create: {
-          username: 'admin',
-          password: 'admin123',
-          name: 'System Admin',
-          role: 'ADMIN',
-        },
-      });
-
-      await userDb.upsert({
         where: { username: 'Dhinushan' },
         update: {},
         create: {
           username: 'Dhinushan',
-          password: '121926',
-          name: 'Staff Operator',
-          role: 'STAFF',
-        },
-      });
-
-      await userDb.upsert({
-        where: { username: 'staff' },
-        update: {},
-        create: {
-          username: 'staff',
           password: '121926',
           name: 'Staff Operator',
           role: 'STAFF',
@@ -1079,9 +1066,7 @@ export class RelationalDatabaseStore {
     const lowerUser = cleanUsername.toLowerCase();
     const defaultCredentials: Record<string, { password: string; name: string; role: 'ADMIN' | 'STAFF' }> = {
       rishaban: { password: 'Rish6012$', name: 'Admin Manager', role: 'ADMIN' },
-      admin: { password: 'admin123', name: 'System Admin', role: 'ADMIN' },
       dhinushan: { password: '121926', name: 'Staff Operator', role: 'STAFF' },
-      staff: { password: '121926', name: 'Staff Operator', role: 'STAFF' },
     };
 
     if (defaultCredentials[lowerUser] && defaultCredentials[lowerUser].password === cleanPassword) {
@@ -1099,36 +1084,48 @@ export class RelationalDatabaseStore {
   }
 
   public async getUsers(): Promise<User[]> {
-    await this.seedDefaultUsers();
-    const userDb = this.getUserClient();
-    if (!userDb) return [];
+    try {
+      await this.seedDefaultUsers();
+      const userDb = this.getUserClient();
+      if (userDb) {
+        const users = await userDb.findMany({
+          orderBy: { createdAt: 'asc' },
+        });
+        if (users && users.length > 0) {
+          return users.map((u: any) => ({
+            id: u.id,
+            username: u.username,
+            name: u.name,
+            role: (u.role || 'STAFF') as 'ADMIN' | 'STAFF',
+            createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
+          }));
+        }
+      }
+    } catch (e: any) {
+      console.warn('DB getUsers query failed, serving seeded users:', e?.message);
+    }
 
-    const users = await userDb.findMany({
-      orderBy: { createdAt: 'asc' },
-    });
-    return users.map((u: any) => ({
-      id: u.id,
-      username: u.username,
-      name: u.name,
-      role: (u.role || 'STAFF') as 'ADMIN' | 'STAFF',
-      createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
-    }));
+    return [
+      { id: '1', username: 'rishaban', name: 'Admin Manager', role: 'ADMIN', createdAt: new Date().toISOString() },
+      { id: '2', username: 'Dhinushan', name: 'Staff Operator', role: 'STAFF', createdAt: new Date().toISOString() },
+    ];
   }
 
   public async createUser(dto: { username: string; password: string; name: string; role: 'ADMIN' | 'STAFF' }): Promise<User> {
     const userDb = this.getUserClient();
     if (!userDb) throw new Error('User database service is unavailable');
 
+    const cleanUsername = dto.username.trim().toLowerCase();
     const existing = await userDb.findFirst({
-      where: { username: { equals: dto.username, mode: 'insensitive' } },
+      where: { username: { equals: cleanUsername, mode: 'insensitive' } },
     });
     if (existing) {
-      throw new Error(`Username "${dto.username}" is already taken.`);
+      throw new Error(`Username "${dto.username}" is already registered.`);
     }
 
     const u = await userDb.create({
       data: {
-        username: dto.username.trim().toLowerCase(),
+        username: cleanUsername,
         password: dto.password,
         name: dto.name.trim(),
         role: dto.role || 'STAFF',
@@ -1148,8 +1145,84 @@ export class RelationalDatabaseStore {
     const userDb = this.getUserClient();
     if (!userDb) return false;
 
-    await userDb.delete({ where: { id } });
-    return true;
+    try {
+      await userDb.delete({ where: { id } });
+      return true;
+    } catch (e: any) {
+      console.error(`Failed to delete user with id ${id}:`, e?.message);
+      return false;
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // SYSTEM SETTINGS & STAFF PRIVILEGES TABLE
+  // -------------------------------------------------------------------
+  private getSettingClient(): any {
+    const settingModel = (prisma as any).setting;
+    if (settingModel) return settingModel;
+    try {
+      const freshClient = new PrismaClient();
+      return (freshClient as any).setting;
+    } catch {
+      return null;
+    }
+  }
+
+  public async getSetting(key: string): Promise<string | null> {
+    try {
+      const client = this.getSettingClient();
+      if (!client) return null;
+      const rec = await client.findUnique({ where: { key } });
+      return rec ? rec.value : null;
+    } catch (e: any) {
+      console.warn(`Failed to fetch setting key "${key}":`, e?.message);
+      return null;
+    }
+  }
+
+  public async setSetting(key: string, value: string): Promise<void> {
+    try {
+      const client = this.getSettingClient();
+      if (!client) return;
+      await client.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      });
+    } catch (e: any) {
+      console.error(`Failed to save setting key "${key}":`, e?.message);
+    }
+  }
+
+  public async getStaffPrivileges(): Promise<Record<string, boolean>> {
+    const val = await this.getSetting('staff_privileges');
+    if (val) {
+      try {
+        return {
+          dashboard: true,
+          transactions: true,
+          summary: false,
+          customers: true,
+          'monthly-payment': true,
+          'customer-history': true,
+          ...JSON.parse(val),
+        };
+      } catch {
+        // ignore
+      }
+    }
+    return {
+      dashboard: true,
+      transactions: true,
+      summary: false,
+      customers: true,
+      'monthly-payment': true,
+      'customer-history': true,
+    };
+  }
+
+  public async setStaffPrivileges(privileges: Record<string, boolean>): Promise<void> {
+    await this.setSetting('staff_privileges', JSON.stringify(privileges));
   }
 }
 

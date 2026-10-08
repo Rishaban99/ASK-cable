@@ -9,7 +9,8 @@ import {
   SupportedCurrency,
   TableMeta,
   TableQueryResponse,
-  SqlQueryResult
+  SqlQueryResult,
+  StaffPrivileges
 } from '../types/finance.js';
 
 export const CURRENCY_CONF = {
@@ -356,6 +357,32 @@ class ApiClient {
 
   async deleteUser(id: string): Promise<void> {
     await this.request(`/auth/users/${id}`, { method: 'DELETE' });
+  }
+
+  // System Settings & Staff Privileges API
+  async getStaffPrivileges(): Promise<StaffPrivileges> {
+    const res = await this.request<{ privileges: StaffPrivileges }>('/settings/staff-privileges');
+    return res.privileges;
+  }
+
+  async setStaffPrivileges(privileges: StaffPrivileges): Promise<StaffPrivileges> {
+    const res = await this.request<{ privileges: StaffPrivileges }>('/settings/staff-privileges', {
+      method: 'POST',
+      body: JSON.stringify({ privileges }),
+    });
+    return res.privileges;
+  }
+
+  async getSetting(key: string): Promise<string | null> {
+    const res = await this.request<{ key: string; value: string | null }>(`/settings/${key}`);
+    return res.value;
+  }
+
+  async setSetting(key: string, value: string): Promise<void> {
+    await this.request('/settings', {
+      method: 'POST',
+      body: JSON.stringify({ key, value }),
+    });
   }
 }
 

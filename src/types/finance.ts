@@ -8,6 +8,24 @@ export interface User {
   createdAt?: string;
 }
 
+export interface StaffPrivileges {
+  dashboard: boolean;
+  transactions: boolean;
+  summary: boolean;
+  customers: boolean;
+  'monthly-payment': boolean;
+  'customer-history': boolean;
+}
+
+export const DEFAULT_STAFF_PRIVILEGES: StaffPrivileges = {
+  dashboard: true,
+  transactions: true,
+  summary: false,
+  customers: true,
+  'monthly-payment': true,
+  'customer-history': true,
+};
+
 export interface Category {
   id: string;
   name: string;

@@ -7,16 +7,19 @@ import {
   MonthlyPayment,
   AnalyticsOverview,
   SupportedCurrency,
-  User
+  User,
+  StaffPrivileges,
+  DEFAULT_STAFF_PRIVILEGES
 } from './types/finance.js';
 import { api } from './api/client.js';
-import { Navbar } from './components/Navbar.js';
+import { Navbar, NavTab } from './components/Navbar.js';
 import { DashboardView } from './components/DashboardView.js';
 import { TransactionsView } from './components/TransactionsView.js';
 import { SummaryView } from './components/SummaryView.js';
 import { CustomersView } from './components/CustomersView.js';
 import { MonthlyPaymentView } from './components/MonthlyPaymentView.js';
 import { CustomerHistoryView } from './components/CustomerHistoryView.js';
+import { SettingsView } from './components/SettingsView.js';
 import { LoginView } from './components/LoginView.js';
 import { RecordModal } from './components/RecordModal.js';
 
@@ -30,9 +33,30 @@ export default function App() {
     }
   });
 
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment' | 'customer-history'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [selectedHistoryCustomerId, setSelectedHistoryCustomerId] = useState<string | null>(null);
   const currency: SupportedCurrency = 'LKR';
+
+  // Staff Privileges State
+  const [staffPrivileges, setStaffPrivileges] = useState<StaffPrivileges>(() => {
+    try {
+      const saved = localStorage.getItem('ask_cable_staff_privileges');
+      return saved ? { ...DEFAULT_STAFF_PRIVILEGES, ...JSON.parse(saved) } : DEFAULT_STAFF_PRIVILEGES;
+    } catch {
+      return DEFAULT_STAFF_PRIVILEGES;
+    }
+  });
+
+  const reloadPrivileges = useCallback(() => {
+    try {
+      const saved = localStorage.getItem('ask_cable_staff_privileges');
+      if (saved) {
+        setStaffPrivileges({ ...DEFAULT_STAFF_PRIVILEGES, ...JSON.parse(saved) });
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Application Data States - Strictly fetched from DB
   const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
@@ -65,24 +89,32 @@ export default function App() {
     }
   };
 
-  // Staff Permission Guard: Redirect Staff away from Total Summary page
+  // Staff Permission Guard: Redirect Staff away from restricted pages
   useEffect(() => {
-    if (currentUser?.role === 'STAFF' && currentTab === 'summary') {
-      setCurrentTab('dashboard');
+    if (currentUser?.role === 'STAFF') {
+      if (currentTab === 'settings') {
+        setCurrentTab('dashboard');
+        return;
+      }
+      const isAllowed = staffPrivileges[currentTab as keyof StaffPrivileges];
+      if (isAllowed === false) {
+        setCurrentTab('dashboard');
+      }
     }
-  }, [currentUser, currentTab]);
+  }, [currentUser, currentTab, staffPrivileges]);
 
   // Load live DB data from Prisma API
   const loadData = useCallback(async () => {
     if (!currentUser) return;
     try {
-      const [analyticsData, incs, exps, cats, custs, pmts] = await Promise.all([
+      const [analyticsData, incs, exps, cats, custs, pmts, dbPrivs] = await Promise.all([
         api.getAnalytics(),
         api.getIncomes(),
         api.getExpenses(),
         api.getCategories(),
         api.getCustomers(),
         api.getMonthlyPayments(),
+        api.getStaffPrivileges().catch(() => null),
       ]);
 
       setAnalytics(analyticsData);
@@ -91,6 +123,9 @@ export default function App() {
       setCategories(cats);
       setCustomers(custs);
       setMonthlyPayments(pmts);
+      if (dbPrivs) {
+        setStaffPrivileges(dbPrivs);
+      }
     } catch (e) {
       console.error('Failed to load application data:', e);
     } finally {
@@ -118,6 +153,7 @@ export default function App() {
         analytics={analytics}
         currentUser={currentUser}
         onLogout={handleLogout}
+        staffPrivileges={staffPrivileges}
       />
 
       {/* Main Viewport Content */}
@@ -192,6 +228,13 @@ export default function App() {
             currentUser={currentUser}
             selectedCustomerId={selectedHistoryCustomerId}
             onSelectCustomer={(custId) => setSelectedHistoryCustomerId(custId)}
+          />
+        )}
+
+        {currentTab === 'settings' && currentUser.role === 'ADMIN' && (
+          <SettingsView
+            currentUser={currentUser}
+            onPrivilegesUpdated={reloadPrivileges}
           />
         )}
       </main>

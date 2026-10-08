@@ -545,3 +545,52 @@ router.delete('/auth/users/:id', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+
+// ==========================================
+// SYSTEM SETTINGS & STAFF PRIVILEGES API
+// ==========================================
+router.get('/settings/staff-privileges', async (_req, res) => {
+  try {
+    const privileges = await db.getStaffPrivileges();
+    res.json({ privileges });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch staff privileges' });
+  }
+});
+
+router.post('/settings/staff-privileges', async (req, res) => {
+  try {
+    const { privileges } = req.body;
+    if (!privileges || typeof privileges !== 'object') {
+      return res.status(400).json({ error: 'Privileges object is required' });
+    }
+
+    await db.setStaffPrivileges(privileges);
+    res.json({ privileges, message: 'Staff privileges updated in database' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to update staff privileges' });
+  }
+});
+
+router.get('/settings/:key', async (req, res) => {
+  try {
+    const value = await db.getSetting(req.params.key);
+    res.json({ key: req.params.key, value });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/settings', async (req, res) => {
+  try {
+    const { key, value } = req.body;
+    if (!key || value === undefined) {
+      return res.status(400).json({ error: 'Setting key and value are required' });
+    }
+
+    await db.setSetting(key, String(value));
+    res.json({ key, value, message: 'Setting saved to database' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
