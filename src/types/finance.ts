@@ -1,5 +1,13 @@
 export type SupportedCurrency = 'LKR';
 
+export interface User {
+  id: string;
+  username: string;
+  name: string;
+  role: 'ADMIN' | 'STAFF';
+  createdAt?: string;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -20,6 +28,21 @@ export interface Customer {
   totalAmount: number;
   paidAmount: number;
   balanceAmount: number;
+  status: 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED';
+  createdAt: string;
+}
+
+export interface MonthlyPayment {
+  id: string;
+  customerId: string;
+  customerName: string;
+  boxNo: string;
+  month: string;
+  monthlyFee: number;
+  paidAmount: number;
+  balanceAmount: number;
+  status: 'PAID' | 'PARTIAL' | 'UNPAID';
+  paymentDate: string;
   createdAt: string;
 }
 

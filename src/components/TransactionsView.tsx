@@ -3,7 +3,8 @@ import {
   Category,
   IncomeRecord,
   ExpenseRecord,
-  SupportedCurrency
+  SupportedCurrency,
+  User
 } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import {
@@ -28,6 +29,7 @@ interface TransactionsViewProps {
   currency: SupportedCurrency;
   onRefreshData: () => void;
   onOpenRecordModal: () => void;
+  currentUser?: User | null;
 }
 
 export const TransactionsView: React.FC<TransactionsViewProps> = ({
@@ -37,6 +39,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   currency,
   onRefreshData,
   onOpenRecordModal,
+  currentUser,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'incomes' | 'expenses' | 'categories'>('incomes');
   const [searchQuery, setSearchQuery] = useState('');
@@ -228,12 +231,12 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   const totalExpensesSum = filteredExpenses.reduce((sum, r) => sum + r.amount, 0);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-5 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Incomes & Expenses Tables</h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Incomes & Expenses Tables</h1>
+          <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 sm:mt-1">
             Edit, search, and manage your records and categories
           </p>
         </div>
@@ -241,7 +244,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {activeSubTab === 'incomes' && (
             <button
               onClick={() => api.downloadIncomesCsv()}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-300 bg-neutral-900 border border-neutral-800 rounded-md hover:bg-neutral-800 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-neutral-300 bg-neutral-900 border border-neutral-800 rounded-md hover:bg-neutral-800 transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export CSV</span>
@@ -250,7 +253,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {activeSubTab === 'expenses' && (
             <button
               onClick={() => api.downloadExpensesCsv()}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-300 bg-neutral-900 border border-neutral-800 rounded-md hover:bg-neutral-800 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-neutral-300 bg-neutral-900 border border-neutral-800 rounded-md hover:bg-neutral-800 transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export CSV</span>
@@ -267,10 +270,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       </div>
 
       {/* Subtabs Switcher */}
-      <div className="flex items-center gap-2 border-b border-neutral-800 pb-3">
+      <div className="flex overflow-x-auto items-center gap-2 border-b border-neutral-800 pb-3 scrollbar-none">
         <button
           onClick={() => setActiveSubTab('incomes')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md transition-colors ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 ${
             activeSubTab === 'incomes'
               ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
               : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
@@ -282,7 +285,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
 
         <button
           onClick={() => setActiveSubTab('expenses')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md transition-colors ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 ${
             activeSubTab === 'expenses'
               ? 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
               : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
@@ -385,13 +388,15 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => handleDeleteIncome(inc.id)}
-                              className="text-neutral-500 hover:text-rose-400 transition-colors"
-                              title="Delete Record"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {currentUser?.role !== 'STAFF' && (
+                              <button
+                                onClick={() => handleDeleteIncome(inc.id)}
+                                className="text-neutral-500 hover:text-rose-400 transition-colors"
+                                title="Delete Record (Admin Only)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -491,13 +496,15 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => handleDeleteExpense(exp.id)}
-                              className="text-neutral-500 hover:text-rose-400 transition-colors"
-                              title="Delete Record"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {currentUser?.role !== 'STAFF' && (
+                              <button
+                                onClick={() => handleDeleteExpense(exp.id)}
+                                className="text-neutral-500 hover:text-rose-400 transition-colors"
+                                title="Delete Record (Admin Only)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

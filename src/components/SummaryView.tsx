@@ -81,12 +81,12 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Total Financial Summary</h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Total Financial Summary</h1>
+          <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 sm:mt-1">
             Complete overview card of net reserves, revenue inflows, and expense summary
           </p>
         </div>

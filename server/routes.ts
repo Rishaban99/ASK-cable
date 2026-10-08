@@ -301,6 +301,65 @@ router.delete('/customers/:id', async (req, res) => {
 });
 
 // ==========================================
+// 4.6. MONTHLY PAYMENTS ROUTES
+// ==========================================
+
+router.get('/monthly-payments', async (req, res) => {
+  try {
+    const { month, customerId, search, status } = req.query;
+    const payments = await db.getMonthlyPayments({
+      month: month as string,
+      customerId: customerId as string,
+      search: search as string,
+      status: status as string,
+    });
+    res.json({ payments });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch monthly payments' });
+  }
+});
+
+router.post('/monthly-payments', async (req, res) => {
+  try {
+    const { customerId, month, monthlyFee, paidAmount, paymentDate } = req.body;
+    if (!customerId || !month || monthlyFee === undefined) {
+      return res.status(400).json({ error: 'Customer, Month, and Monthly Fee are required' });
+    }
+    const payment = await db.createMonthlyPayment({
+      customerId,
+      month,
+      monthlyFee: Number(monthlyFee),
+      paidAmount: Number(paidAmount || 0),
+      paymentDate,
+    });
+    res.status(201).json({ payment });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to record monthly payment' });
+  }
+});
+
+router.put('/monthly-payments/:id', async (req, res) => {
+  try {
+    const payment = await db.updateMonthlyPayment(req.params.id, req.body);
+    res.json({ payment });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to update monthly payment' });
+  }
+});
+
+router.delete('/monthly-payments/:id', async (req, res) => {
+  try {
+    const success = await db.deleteMonthlyPayment(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: 'Monthly payment record not found' });
+    }
+    res.json({ message: 'Monthly payment record deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// ==========================================
 // 5. ANALYTICS ROUTES
 // ==========================================
 
@@ -429,6 +488,59 @@ router.post('/database/query', async (req, res) => {
     const { sql } = req.body;
     const result = await db.executeSql(sql || '');
     res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// AUTHENTICATION & USER MANAGEMENT API
+// ==========================================
+router.post('/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    const user = await db.authenticateUser(username, password);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+
+    res.json({ user, message: 'Login successful' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/auth/users', async (req, res) => {
+  try {
+    const users = await db.getUsers();
+    res.json({ users });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/auth/users', async (req, res) => {
+  try {
+    const { username, password, name, role } = req.body;
+    if (!username || !password || !name) {
+      return res.status(400).json({ error: 'Username, password, and name are required' });
+    }
+
+    const user = await db.createUser({ username, password, name, role: role || 'STAFF' });
+    res.status(201).json({ user });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/auth/users/:id', async (req, res) => {
+  try {
+    await db.deleteUser(req.params.id);
+    res.json({ success: true });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

@@ -1,6 +1,8 @@
 import {
+  User,
   Category,
   Customer,
+  MonthlyPayment,
   IncomeRecord,
   ExpenseRecord,
   AnalyticsOverview,
@@ -191,6 +193,7 @@ class ApiClient {
     boxNo: string;
     totalAmount: number;
     paidAmount: number;
+    status?: 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED';
   }): Promise<Customer> {
     const res = await this.request<{ customer: Customer }>('/customers', {
       method: 'POST',
@@ -209,6 +212,50 @@ class ApiClient {
 
   async deleteCustomer(id: string): Promise<void> {
     await this.request(`/customers/${id}`, { method: 'DELETE' });
+  }
+
+  // Monthly Payments API
+  async getMonthlyPayments(filter?: {
+    month?: string;
+    customerId?: string;
+    search?: string;
+    status?: string;
+  }): Promise<MonthlyPayment[]> {
+    const params = new URLSearchParams();
+    if (filter?.month) params.set('month', filter.month);
+    if (filter?.customerId) params.set('customerId', filter.customerId);
+    if (filter?.search) params.set('search', filter.search);
+    if (filter?.status) params.set('status', filter.status);
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const res = await this.request<{ payments: MonthlyPayment[] }>(`/monthly-payments${query}`);
+    return res.payments;
+  }
+
+  async createMonthlyPayment(data: {
+    customerId: string;
+    month: string;
+    monthlyFee: number;
+    paidAmount: number;
+    paymentDate?: string;
+  }): Promise<MonthlyPayment> {
+    const res = await this.request<{ payment: MonthlyPayment }>('/monthly-payments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.payment;
+  }
+
+  async updateMonthlyPayment(id: string, data: Partial<MonthlyPayment>): Promise<MonthlyPayment> {
+    const res = await this.request<{ payment: MonthlyPayment }>(`/monthly-payments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return res.payment;
+  }
+
+  async deleteMonthlyPayment(id: string): Promise<void> {
+    await this.request(`/monthly-payments/${id}`, { method: 'DELETE' });
   }
 
   // Analytics Overview
@@ -283,6 +330,32 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ sql }),
     });
+  }
+
+  // Authentication API
+  async login(username: string, password: string): Promise<User> {
+    const res = await this.request<{ user: User }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+    return res.user;
+  }
+
+  async getUsers(): Promise<User[]> {
+    const res = await this.request<{ users: User[] }>('/auth/users');
+    return res.users;
+  }
+
+  async createUser(data: { username: string; password: string; name: string; role: 'ADMIN' | 'STAFF' }): Promise<User> {
+    const res = await this.request<{ user: User }>('/auth/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await this.request(`/auth/users/${id}`, { method: 'DELETE' });
   }
 }
 

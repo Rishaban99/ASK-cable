@@ -120,12 +120,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const isTrajectoryPositive = currentNetWorth >= 0;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
       {/* Editorial Page Lead */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">ASK Cable Financial Dashboard</h1>
-          <p className="text-sm text-neutral-400 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">ASK Cable Financial Dashboard</h1>
+          <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 sm:mt-1">
             Real-time income, expense monitoring, and cashflow analysis in Sri Lankan Rupees (LKR)
           </p>
         </div>

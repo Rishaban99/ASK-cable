@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import {
+  User,
   Category,
   Customer,
+  MonthlyPayment,
   IncomeRecord,
   ExpenseRecord,
   CashFlowSummary,
@@ -327,6 +329,7 @@ export class RelationalDatabaseStore {
       totalAmount: c.totalAmount,
       paidAmount: c.paidAmount,
       balanceAmount: c.totalAmount - c.paidAmount,
+      status: (c.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED',
       createdAt: c.createdAt.toISOString(),
     }));
   }
@@ -365,6 +368,7 @@ export class RelationalDatabaseStore {
     boxNo: string;
     totalAmount: number;
     paidAmount: number;
+    status?: string;
   }): Promise<Customer> {
     const initialPaid = Math.abs(dto.paidAmount || 0);
     const cust = await prisma.customer.create({
@@ -376,6 +380,7 @@ export class RelationalDatabaseStore {
         boxNo: dto.boxNo,
         totalAmount: Math.abs(dto.totalAmount || 0),
         paidAmount: initialPaid,
+        status: dto.status || 'ACTIVE',
       },
     });
 
@@ -409,6 +414,7 @@ export class RelationalDatabaseStore {
       totalAmount: cust.totalAmount,
       paidAmount: cust.paidAmount,
       balanceAmount: cust.totalAmount - cust.paidAmount,
+      status: (cust.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED',
       createdAt: cust.createdAt.toISOString(),
     };
   }
@@ -421,6 +427,7 @@ export class RelationalDatabaseStore {
     boxNo: string;
     totalAmount: number;
     paidAmount: number;
+    status: string;
   }>): Promise<Customer> {
     const oldCust = await prisma.customer.findUnique({ where: { id } });
 
@@ -432,6 +439,7 @@ export class RelationalDatabaseStore {
     if (dto.boxNo !== undefined) dataToUpdate.boxNo = dto.boxNo;
     if (dto.totalAmount !== undefined) dataToUpdate.totalAmount = Math.abs(dto.totalAmount);
     if (dto.paidAmount !== undefined) dataToUpdate.paidAmount = Math.abs(dto.paidAmount);
+    if (dto.status !== undefined) dataToUpdate.status = dto.status;
 
     const cust = await prisma.customer.update({
       where: { id },
@@ -471,12 +479,197 @@ export class RelationalDatabaseStore {
       totalAmount: cust.totalAmount,
       paidAmount: cust.paidAmount,
       balanceAmount: cust.totalAmount - cust.paidAmount,
+      status: (cust.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED',
       createdAt: cust.createdAt.toISOString(),
     };
   }
 
   public async deleteCustomer(id: string): Promise<boolean> {
     await prisma.customer.delete({ where: { id } });
+    return true;
+  }
+
+  // -------------------------------------------------------------------
+  // MONTHLY PAYMENTS TABLE
+  // -------------------------------------------------------------------
+  public async getMonthlyPayments(filter?: {
+    month?: string;
+    customerId?: string;
+    search?: string;
+    status?: string;
+  }): Promise<MonthlyPayment[]> {
+    const whereClause: any = {};
+    if (filter?.month) whereClause.month = filter.month;
+    if (filter?.customerId) whereClause.customerId = filter.customerId;
+    if (filter?.search) {
+      whereClause.OR = [
+        { customerName: { contains: filter.search, mode: 'insensitive' } },
+        { boxNo: { contains: filter.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const recs = await prisma.monthlyPayment.findMany({
+      where: whereClause,
+      orderBy: [{ month: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    return recs.map((r) => {
+      const balance = Math.max(0, r.monthlyFee - r.paidAmount);
+      let status: 'PAID' | 'PARTIAL' | 'UNPAID' = 'UNPAID';
+      if (balance === 0 && r.paidAmount > 0) status = 'PAID';
+      else if (r.paidAmount > 0 && balance > 0) status = 'PARTIAL';
+
+      if (filter?.status && filter.status !== 'ALL' && status !== filter.status) {
+        return null;
+      }
+
+      return {
+        id: r.id,
+        customerId: r.customerId,
+        customerName: r.customerName,
+        boxNo: r.boxNo,
+        month: r.month,
+        monthlyFee: r.monthlyFee,
+        paidAmount: r.paidAmount,
+        balanceAmount: balance,
+        status,
+        paymentDate: r.paymentDate,
+        createdAt: r.createdAt.toISOString(),
+      };
+    }).filter(Boolean) as MonthlyPayment[];
+  }
+
+  public async createMonthlyPayment(dto: {
+    customerId: string;
+    month: string;
+    monthlyFee: number;
+    paidAmount: number;
+    paymentDate?: string;
+  }): Promise<MonthlyPayment> {
+    const cust = await prisma.customer.findUnique({ where: { id: dto.customerId } });
+    if (!cust) throw new Error(`Customer not found for ID "${dto.customerId}"`);
+
+    const fee = Math.abs(dto.monthlyFee || 0);
+    const paid = Math.abs(dto.paidAmount || 0);
+    const todayStr = dto.paymentDate || new Date().toISOString().split('T')[0];
+
+    const rec = await prisma.monthlyPayment.create({
+      data: {
+        customerId: cust.id,
+        customerName: cust.name,
+        boxNo: cust.boxNo,
+        month: dto.month,
+        monthlyFee: fee,
+        paidAmount: paid,
+        paymentDate: todayStr,
+      },
+    });
+
+    // Automatically record payment as an Income entry in DB if paidAmount > 0
+    if (paid > 0) {
+      try {
+        const categoryId = await this.getOrCreateCustomerIncomeCategory();
+        await prisma.income.create({
+          data: {
+            categoryId,
+            amount: paid,
+            date: todayStr,
+            description: `Monthly Cable Fee (${dto.month}) - ${cust.name} (Box: ${cust.boxNo})`,
+            paymentMethod: 'CASH',
+            tags: ['monthly-fee', dto.month, cust.boxNo],
+          },
+        });
+      } catch (e) {
+        console.error('Failed to log monthly payment to income ledger:', e);
+      }
+    }
+
+    const balance = Math.max(0, fee - paid);
+    let status: 'PAID' | 'PARTIAL' | 'UNPAID' = 'UNPAID';
+    if (balance === 0 && paid > 0) status = 'PAID';
+    else if (paid > 0 && balance > 0) status = 'PARTIAL';
+
+    return {
+      id: rec.id,
+      customerId: rec.customerId,
+      customerName: rec.customerName,
+      boxNo: rec.boxNo,
+      month: rec.month,
+      monthlyFee: rec.monthlyFee,
+      paidAmount: rec.paidAmount,
+      balanceAmount: balance,
+      status,
+      paymentDate: rec.paymentDate,
+      createdAt: rec.createdAt.toISOString(),
+    };
+  }
+
+  public async updateMonthlyPayment(
+    id: string,
+    dto: Partial<{
+      monthlyFee: number;
+      paidAmount: number;
+      paymentDate: string;
+    }>
+  ): Promise<MonthlyPayment> {
+    const oldRec = await prisma.monthlyPayment.findUnique({ where: { id } });
+    if (!oldRec) throw new Error(`Monthly payment record "${id}" not found`);
+
+    const dataToUpdate: any = {};
+    if (dto.monthlyFee !== undefined) dataToUpdate.monthlyFee = Math.abs(dto.monthlyFee);
+    if (dto.paidAmount !== undefined) dataToUpdate.paidAmount = Math.abs(dto.paidAmount);
+    if (dto.paymentDate !== undefined) dataToUpdate.paymentDate = dto.paymentDate;
+
+    const rec = await prisma.monthlyPayment.update({
+      where: { id },
+      data: dataToUpdate,
+    });
+
+    // Log payment difference to income ledger if paidAmount increased
+    if (dto.paidAmount !== undefined) {
+      const diff = rec.paidAmount - oldRec.paidAmount;
+      if (diff > 0) {
+        try {
+          const categoryId = await this.getOrCreateCustomerIncomeCategory();
+          const todayStr = dto.paymentDate || new Date().toISOString().split('T')[0];
+          await prisma.income.create({
+            data: {
+              categoryId,
+              amount: diff,
+              date: todayStr,
+              description: `Monthly Cable Fee Payment (${rec.month}) - ${rec.customerName} (Box: ${rec.boxNo})`,
+              paymentMethod: 'CASH',
+              tags: ['monthly-fee', rec.month, rec.boxNo],
+            },
+          });
+        } catch (e) {
+          console.error('Failed to log monthly fee update to income ledger:', e);
+        }
+      }
+    }
+
+    const balance = Math.max(0, rec.monthlyFee - rec.paidAmount);
+    let status: 'PAID' | 'PARTIAL' | 'UNPAID' = 'UNPAID';
+    if (balance === 0 && rec.paidAmount > 0) status = 'PAID';
+    else if (rec.paidAmount > 0 && balance > 0) status = 'PARTIAL';
+
+    return {
+      id: rec.id,
+      customerId: rec.customerId,
+      customerName: rec.customerName,
+      boxNo: rec.boxNo,
+      month: rec.month,
+      monthlyFee: rec.monthlyFee,
+      paidAmount: rec.paidAmount,
+      balanceAmount: balance,
+      status,
+      paymentDate: rec.paymentDate,
+      createdAt: rec.createdAt.toISOString(),
+    };
+  }
+
+  public async deleteMonthlyPayment(id: string): Promise<boolean> {
+    await prisma.monthlyPayment.delete({ where: { id } });
     return true;
   }
 
@@ -742,6 +935,105 @@ export class RelationalDatabaseStore {
       message: 'Query executed successfully',
     };
   }
+
+  // -------------------------------------------------------------------
+  // USERS & AUTHENTICATION TABLE
+  // -------------------------------------------------------------------
+  public async seedDefaultUsers(): Promise<void> {
+    try {
+      await prisma.user.upsert({
+        where: { username: 'rishaban' },
+        update: {},
+        create: {
+          username: 'rishaban',
+          password: 'Rish6012$',
+          name: 'Admin Manager',
+          role: 'ADMIN',
+        },
+      });
+
+      await prisma.user.upsert({
+        where: { username: 'Dhinushan' },
+        update: {},
+        create: {
+          username: 'Dhinushan',
+          password: '121926',
+          name: 'Staff Operator',
+          role: 'STAFF',
+        },
+      });
+    } catch (e: any) {
+      if (e?.code !== 'P2002') {
+        console.error('Failed to seed default users:', e);
+      }
+    }
+  }
+
+  public async authenticateUser(username: string, password: string): Promise<User | null> {
+    await this.seedDefaultUsers();
+    const u = await prisma.user.findFirst({
+      where: {
+        username: { equals: username, mode: 'insensitive' },
+        password: password,
+      },
+    });
+
+    if (!u) return null;
+    return {
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      role: (u.role || 'STAFF') as 'ADMIN' | 'STAFF',
+      createdAt: u.createdAt.toISOString(),
+    };
+  }
+
+  public async getUsers(): Promise<User[]> {
+    await this.seedDefaultUsers();
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+    return users.map((u) => ({
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      role: (u.role || 'STAFF') as 'ADMIN' | 'STAFF',
+      createdAt: u.createdAt.toISOString(),
+    }));
+  }
+
+  public async createUser(dto: { username: string; password: string; name: string; role: 'ADMIN' | 'STAFF' }): Promise<User> {
+    const existing = await prisma.user.findFirst({
+      where: { username: { equals: dto.username, mode: 'insensitive' } },
+    });
+    if (existing) {
+      throw new Error(`Username "${dto.username}" is already taken.`);
+    }
+
+    const u = await prisma.user.create({
+      data: {
+        username: dto.username.trim().toLowerCase(),
+        password: dto.password,
+        name: dto.name.trim(),
+        role: dto.role || 'STAFF',
+      },
+    });
+
+    return {
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      role: (u.role || 'STAFF') as 'ADMIN' | 'STAFF',
+      createdAt: u.createdAt.toISOString(),
+    };
+  }
+
+  public async deleteUser(id: string): Promise<boolean> {
+    await prisma.user.delete({ where: { id } });
+    return true;
+  }
 }
 
 export const db = new RelationalDatabaseStore();
+// Auto seed default users on server load
+db.seedDefaultUsers();
