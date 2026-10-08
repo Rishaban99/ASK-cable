@@ -973,10 +973,32 @@ export class RelationalDatabaseStore {
       });
 
       await userDb.upsert({
+        where: { username: 'admin' },
+        update: {},
+        create: {
+          username: 'admin',
+          password: 'admin123',
+          name: 'System Admin',
+          role: 'ADMIN',
+        },
+      });
+
+      await userDb.upsert({
         where: { username: 'Dhinushan' },
         update: {},
         create: {
           username: 'Dhinushan',
+          password: '121926',
+          name: 'Staff Operator',
+          role: 'STAFF',
+        },
+      });
+
+      await userDb.upsert({
+        where: { username: 'staff' },
+        update: {},
+        create: {
+          username: 'staff',
           password: '121926',
           name: 'Staff Operator',
           role: 'STAFF',
@@ -994,10 +1016,13 @@ export class RelationalDatabaseStore {
     const userDb = this.getUserClient();
     if (!userDb) return null;
 
+    const cleanUsername = (username || '').trim();
+    const cleanPassword = (password || '').trim();
+
     const u = await userDb.findFirst({
       where: {
-        username: { equals: username, mode: 'insensitive' },
-        password: password,
+        username: { equals: cleanUsername, mode: 'insensitive' },
+        password: cleanPassword,
       },
     });
 
