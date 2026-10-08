@@ -42,35 +42,12 @@ class ApiClient {
       ...(options.headers as Record<string, string> || {}),
     };
 
-    // Attach current user session headers if available
-    try {
-      const savedUser = localStorage.getItem('ask_cable_user');
-      if (savedUser) {
-        const parsed = JSON.parse(savedUser);
-        if (parsed?.id) {
-          headers['X-User-Id'] = parsed.id;
-          headers['Authorization'] = `Bearer user-${parsed.id}`;
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-
     const response = await fetch(`/api${endpoint}`, {
       ...options,
       headers,
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
-        // Handle 401 Unauthorized: clear expired local session & trigger login redirect
-        try {
-          localStorage.removeItem('ask_cable_user');
-        } catch (e) {}
-        window.location.reload();
-        throw new Error('401 Unauthorized: Session expired or invalid authentication token. Please log in again.');
-      }
-
       let errorMsg = `Error ${response.status}: ${response.statusText}`;
       try {
         const errJson = await response.json();
