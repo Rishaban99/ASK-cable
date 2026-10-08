@@ -15,7 +15,8 @@ import {
   Clock,
   Filter,
   DollarSign,
-  Printer
+  Printer,
+  History
 } from 'lucide-react';
 
 interface MonthlyPaymentViewProps {
@@ -24,6 +25,7 @@ interface MonthlyPaymentViewProps {
   currency: SupportedCurrency;
   onRefreshData: () => void;
   currentUser?: User | null;
+  onViewHistory?: (customerId: string) => void;
 }
 
 export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
@@ -32,6 +34,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   currency,
   onRefreshData,
   currentUser,
+  onViewHistory,
 }) => {
   // Current Month YYYY-MM
   const currentMonthStr = new Date().toISOString().slice(0, 7);
@@ -192,6 +195,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
       const newTotalPaid = payBalancePayment.paidAmount + addPay;
       await api.updateMonthlyPayment(payBalancePayment.id, {
         paidAmount: newTotalPaid,
+        paymentDate: todayStr,
       });
 
       setPayBalancePayment(null);
@@ -244,13 +248,33 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   const totalCollected = filteredPayments.reduce((sum, p) => sum + p.paidAmount, 0);
   const totalOutstanding = filteredPayments.reduce((sum, p) => sum + p.balanceAmount, 0);
 
-  // Available unique months for dropdown filter
+  // Available unique months present in actual database records
   const availableMonths = Array.from(new Set(monthlyPayments.map((p) => p.month))).sort().reverse();
+
+  // Format month code into pill display text (e.g. 2026-10 -> Oct 2026)
+  const formatMonthPill = (mStr: string) => {
+    if (!mStr) return { monthName: mStr, year: '' };
+    const [year, month] = mStr.split('-');
+    if (!year || !month) return { monthName: mStr, year: '' };
+    const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+    const mName = date.toLocaleString('default', { month: 'short' });
+    return { monthName: mName, year };
+  };
+
+  // Automatically select latest month with data if current selection is invalid
+  useEffect(() => {
+    if (availableMonths.length > 0 && (!selectedMonthFilter || !availableMonths.includes(selectedMonthFilter))) {
+      setSelectedMonthFilter(availableMonths[0]);
+    }
+  }, [availableMonths, selectedMonthFilter]);
+
+  // Only show months that actually exist in the database records
+  const periodMonthOptions = availableMonths;
 
   return (
     <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+      {/* Header with PERIOD Month Quick Filters Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
             <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
@@ -260,6 +284,37 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
             Collect subscriber monthly fees, track billing cycles, and auto-sync income to MongoDB Atlas.
           </p>
         </div>
+
+        {/* PERIOD: Month Pills Filter Strip (Only Months with Real Data) */}
+        {periodMonthOptions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* PERIOD Label Badge */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-full text-xs font-bold text-indigo-400 font-mono shrink-0 shadow-sm">
+              <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+              <span>PERIOD:</span>
+            </div>
+
+            {/* Month Pills (Only Months with Data) */}
+            {periodMonthOptions.map((mStr) => {
+              const isSelected = selectedMonthFilter === mStr;
+              const { monthName, year } = formatMonthPill(mStr);
+              return (
+                <button
+                  key={mStr}
+                  onClick={() => setSelectedMonthFilter(mStr)}
+                  className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-neutral-900 border border-emerald-500/50 text-white font-bold ring-1 ring-emerald-500/30 shadow-md'
+                      : 'bg-neutral-900/60 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700'
+                  }`}
+                >
+                  <span className="font-bold">{monthName}</span>
+                  <span className="text-[10px] text-neutral-500 font-mono">{year}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -560,6 +615,16 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                                 >
                                   <CreditCard className="w-3 h-3" />
                                   <span>Pay Balance</span>
+                                </button>
+                              )}
+                              {onViewHistory && pmt.customerId && (
+                                <button
+                                  onClick={() => onViewHistory(pmt.customerId)}
+                                  className="flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 rounded text-[11px] font-medium transition-colors cursor-pointer shrink-0"
+                                  title="View Customer Payment History"
+                                >
+                                  <History className="w-3.5 h-3.5" />
+                                  <span>History</span>
                                 </button>
                               )}
                               <button

@@ -4,8 +4,8 @@ import { CURRENCY_CONF } from '../api/client.js';
 import { Plus, LogOut, ShieldCheck, UserCheck } from 'lucide-react';
 
 interface NavbarProps {
-  currentTab: 'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment';
-  onSelectTab: (tab: 'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment') => void;
+  currentTab: 'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment' | 'customer-history';
+  onSelectTab: (tab: 'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment' | 'customer-history') => void;
   currency?: SupportedCurrency;
   onOpenRecordModal: () => void;
   analytics?: AnalyticsOverview | null;
@@ -28,6 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'summary', label: 'Total Summary' },
     { id: 'customers', label: 'Customers' },
     { id: 'monthly-payment', label: 'Monthly Payment' },
+    { id: 'customer-history', label: 'Payment History' },
   ] as const;
 
   // STAFF Role Restriction: Hide "Total Summary" page for Staff users

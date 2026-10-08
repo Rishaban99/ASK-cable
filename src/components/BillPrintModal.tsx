@@ -1,10 +1,18 @@
 import React, { useRef } from 'react';
 import { formatMoney } from '../api/client.js';
 import { SupportedCurrency } from '../types/finance.js';
-import { Printer, X, CheckCircle, AlertTriangle, Tv } from 'lucide-react';
+import { Printer, X, CheckCircle, AlertTriangle, Tv, FileText, Calendar } from 'lucide-react';
+
+export interface BillLineItem {
+  description: string;
+  amount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  dateOrPeriod?: string;
+}
 
 export interface BillData {
-  type: 'MONTHLY' | 'CUSTOMER';
+  type: 'TOTAL' | 'MONTHLY' | 'CUSTOMER';
   billNo: string;
   date: string;
   customerName: string;
@@ -18,6 +26,7 @@ export interface BillData {
   balanceAmount: number;
   status?: 'PAID' | 'PARTIAL' | 'UNPAID';
   paymentDate?: string;
+  items?: BillLineItem[];
 }
 
 interface BillPrintModalProps {
@@ -50,15 +59,23 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
     return date.toLocaleString('default', { month: 'long', year: 'numeric' });
   };
 
+  const getBadgeLabel = () => {
+    if (billData.type === 'TOTAL') return 'TOTAL BILL STATEMENT';
+    if (billData.type === 'MONTHLY') return 'MONTHLY BILL RECEIPT';
+    return 'CUSTOMER RECEIPT';
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
       {/* Container Card */}
-      <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="w-full max-w-xl bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
         {/* Modal Action Header (Hidden in Print) */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-neutral-800 bg-neutral-950 print:hidden">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-neutral-800 bg-neutral-950 print:hidden">
           <div className="flex items-center gap-2">
             <Printer className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 shrink-0" />
-            <h3 className="text-xs sm:text-base font-semibold text-white truncate">Subscription Receipt / Bill</h3>
+            <h3 className="text-xs sm:text-base font-semibold text-white truncate">
+              {billData.type === 'TOTAL' ? 'Grand Total Bill Statement' : billData.type === 'MONTHLY' ? 'Monthly Bill Receipt' : 'Customer Connection Receipt'}
+            </h3>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -78,7 +95,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
         </div>
 
         {/* Printable Receipt Body */}
-        <div className="p-6 overflow-y-auto print-area">
+        <div className="p-4 sm:p-6 overflow-y-auto print-area">
           <div
             ref={printRef}
             className="p-6 bg-white text-neutral-900 rounded-lg shadow-inner space-y-5 border border-neutral-200 font-sans text-xs print:p-0 print:border-none print:shadow-none"
@@ -104,7 +121,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
 
               <div className="text-right">
                 <span className="inline-block px-2.5 py-1 bg-neutral-900 text-white font-mono font-bold text-[11px] rounded uppercase">
-                  {billData.type === 'MONTHLY' ? 'MONTHLY BILL' : 'CUSTOMER RECEIPT'}
+                  {getBadgeLabel()}
                 </span>
                 <p className="font-mono text-[11px] text-neutral-700 mt-1 font-semibold">
                   Bill #: {billData.billNo}
@@ -141,36 +158,74 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
                 <thead>
                   <tr className="border-b-2 border-neutral-900 text-neutral-700 text-[11px] uppercase">
                     <th className="py-2 text-left">Description</th>
-                    <th className="py-2 text-right">Amount (LKR)</th>
+                    <th className="py-2 text-right">Fee</th>
+                    <th className="py-2 text-right">Paid</th>
+                    <th className="py-2 text-right">Balance (LKR)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200">
-                  <tr>
-                    <td className="py-2.5">
-                      <p className="font-semibold text-neutral-900">
-                        {billData.type === 'MONTHLY'
-                          ? `Cable Subscription Fee (${formatMonthDisplay(billData.month)})`
-                          : 'Initial Package / Total Connection Dues'}
-                      </p>
-                      <p className="text-[10px] text-neutral-500">
-                        Box No: {billData.boxNo} | Payment Date: {billData.paymentDate || billData.date}
-                      </p>
-                    </td>
-                    <td className="py-2.5 text-right font-mono font-semibold text-neutral-900">
+                  {billData.items && billData.items.length > 0 ? (
+                    billData.items.map((item, idx) => (
+                      <tr key={idx}>
+                        <td className="py-2.5">
+                          <p className="font-semibold text-neutral-900">{item.description}</p>
+                          {item.dateOrPeriod && (
+                            <p className="text-[10px] text-neutral-500">Period/Date: {item.dateOrPeriod}</p>
+                          )}
+                        </td>
+                        <td className="py-2.5 text-right font-mono font-medium text-neutral-800">
+                          {formatMoney(item.amount, currency)}
+                        </td>
+                        <td className="py-2.5 text-right font-mono font-medium text-emerald-700">
+                          {formatMoney(item.paidAmount, currency)}
+                        </td>
+                        <td className="py-2.5 text-right font-mono font-bold text-neutral-900">
+                          {formatMoney(item.balanceAmount, currency)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td className="py-2.5">
+                        <p className="font-semibold text-neutral-900">
+                          {billData.type === 'MONTHLY'
+                            ? `Cable Subscription Fee (${formatMonthDisplay(billData.month)})`
+                            : 'Initial Package / Total Connection Dues'}
+                        </p>
+                        <p className="text-[10px] text-neutral-500">
+                          Box No: {billData.boxNo} | Payment Date: {billData.paymentDate || billData.date}
+                        </p>
+                      </td>
+                      <td className="py-2.5 text-right font-mono font-medium text-neutral-800">
+                        {formatMoney(billData.totalOrFeeAmount, currency)}
+                      </td>
+                      <td className="py-2.5 text-right font-mono font-medium text-emerald-700">
+                        {formatMoney(billData.paidAmount, currency)}
+                      </td>
+                      <td className="py-2.5 text-right font-mono font-bold text-neutral-900">
+                        {formatMoney(billData.balanceAmount, currency)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Summary Totals */}
+                  <tr className="bg-neutral-100 font-bold border-t-2 border-neutral-400">
+                    <td colSpan={3} className="py-2.5 text-neutral-900 uppercase">Grand Total Amount Billed</td>
+                    <td className="py-2.5 text-right font-mono text-sm text-neutral-900">
                       {formatMoney(billData.totalOrFeeAmount, currency)}
                     </td>
                   </tr>
 
-                  <tr>
-                    <td className="py-2.5 font-medium text-emerald-700">Amount Paid</td>
-                    <td className="py-2.5 text-right font-mono font-bold text-emerald-700">
+                  <tr className="bg-emerald-50 text-emerald-800 font-bold">
+                    <td colSpan={3} className="py-2.5 uppercase">Total Amount Paid to Date</td>
+                    <td className="py-2.5 text-right font-mono text-sm">
                       {formatMoney(billData.paidAmount, currency)}
                     </td>
                   </tr>
 
-                  <tr className="bg-neutral-100/70">
-                    <td className="py-2.5 font-bold text-neutral-900">Balance Amount Due</td>
-                    <td className="py-2.5 text-right font-mono font-bold text-sm text-neutral-900">
+                  <tr className="bg-neutral-900 text-white font-bold">
+                    <td colSpan={3} className="py-2.5 uppercase">Grand Balance Amount Due</td>
+                    <td className="py-2.5 text-right font-mono text-base text-amber-300">
                       {formatMoney(billData.balanceAmount, currency)}
                     </td>
                   </tr>

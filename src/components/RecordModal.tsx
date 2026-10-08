@@ -39,6 +39,12 @@ export const RecordModal: React.FC<RecordModalProps> = ({
   const availableCategories = categories.filter((c) => c.type === txType);
 
   React.useEffect(() => {
+    if (isOpen) {
+      setTxDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [isOpen]);
+
+  React.useEffect(() => {
     if (availableCategories.length > 0 && !availableCategories.some((c) => c.id === txCategoryId)) {
       setTxCategoryId(availableCategories[0].id);
     }

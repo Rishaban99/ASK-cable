@@ -16,6 +16,7 @@ import { TransactionsView } from './components/TransactionsView.js';
 import { SummaryView } from './components/SummaryView.js';
 import { CustomersView } from './components/CustomersView.js';
 import { MonthlyPaymentView } from './components/MonthlyPaymentView.js';
+import { CustomerHistoryView } from './components/CustomerHistoryView.js';
 import { LoginView } from './components/LoginView.js';
 import { RecordModal } from './components/RecordModal.js';
 
@@ -29,7 +30,8 @@ export default function App() {
     }
   });
 
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment' | 'customer-history'>('dashboard');
+  const [selectedHistoryCustomerId, setSelectedHistoryCustomerId] = useState<string | null>(null);
   const currency: SupportedCurrency = 'LKR';
 
   // Application Data States - Strictly fetched from DB
@@ -160,6 +162,10 @@ export default function App() {
             currency={currency}
             onRefreshData={loadData}
             currentUser={currentUser}
+            onViewHistory={(custId) => {
+              setSelectedHistoryCustomerId(custId);
+              setCurrentTab('customer-history');
+            }}
           />
         )}
 
@@ -170,6 +176,22 @@ export default function App() {
             currency={currency}
             onRefreshData={loadData}
             currentUser={currentUser}
+            onViewHistory={(custId) => {
+              setSelectedHistoryCustomerId(custId);
+              setCurrentTab('customer-history');
+            }}
+          />
+        )}
+
+        {currentTab === 'customer-history' && (
+          <CustomerHistoryView
+            customers={customers}
+            monthlyPayments={monthlyPayments}
+            currency={currency}
+            onRefreshData={loadData}
+            currentUser={currentUser}
+            selectedCustomerId={selectedHistoryCustomerId}
+            onSelectCustomer={(custId) => setSelectedHistoryCustomerId(custId)}
           />
         )}
       </main>

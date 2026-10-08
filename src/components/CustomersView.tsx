@@ -17,7 +17,8 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
-  Printer
+  Printer,
+  History
 } from 'lucide-react';
 
 interface CustomersViewProps {
@@ -25,6 +26,7 @@ interface CustomersViewProps {
   currency: SupportedCurrency;
   onRefreshData: () => void;
   currentUser?: User | null;
+  onViewHistory?: (customerId: string) => void;
 }
 
 export const CustomersView: React.FC<CustomersViewProps> = ({
@@ -32,6 +34,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   currency,
   onRefreshData,
   currentUser,
+  onViewHistory,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -568,6 +571,16 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                                 >
                                   <CreditCard className="w-3 h-3" />
                                   <span>Pay Balance</span>
+                                </button>
+                              )}
+                              {onViewHistory && (
+                                <button
+                                  onClick={() => onViewHistory(cust.id)}
+                                  className="flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 rounded text-[11px] font-medium transition-colors cursor-pointer shrink-0"
+                                  title="View Customer Payment History"
+                                >
+                                  <History className="w-3.5 h-3.5" />
+                                  <span>History</span>
                                 </button>
                               )}
                               <button

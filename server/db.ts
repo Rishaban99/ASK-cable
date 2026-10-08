@@ -617,8 +617,13 @@ export class RelationalDatabaseStore {
 
     const dataToUpdate: any = {};
     if (dto.monthlyFee !== undefined) dataToUpdate.monthlyFee = Math.abs(dto.monthlyFee);
-    if (dto.paidAmount !== undefined) dataToUpdate.paidAmount = Math.abs(dto.paidAmount);
-    if (dto.paymentDate !== undefined) dataToUpdate.paymentDate = dto.paymentDate;
+    if (dto.paidAmount !== undefined) {
+      dataToUpdate.paidAmount = Math.abs(dto.paidAmount);
+      // Automatically pick current date for payment updates if not explicitly specified
+      dataToUpdate.paymentDate = dto.paymentDate || new Date().toISOString().split('T')[0];
+    } else if (dto.paymentDate !== undefined) {
+      dataToUpdate.paymentDate = dto.paymentDate;
+    }
 
     const rec = await prisma.monthlyPayment.update({
       where: { id },
