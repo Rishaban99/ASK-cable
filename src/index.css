@@ -1,1 +1,150 @@
 @import "tailwindcss";
+
+/* -------------------------------------------------------------------
+ * LIGHT MODE OVERRIDES
+ * Converts dark palette into clean, high-contrast, user-friendly Light Mode UI
+ * ------------------------------------------------------------------- */
+.theme-light {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.theme-light header {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.theme-light header button {
+  color: #334155;
+}
+.theme-light header button:hover {
+  color: #0f172a;
+}
+.theme-light header .text-white {
+  color: #0f172a !important;
+}
+
+.theme-light .bg-neutral-950,
+.theme-light .bg-neutral-950\/95,
+.theme-light .bg-neutral-950\/90,
+.theme-light .bg-neutral-950\/80,
+.theme-light .bg-neutral-950\/60 {
+  background-color: #f8fafc !important;
+}
+
+.theme-light .bg-neutral-900,
+.theme-light .bg-neutral-900\/90,
+.theme-light .bg-neutral-900\/80,
+.theme-light .bg-neutral-900\/70,
+.theme-light .bg-neutral-900\/60,
+.theme-light .bg-neutral-900\/50,
+.theme-light .bg-neutral-900\/40 {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+.theme-light .bg-neutral-850,
+.theme-light .bg-neutral-850\/50,
+.theme-light .bg-neutral-800 {
+  background-color: #f1f5f9 !important;
+}
+
+.theme-light .border-neutral-800,
+.theme-light .border-neutral-850,
+.theme-light .border-neutral-750,
+.theme-light .border-neutral-700 {
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light .text-white {
+  color: #0f172a !important;
+}
+
+.theme-light .text-neutral-100,
+.theme-light .text-neutral-200,
+.theme-light .text-neutral-300 {
+  color: #1e293b !important;
+}
+
+.theme-light .text-neutral-400 {
+  color: #475569 !important;
+}
+
+.theme-light .text-neutral-500 {
+  color: #64748b !important;
+}
+
+.theme-light input,
+.theme-light select,
+.theme-light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.theme-light table thead {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light table thead th {
+  color: #475569 !important;
+}
+
+.theme-light table tbody tr {
+  border-color: #f1f5f9 !important;
+}
+
+.theme-light table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+.theme-light .bg-emerald-500\/10,
+.theme-light .bg-emerald-500\/15,
+.theme-light .bg-emerald-500\/20 {
+  background-color: #ecfdf5 !important;
+}
+
+.theme-light .text-emerald-400,
+.theme-light .text-emerald-300 {
+  color: #059669 !important;
+}
+
+.theme-light .bg-indigo-500\/10,
+.theme-light .bg-indigo-500\/15,
+.theme-light .bg-indigo-500\/20 {
+  background-color: #eef2ff !important;
+}
+
+.theme-light .text-indigo-400,
+.theme-light .text-indigo-300 {
+  color: #4f46e5 !important;
+}
+
+.theme-light .bg-amber-500\/10,
+.theme-light .bg-amber-500\/15,
+.theme-light .bg-amber-500\/20 {
+  background-color: #fffbeb !important;
+}
+
+.theme-light .text-amber-400,
+.theme-light .text-amber-300 {
+  color: #d97706 !important;
+}
+
+.theme-light .bg-rose-500\/10,
+.theme-light .bg-rose-500\/15,
+.theme-light .bg-rose-500\/20 {
+  background-color: #fff1f2 !important;
+}
+
+.theme-light .text-rose-400,
+.theme-light .text-rose-300 {
+  color: #e11d48 !important;
+}

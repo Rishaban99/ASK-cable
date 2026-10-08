@@ -37,6 +37,26 @@ export default function App() {
   const [selectedHistoryCustomerId, setSelectedHistoryCustomerId] = useState<string | null>(null);
   const currency: SupportedCurrency = 'LKR';
 
+  // Theme State ('dark' | 'light')
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem('ask_cable_theme');
+      return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    try {
+      localStorage.setItem('ask_cable_theme', nextTheme);
+    } catch {
+      // ignore
+    }
+  };
+
   // Staff Privileges State
   const [staffPrivileges, setStaffPrivileges] = useState<StaffPrivileges>(() => {
     try {
@@ -143,7 +163,9 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-emerald-500/20 selection:text-emerald-300">
+    <div className={`min-h-screen transition-colors duration-200 flex flex-col font-sans selection:bg-emerald-500/20 selection:text-emerald-300 ${
+      theme === 'light' ? 'theme-light bg-slate-50 text-slate-900' : 'bg-neutral-950 text-neutral-100'
+    }`}>
       {/* Universal Top Navigation */}
       <Navbar
         currentTab={currentTab}
@@ -154,6 +176,8 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         staffPrivileges={staffPrivileges}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main Viewport Content */}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { AnalyticsOverview, SupportedCurrency, User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES } from '../types/finance.js';
 import { CURRENCY_CONF } from '../api/client.js';
-import { LogOut, ShieldCheck, UserCheck, Settings } from 'lucide-react';
+import { LogOut, ShieldCheck, UserCheck, Settings, Sun, Moon } from 'lucide-react';
 
 export type NavTab = 'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment' | 'customer-history' | 'settings';
 
@@ -14,6 +14,8 @@ interface NavbarProps {
   currentUser?: User | null;
   onLogout?: () => void;
   staffPrivileges?: StaffPrivileges;
+  theme?: 'dark' | 'light';
+  onToggleTheme?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,6 +27,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onLogout,
   staffPrivileges = DEFAULT_STAFF_PRIVILEGES,
+  theme = 'dark',
+  onToggleTheme,
 }) => {
   const baseNavLinks = [
     { id: 'dashboard', label: 'Dashboard' },
@@ -90,6 +94,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>{CURRENCY_CONF.symbol.trim()}</span>
             <span>{CURRENCY_CONF.code}</span>
           </div>
+
+          {/* Theme Mode Switcher Toggle */}
+          {onToggleTheme && (
+            <button
+              onClick={onToggleTheme}
+              className="p-1.5 text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 rounded-md transition-all cursor-pointer flex items-center justify-center shadow-xs"
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-indigo-400" />
+              )}
+            </button>
+          )}
 
           {/* User Profile & Role Badge */}
           {currentUser && (
