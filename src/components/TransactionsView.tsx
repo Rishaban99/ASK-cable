@@ -338,7 +338,69 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             </select>
           </div>
 
-          <div className="rounded-lg bg-neutral-900 border border-neutral-800 overflow-hidden">
+          {/* Mobile Cards View for Incomes (block md:hidden) */}
+          <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+            {filteredIncomes.length === 0 ? (
+              <div className="p-6 text-center text-neutral-500 text-xs">
+                No income records found.
+              </div>
+            ) : (
+              filteredIncomes.map((inc) => (
+                <div key={inc.id} className="p-4 space-y-2.5 bg-neutral-900/50">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-white text-sm">{inc.description}</p>
+                      <p className="text-[11px] font-mono text-neutral-400 mt-0.5">Date: {inc.date} • Method: {inc.paymentMethod}</p>
+                    </div>
+                    <span className="font-mono font-bold text-emerald-400 text-sm shrink-0">
+                      +{formatMoney(inc.amount, currency)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-850">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-medium"
+                      style={{
+                        backgroundColor: `${inc.categoryColor || '#10B981'}20`,
+                        color: inc.categoryColor || '#10B981',
+                        border: `1px solid ${inc.categoryColor || '#10B981'}40`,
+                      }}
+                    >
+                      {inc.categoryName}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenEditIncome(inc)}
+                        className="p-1.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800 rounded"
+                        title="Edit Record"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      {currentUser?.role !== 'STAFF' && (
+                        <button
+                          onClick={() => handleDeleteIncome(inc.id)}
+                          className="p-1.5 text-neutral-400 hover:text-rose-400 bg-neutral-800 rounded"
+                          title="Delete Record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            <div className="p-3 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono">
+              <span>Total Income Inflows:</span>
+              <span className="font-bold text-emerald-400 text-sm">
+                +{formatMoney(totalIncomesSum, currency)}
+              </span>
+            </div>
+          </div>
+
+          {/* Desktop Table View for Incomes (hidden md:block) */}
+          <div className="hidden md:block rounded-lg bg-neutral-900 border border-neutral-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-neutral-950 border-b border-neutral-800 text-neutral-400 font-mono">
@@ -446,7 +508,69 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             </select>
           </div>
 
-          <div className="rounded-lg bg-neutral-900 border border-neutral-800 overflow-hidden">
+          {/* Mobile Cards View for Expenses (block md:hidden) */}
+          <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+            {filteredExpenses.length === 0 ? (
+              <div className="p-6 text-center text-neutral-500 text-xs">
+                No expense records found.
+              </div>
+            ) : (
+              filteredExpenses.map((exp) => (
+                <div key={exp.id} className="p-4 space-y-2.5 bg-neutral-900/50">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-white text-sm">{exp.description}</p>
+                      <p className="text-[11px] font-mono text-neutral-400 mt-0.5">Date: {exp.date} • Method: {exp.paymentMethod}</p>
+                    </div>
+                    <span className="font-mono font-bold text-rose-400 text-sm shrink-0">
+                      -{formatMoney(exp.amount, currency)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-850">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-medium"
+                      style={{
+                        backgroundColor: `${exp.categoryColor || '#F43F5E'}20`,
+                        color: exp.categoryColor || '#F43F5E',
+                        border: `1px solid ${exp.categoryColor || '#F43F5E'}40`,
+                      }}
+                    >
+                      {exp.categoryName}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenEditExpense(exp)}
+                        className="p-1.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800 rounded"
+                        title="Edit Record"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      {currentUser?.role !== 'STAFF' && (
+                        <button
+                          onClick={() => handleDeleteExpense(exp.id)}
+                          className="p-1.5 text-neutral-400 hover:text-rose-400 bg-neutral-800 rounded"
+                          title="Delete Record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            <div className="p-3 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono">
+              <span>Total Operational Expenses:</span>
+              <span className="font-bold text-rose-400 text-sm">
+                -{formatMoney(totalExpensesSum, currency)}
+              </span>
+            </div>
+          </div>
+
+          {/* Desktop Table View for Expenses (hidden md:block) */}
+          <div className="hidden md:block rounded-lg bg-neutral-900 border border-neutral-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-neutral-950 border-b border-neutral-800 text-neutral-400 font-mono">

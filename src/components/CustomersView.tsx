@@ -494,8 +494,108 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
               </div>
             </div>
 
-            {/* Customers Table */}
-            <div className="rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
+            {/* Mobile Cards View (block md:hidden) */}
+            <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-950 rounded-lg border border-neutral-800">
+              {filteredCustomers.length === 0 ? (
+                <div className="p-6 text-center text-neutral-500 text-xs">
+                  No customer records found matching the criteria.
+                </div>
+              ) : (
+                filteredCustomers.map((cust) => (
+                  <div key={cust.id} className="p-4 space-y-3 bg-neutral-900/40">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-white text-sm">{cust.name}</p>
+                        <p className="text-xs text-neutral-400">{cust.address || 'No Address'}</p>
+                        <p className="text-[11px] font-mono text-neutral-400 mt-0.5">NIC: {cust.nicNo} • Tel: {cust.phoneNo}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[11px] font-semibold text-emerald-400 font-mono">
+                          {cust.boxNo}
+                        </span>
+                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded font-mono ${
+                          (cust.status || 'ACTIVE') === 'ACTIVE'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : (cust.status || 'ACTIVE') === 'INACTIVE'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        }`}>
+                          {cust.status || 'ACTIVE'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 p-2.5 bg-neutral-950 rounded-lg border border-neutral-850 font-mono text-xs">
+                      <div>
+                        <span className="text-[10px] text-neutral-500 block">Total</span>
+                        <span className="text-neutral-300 font-medium">{formatMoney(cust.totalAmount, currency)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 block">Paid</span>
+                        <span className="text-emerald-400 font-medium">{formatMoney(cust.paidAmount, currency)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 block">Balance</span>
+                        <span className={`font-bold ${cust.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {formatMoney(cust.balanceAmount, currency)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                      <div className="flex items-center gap-1.5">
+                        {cust.balanceAmount > 0 && (
+                          <button
+                            onClick={() => handleOpenPayBalance(cust)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 rounded text-xs font-semibold cursor-pointer"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Pay Balance</span>
+                          </button>
+                        )}
+                        {onViewHistory && (
+                          <button
+                            onClick={() => onViewHistory(cust.id)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 rounded text-xs font-medium cursor-pointer"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                            <span>History</span>
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handlePrintCustomerBill(cust)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 bg-neutral-800 border border-neutral-700 text-neutral-200 rounded text-xs font-medium cursor-pointer"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Bill</span>
+                        </button>
+                        <button
+                          onClick={() => handleOpenEdit(cust)}
+                          className="p-1.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800 rounded"
+                          title="Edit Customer"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        {currentUser?.role === 'ADMIN' && (
+                          <button
+                            onClick={() => handleDelete(cust.id, cust.name)}
+                            className="p-1.5 text-neutral-400 hover:text-rose-400 bg-neutral-800 rounded"
+                            title="Delete Customer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono">

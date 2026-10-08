@@ -664,8 +664,89 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
               </div>
             </div>
 
-            {/* Table */}
-            <div className="rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
+            {/* Mobile Cards View (block md:hidden) */}
+            <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-950 rounded-lg border border-neutral-800">
+              {filteredHistoryItems.length === 0 ? (
+                <div className="p-6 text-center text-neutral-500 text-xs">
+                  No payment history records found matching filter "{historyFilter}".
+                </div>
+              ) : (
+                filteredHistoryItems.map((item) => (
+                  <div key={item.id} className="p-4 space-y-3 bg-neutral-900/40">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-white text-sm">{item.title}</p>
+                        <div className="flex items-center gap-1.5 mt-1 font-mono text-[11px]">
+                          <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded font-semibold text-emerald-400">
+                            Box: {item.boxNo}
+                          </span>
+                          <span className="text-neutral-400">{item.periodOrDate}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded font-mono ${
+                          item.itemType === 'REGISTRATION'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                        }`}>
+                          {item.itemType}
+                        </span>
+                        <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded ${
+                          item.status === 'PAID'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : item.status === 'PARTIAL'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 p-2.5 bg-neutral-950 rounded-lg border border-neutral-850 font-mono text-xs">
+                      <div>
+                        <span className="text-[10px] text-neutral-500 block">Fee / Total</span>
+                        <span className="text-neutral-300 font-medium">{formatMoney(item.totalOrFee, currency)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 block">Paid</span>
+                        <span className="text-emerald-400 font-medium">{formatMoney(item.paidAmount, currency)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 block">Balance</span>
+                        <span className={`font-bold ${item.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {formatMoney(item.balanceAmount, currency)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <div>
+                        {item.balanceAmount > 0 && (
+                          <button
+                            onClick={() => handleOpenPayBalance(item)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 rounded text-xs font-semibold cursor-pointer"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Pay Balance</span>
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handlePrintHistoryItemBill(item)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-neutral-800 border border-neutral-700 text-neutral-200 rounded text-xs font-medium cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Bill</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono">

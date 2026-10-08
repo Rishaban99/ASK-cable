@@ -139,19 +139,20 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Mobile Subnav Strip */}
-      <div className="flex md:hidden overflow-x-auto border-t border-neutral-850 px-3 py-2 gap-1.5 text-xs font-medium scrollbar-none items-center">
+      <div className="flex md:hidden overflow-x-auto border-t border-neutral-850 px-3 py-2 gap-2 text-xs font-medium scrollbar-none items-center bg-neutral-950/95">
         {visibleNavLinks.map((link) => {
           const isActive = currentTab === link.id;
           return (
             <button
               key={link.id}
               onClick={() => onSelectTab(link.id as any)}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium shrink-0 transition-all ${
+              className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
                 isActive
-                  ? 'bg-emerald-500/15 text-emerald-400 font-semibold border border-emerald-500/30 shadow-xs'
-                  : 'text-neutral-400 hover:text-neutral-200 bg-neutral-900/60'
+                  ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 shadow-xs'
+                  : 'text-neutral-400 hover:text-neutral-200 bg-neutral-900/80 border border-neutral-800/80'
               }`}
             >
+              {link.id === 'settings' && <Settings className="w-3 h-3 text-emerald-400" />}
               {link.label}
             </button>
           );

@@ -287,7 +287,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
         {/* PERIOD: Month Pills Filter Strip (Only Months with Real Data) */}
         {periodMonthOptions.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none">
             {/* PERIOD Label Badge */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-full text-xs font-bold text-indigo-400 font-mono shrink-0 shadow-sm">
               <Calendar className="w-3.5 h-3.5 text-indigo-400" />
@@ -542,8 +542,108 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
               </div>
             </div>
 
-            {/* Table */}
-            <div className="rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
+            {/* Mobile Cards View (block md:hidden) */}
+            <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-950 rounded-lg border border-neutral-800">
+              {filteredPayments.length === 0 ? (
+                <div className="p-6 text-center text-neutral-500 text-xs">
+                  No monthly payment records match the current filters.
+                </div>
+              ) : (
+                filteredPayments.map((pmt) => (
+                  <div key={pmt.id} className="p-4 space-y-3 bg-neutral-900/40">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-white text-sm">{pmt.customerName}</p>
+                        <div className="flex items-center gap-1.5 mt-1 font-mono text-[11px]">
+                          <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded font-semibold text-emerald-400">
+                            {pmt.boxNo}
+                          </span>
+                          <span className="text-neutral-400">Month: {pmt.month}</span>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded shrink-0 ${
+                        pmt.status === 'PAID'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          : pmt.status === 'PARTIAL'
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                      }`}>
+                        {pmt.status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 p-2.5 bg-neutral-950 rounded-lg border border-neutral-850 font-mono text-xs">
+                      <div>
+                        <span className="text-[10px] text-neutral-500 block">Monthly Fee</span>
+                        <span className="text-neutral-300 font-medium">{formatMoney(pmt.monthlyFee, currency)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 block">Paid</span>
+                        <span className="text-emerald-400 font-medium">{formatMoney(pmt.paidAmount, currency)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-neutral-500 block">Balance</span>
+                        <span className={`font-bold ${pmt.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {formatMoney(pmt.balanceAmount, currency)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                      <div className="flex items-center gap-1.5">
+                        {pmt.balanceAmount > 0 && (
+                          <button
+                            onClick={() => handleOpenPayBalance(pmt)}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 rounded text-xs font-semibold cursor-pointer"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Pay Balance</span>
+                          </button>
+                        )}
+                        {onViewHistory && pmt.customerId && (
+                          <button
+                            onClick={() => onViewHistory(pmt.customerId)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 rounded text-xs font-medium cursor-pointer"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                            <span>History</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handlePrintMonthlyBill(pmt)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 bg-neutral-800 border border-neutral-700 text-neutral-200 rounded text-xs font-medium cursor-pointer"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Bill</span>
+                        </button>
+                        <button
+                          onClick={() => handleOpenEdit(pmt)}
+                          className="p-1.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800 rounded"
+                          title="Edit Record"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        {currentUser?.role !== 'STAFF' && (
+                          <button
+                            onClick={() => handleDelete(pmt.id, pmt.customerName, pmt.month)}
+                            className="p-1.5 text-neutral-400 hover:text-rose-400 bg-neutral-800 rounded"
+                            title="Delete Record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono">
