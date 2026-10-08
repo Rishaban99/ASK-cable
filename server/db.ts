@@ -937,11 +937,26 @@ export class RelationalDatabaseStore {
   }
 
   // -------------------------------------------------------------------
+  // -------------------------------------------------------------------
   // USERS & AUTHENTICATION TABLE
   // -------------------------------------------------------------------
+  private getUserClient(): any {
+    const userModel = (prisma as any).user;
+    if (userModel) return userModel;
+    try {
+      const freshClient = new PrismaClient();
+      return (freshClient as any).user;
+    } catch {
+      return null;
+    }
+  }
+
   public async seedDefaultUsers(): Promise<void> {
     try {
-      await prisma.user.upsert({
+      const userDb = this.getUserClient();
+      if (!userDb) return;
+
+      await userDb.upsert({
         where: { username: 'rishaban' },
         update: {},
         create: {
@@ -952,7 +967,7 @@ export class RelationalDatabaseStore {
         },
       });
 
-      await prisma.user.upsert({
+      await userDb.upsert({
         where: { username: 'Dhinushan' },
         update: {},
         create: {
@@ -971,7 +986,10 @@ export class RelationalDatabaseStore {
 
   public async authenticateUser(username: string, password: string): Promise<User | null> {
     await this.seedDefaultUsers();
-    const u = await prisma.user.findFirst({
+    const userDb = this.getUserClient();
+    if (!userDb) return null;
+
+    const u = await userDb.findFirst({
       where: {
         username: { equals: username, mode: 'insensitive' },
         password: password,
@@ -984,33 +1002,39 @@ export class RelationalDatabaseStore {
       username: u.username,
       name: u.name,
       role: (u.role || 'STAFF') as 'ADMIN' | 'STAFF',
-      createdAt: u.createdAt.toISOString(),
+      createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
     };
   }
 
   public async getUsers(): Promise<User[]> {
     await this.seedDefaultUsers();
-    const users = await prisma.user.findMany({
+    const userDb = this.getUserClient();
+    if (!userDb) return [];
+
+    const users = await userDb.findMany({
       orderBy: { createdAt: 'asc' },
     });
-    return users.map((u) => ({
+    return users.map((u: any) => ({
       id: u.id,
       username: u.username,
       name: u.name,
       role: (u.role || 'STAFF') as 'ADMIN' | 'STAFF',
-      createdAt: u.createdAt.toISOString(),
+      createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
     }));
   }
 
   public async createUser(dto: { username: string; password: string; name: string; role: 'ADMIN' | 'STAFF' }): Promise<User> {
-    const existing = await prisma.user.findFirst({
+    const userDb = this.getUserClient();
+    if (!userDb) throw new Error('User database service is unavailable');
+
+    const existing = await userDb.findFirst({
       where: { username: { equals: dto.username, mode: 'insensitive' } },
     });
     if (existing) {
       throw new Error(`Username "${dto.username}" is already taken.`);
     }
 
-    const u = await prisma.user.create({
+    const u = await userDb.create({
       data: {
         username: dto.username.trim().toLowerCase(),
         password: dto.password,
@@ -1024,12 +1048,15 @@ export class RelationalDatabaseStore {
       username: u.username,
       name: u.name,
       role: (u.role || 'STAFF') as 'ADMIN' | 'STAFF',
-      createdAt: u.createdAt.toISOString(),
+      createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
     };
   }
 
   public async deleteUser(id: string): Promise<boolean> {
-    await prisma.user.delete({ where: { id } });
+    const userDb = this.getUserClient();
+    if (!userDb) return false;
+
+    await userDb.delete({ where: { id } });
     return true;
   }
 }
