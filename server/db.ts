@@ -13,14 +13,40 @@ import {
   SqlQueryResult
 } from '../src/types/finance.js';
 
-export const prisma = new PrismaClient();
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const prisma = globalForPrisma.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export class RelationalDatabaseStore {
+  // Defensive model accessors for serverless Vercel environments
+  private getModelDb(modelName: string): any {
+    const p = prisma as any;
+    if (p && p[modelName]) return p[modelName];
+    try {
+      const fresh = new PrismaClient();
+      return (fresh as any)[modelName] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  private get categoryDb() { return this.getModelDb('category'); }
+  private get incomeDb() { return this.getModelDb('income'); }
+  private get expenseDb() { return this.getModelDb('expense'); }
+  private get customerDb() { return this.getModelDb('customer'); }
+  private get monthlyPaymentDb() { return this.getModelDb('monthlyPayment'); }
+  private get userDb() { return this.getModelDb('user'); }
+
   // -------------------------------------------------------------------
   // CATEGORIES
   // -------------------------------------------------------------------
   public async getCategories(): Promise<Category[]> {
-    const cats = await prisma.category.findMany({
+    const dbClient = this.categoryDb;
+    if (!dbClient) return [];
+
+    const cats = await dbClient.findMany({
       orderBy: { createdAt: 'asc' }
     });
     return cats.map((c) => ({
@@ -306,6 +332,9 @@ export class RelationalDatabaseStore {
   // CUSTOMERS TABLE
   // -------------------------------------------------------------------
   public async getCustomers(search?: string): Promise<Customer[]> {
+    const dbClient = this.customerDb;
+    if (!dbClient) return [];
+
     const whereClause: any = {};
     if (search) {
       whereClause.OR = [
@@ -315,11 +344,11 @@ export class RelationalDatabaseStore {
         { boxNo: { contains: search, mode: 'insensitive' } },
       ];
     }
-    const custs = await prisma.customer.findMany({
+    const custs = await dbClient.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
     });
-    return custs.map((c) => ({
+    return (custs || []).map((c: any) => ({
       id: c.id,
       name: c.name,
       nicNo: c.nicNo,
@@ -330,7 +359,7 @@ export class RelationalDatabaseStore {
       paidAmount: c.paidAmount,
       balanceAmount: c.totalAmount - c.paidAmount,
       status: (c.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED',
-      createdAt: c.createdAt.toISOString(),
+      createdAt: c.createdAt ? new Date(c.createdAt).toISOString() : new Date().toISOString(),
     }));
   }
 
@@ -371,7 +400,7 @@ export class RelationalDatabaseStore {
     status?: string;
   }): Promise<Customer> {
     const initialPaid = Math.abs(dto.paidAmount || 0);
-    const cust = await prisma.customer.create({
+    const cust = await this.customerDb.create({
       data: {
         name: dto.name,
         nicNo: dto.nicNo,
@@ -429,7 +458,7 @@ export class RelationalDatabaseStore {
     paidAmount: number;
     status: string;
   }>): Promise<Customer> {
-    const oldCust = await prisma.customer.findUnique({ where: { id } });
+    const oldCust = await this.customerDb.findUnique({ where: { id } });
 
     const dataToUpdate: any = {};
     if (dto.name !== undefined) dataToUpdate.name = dto.name;
@@ -441,7 +470,7 @@ export class RelationalDatabaseStore {
     if (dto.paidAmount !== undefined) dataToUpdate.paidAmount = Math.abs(dto.paidAmount);
     if (dto.status !== undefined) dataToUpdate.status = dto.status;
 
-    const cust = await prisma.customer.update({
+    const cust = await this.customerDb.update({
       where: { id },
       data: dataToUpdate,
     });
@@ -485,7 +514,7 @@ export class RelationalDatabaseStore {
   }
 
   public async deleteCustomer(id: string): Promise<boolean> {
-    await prisma.customer.delete({ where: { id } });
+    await this.customerDb.delete({ where: { id } });
     return true;
   }
 
@@ -498,6 +527,9 @@ export class RelationalDatabaseStore {
     search?: string;
     status?: string;
   }): Promise<MonthlyPayment[]> {
+    const dbClient = this.monthlyPaymentDb;
+    if (!dbClient) return [];
+
     const whereClause: any = {};
     if (filter?.month) whereClause.month = filter.month;
     if (filter?.customerId) whereClause.customerId = filter.customerId;
@@ -508,12 +540,12 @@ export class RelationalDatabaseStore {
       ];
     }
 
-    const recs = await prisma.monthlyPayment.findMany({
+    const recs = await dbClient.findMany({
       where: whereClause,
       orderBy: [{ month: 'desc' }, { createdAt: 'desc' }],
     });
 
-    return recs.map((r) => {
+    return (recs || []).map((r: any) => {
       const balance = Math.max(0, r.monthlyFee - r.paidAmount);
       let status: 'PAID' | 'PARTIAL' | 'UNPAID' = 'UNPAID';
       if (balance === 0 && r.paidAmount > 0) status = 'PAID';
@@ -534,7 +566,7 @@ export class RelationalDatabaseStore {
         balanceAmount: balance,
         status,
         paymentDate: r.paymentDate,
-        createdAt: r.createdAt.toISOString(),
+        createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : new Date().toISOString(),
       };
     }).filter(Boolean) as MonthlyPayment[];
   }
