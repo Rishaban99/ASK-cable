@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Customer, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
+import { SuccessModal, SuccessData } from './SuccessModal.js';
+import { useToast } from './Toast.js';
 import {
   UserPlus,
   Users,
@@ -36,6 +38,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   currentUser,
   onViewHistory,
 }) => {
+  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -127,13 +130,19 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       });
 
       setPayBalanceCustomer(null);
+      toast.success(`Payment of ${formatMoney(addPay, currency)} recorded for "${payBalanceCustomer.name}"`);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to process balance payment');
+      const msg = err.message || 'Failed to process balance payment';
+      toast.error(msg);
     } finally {
       setIsPaying(false);
     }
   };
+
+  // Success Screen Modal States
+  const [successModalData, setSuccessModalData] = useState<SuccessData | null>(null);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   // Handle Customer Registration Submit
   const handleCreateCustomer = async (e: React.FormEvent) => {
@@ -146,7 +155,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 
     setIsSubmitting(true);
     try {
-      await api.createCustomer({
+      const createdCust = await api.createCustomer({
         name: name.trim(),
         nicNo: nicNo.trim(),
         phoneNo: phoneNo.trim(),
@@ -167,9 +176,31 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       setPaidAmount('');
       setStatus('ACTIVE');
 
+      // Trigger Success Screen Modal
+      setSuccessModalData({
+        title: 'Customer Registered Successfully!',
+        message: `Subscriber ${createdCust.name} (Box: ${createdCust.boxNo}) has been added to the database.`,
+        details: {
+          customerName: createdCust.name,
+          nicNo: createdCust.nicNo,
+          phoneNo: createdCust.phoneNo,
+          boxNo: createdCust.boxNo,
+          totalAmount: createdCust.totalAmount,
+          paidAmount: createdCust.paidAmount,
+          balanceAmount: createdCust.balanceAmount,
+          status: createdCust.status,
+        },
+        onPrintBill: () => handlePrintCustomerBill(createdCust),
+        onViewHistory: onViewHistory ? () => onViewHistory(createdCust.id) : undefined,
+      });
+      setIsSuccessModalOpen(true);
+      toast.success(`Customer "${createdCust.name}" registered successfully!`);
+
       onRefreshData();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to register customer');
+      const msg = err.message || 'Failed to register customer';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -205,10 +236,12 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         status: editStatus,
       });
 
+      toast.success(`Customer "${editName.trim()}" updated successfully!`);
       setEditingCustomer(null);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update customer details');
+      const msg = err.message || 'Failed to update customer details';
+      toast.error(msg);
     }
   };
 
@@ -217,9 +250,11 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     if (!confirm(`Are you sure you want to delete customer "${name}"? This action cannot be undone.`)) return;
     try {
       await api.deleteCustomer(id);
+      toast.success(`Customer "${name}" deleted successfully!`);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete customer');
+      const msg = err.message || 'Failed to delete customer';
+      toast.error(msg);
     }
   };
 
@@ -494,99 +529,124 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
               </div>
             </div>
 
-            {/* Mobile Cards View (block md:hidden) */}
-            <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-950 rounded-lg border border-neutral-800">
+            {/* Mobile Cards View (block md:hidden) - Perfectly Aligned */}
+            <div className="block md:hidden space-y-3">
               {filteredCustomers.length === 0 ? (
-                <div className="p-6 text-center text-neutral-500 text-xs">
+                <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-950 rounded-xl border border-neutral-800">
                   No customer records found matching the criteria.
                 </div>
               ) : (
                 filteredCustomers.map((cust) => (
-                  <div key={cust.id} className="p-4 space-y-3 bg-neutral-900/40">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-bold text-white text-sm">{cust.name}</p>
-                        <p className="text-xs text-neutral-400">{cust.address || 'No Address'}</p>
-                        <p className="text-[11px] font-mono text-neutral-400 mt-0.5">NIC: {cust.nicNo} • Tel: {cust.phoneNo}</p>
+                  <div key={cust.id} className="p-4 space-y-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all">
+                    {/* Header: Name + Status Badge + Box No Pill */}
+                    <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center flex-wrap gap-2">
+                          <h3 className="font-bold text-white text-base leading-tight">{cust.name}</h3>
+                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded font-mono ${
+                            (cust.status || 'ACTIVE') === 'ACTIVE'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : (cust.status || 'ACTIVE') === 'INACTIVE'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          }`}>
+                            {cust.status || 'ACTIVE'}
+                          </span>
+                        </div>
+                        {cust.address && (
+                          <p className="text-xs text-neutral-400 leading-normal">{cust.address}</p>
+                        )}
+                        <p className="text-[11px] font-mono text-neutral-400 flex items-center flex-wrap gap-x-2">
+                          <span>NIC: {cust.nicNo || 'N/A'}</span>
+                          <span>•</span>
+                          <span>Tel: {cust.phoneNo || 'N/A'}</span>
+                        </p>
                       </div>
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[11px] font-semibold text-emerald-400 font-mono">
-                          {cust.boxNo}
-                        </span>
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded font-mono ${
-                          (cust.status || 'ACTIVE') === 'ACTIVE'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                            : (cust.status || 'ACTIVE') === 'INACTIVE'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        }`}>
-                          {cust.status || 'ACTIVE'}
+
+                      <div className="shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-bold text-emerald-400 shadow-xs">
+                          <Box className="w-3 h-3 text-neutral-500" />
+                          <span>{cust.boxNo || '-'}</span>
                         </span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 p-2.5 bg-neutral-950 rounded-lg border border-neutral-850 font-mono text-xs">
-                      <div>
-                        <span className="text-[10px] text-neutral-500 block">Total</span>
-                        <span className="text-neutral-300 font-medium">{formatMoney(cust.totalAmount, currency)}</span>
+                    {/* Financial Metrics 3-Column Card */}
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-neutral-950 rounded-xl border border-neutral-800 text-center font-mono text-xs">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Total</span>
+                        <span className="text-neutral-200 font-semibold block">{formatMoney(cust.totalAmount, currency)}</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 block">Paid</span>
-                        <span className="text-emerald-400 font-medium">{formatMoney(cust.paidAmount, currency)}</span>
+                      <div className="space-y-0.5 border-x border-neutral-850 px-1">
+                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Paid</span>
+                        <span className="text-emerald-400 font-semibold block">{formatMoney(cust.paidAmount, currency)}</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 block">Balance</span>
-                        <span className={`font-bold ${cust.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Balance</span>
+                        <span className={`font-bold block ${cust.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
                           {formatMoney(cust.balanceAmount, currency)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                      <div className="flex items-center gap-1.5">
-                        {cust.balanceAmount > 0 && (
+                    {/* Perfectly Aligned Action Buttons Grid */}
+                    <div className="flex flex-col gap-2 pt-1">
+                      {/* Top Row Primary Actions */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {cust.balanceAmount > 0 ? (
                           <button
                             onClick={() => handleOpenPayBalance(cust)}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 rounded text-xs font-semibold cursor-pointer"
+                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
                           >
-                            <CreditCard className="w-3.5 h-3.5" />
+                            <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
                             <span>Pay Balance</span>
                           </button>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-medium font-mono">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Fully Paid</span>
+                          </div>
                         )}
+
                         {onViewHistory && (
                           <button
                             onClick={() => onViewHistory(cust.id)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 rounded text-xs font-medium cursor-pointer"
+                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
                           >
-                            <History className="w-3.5 h-3.5" />
+                            <History className="w-3.5 h-3.5 text-indigo-400" />
                             <span>History</span>
                           </button>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
+
+                      {/* Bottom Row Secondary Actions */}
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/60">
                         <button
                           onClick={() => handlePrintCustomerBill(cust)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 bg-neutral-800 border border-neutral-700 text-neutral-200 rounded text-xs font-medium cursor-pointer"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-neutral-950 border border-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-800 rounded-lg text-xs font-medium transition-all cursor-pointer"
                         >
                           <Printer className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Bill</span>
+                          <span>Print Bill</span>
                         </button>
-                        <button
-                          onClick={() => handleOpenEdit(cust)}
-                          className="p-1.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800 rounded"
-                          title="Edit Customer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        {currentUser?.role === 'ADMIN' && (
+
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <button
-                            onClick={() => handleDelete(cust.id, cust.name)}
-                            className="p-1.5 text-neutral-400 hover:text-rose-400 bg-neutral-800 rounded"
-                            title="Delete Customer"
+                            onClick={() => handleOpenEdit(cust)}
+                            className="p-2 text-neutral-300 hover:text-emerald-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Customer"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                        )}
+                          {currentUser?.role === 'ADMIN' && (
+                            <button
+                              onClick={() => handleDelete(cust.id, cust.name)}
+                              className="p-2 text-neutral-300 hover:text-rose-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Customer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -958,6 +1018,14 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         isOpen={isBillModalOpen}
         onClose={() => setIsBillModalOpen(false)}
         billData={activeBillData}
+        currency={currency}
+      />
+
+      {/* Success Screen Modal */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        data={successModalData}
         currency={currency}
       />
     </div>

@@ -338,6 +338,24 @@ router.post('/monthly-payments', async (req, res) => {
   }
 });
 
+router.post('/monthly-payments/bulk', async (req, res) => {
+  try {
+    const { month, defaultFee } = req.body;
+    if (!month) {
+      return res.status(400).json({ error: 'Month (YYYY-MM) is required for bulk creation' });
+    }
+
+    const result = await db.bulkCreateMonthlyPayments({
+      month,
+      defaultFee: defaultFee ? Number(defaultFee) : 1300,
+    });
+
+    res.status(201).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to bulk create monthly payments' });
+  }
+});
+
 router.put('/monthly-payments/:id', async (req, res) => {
   try {
     const payment = await db.updateMonthlyPayment(req.params.id, req.body);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES } from '../types/finance.js';
 import { api } from '../api/client.js';
+import { useToast } from './Toast.js';
 import {
   Settings,
   Shield,
@@ -72,6 +73,7 @@ const PAGE_DEFINITIONS: {
 ];
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivilegesUpdated }) => {
+  const toast = useToast();
   // Privileges State
   const [privileges, setPrivileges] = useState<StaffPrivileges>(() => {
     try {
@@ -147,11 +149,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
     try {
       await api.setStaffPrivileges(updated);
       setPrivilegeSaveStatus(successMsg);
+      toast.success(successMsg);
       setTimeout(() => setPrivilegeSaveStatus(null), 2500);
       if (onPrivilegesUpdated) onPrivilegesUpdated();
     } catch (e: any) {
       console.error('Failed to save staff privileges to DB:', e);
       setPrivilegeSaveStatus('Saved to DB & Local state');
+      toast.success('Saved staff privileges');
       setTimeout(() => setPrivilegeSaveStatus(null), 2500);
     }
   };
@@ -187,7 +191,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
     setUserSuccess(null);
 
     if (!newUsername.trim() || !newName.trim() || !newPassword.trim()) {
-      setUserError('Please fill in all user fields.');
+      const msg = 'Please fill in all user fields.';
+      setUserError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -199,7 +205,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
         password: newPassword.trim(),
         role: newRole,
       });
-      setUserSuccess(`User "${newUsername}" created successfully!`);
+      const msg = `User "${newUsername}" created successfully!`;
+      setUserSuccess(msg);
+      toast.success(msg);
       setNewUsername('');
       setNewName('');
       setNewPassword('');
@@ -208,7 +216,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
       await fetchUsers();
       setTimeout(() => setUserSuccess(null), 3000);
     } catch (err: any) {
-      setUserError(err?.message || 'Failed to create user account.');
+      const msg = err?.message || 'Failed to create user account.';
+      setUserError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmittingUser(false);
     }
@@ -217,7 +227,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
   // Delete User Handler
   const handleDeleteUser = async (userToDelete: User) => {
     if (userToDelete.username.toLowerCase() === currentUser.username.toLowerCase()) {
-      alert('You cannot delete your own active account!');
+      const msg = 'You cannot delete your own active account!';
+      toast.error(msg);
       return;
     }
     if (!confirm(`Are you sure you want to delete user account "${userToDelete.name}" (${userToDelete.username})?`)) {
@@ -226,11 +237,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
 
     try {
       await api.deleteUser(userToDelete.id);
-      setUserSuccess(`User "${userToDelete.username}" deleted successfully.`);
+      const msg = `User "${userToDelete.username}" deleted successfully.`;
+      setUserSuccess(msg);
+      toast.success(msg);
       await fetchUsers();
       setTimeout(() => setUserSuccess(null), 3000);
     } catch (err: any) {
-      setUserError(err?.message || 'Failed to delete user.');
+      const msg = err?.message || 'Failed to delete user.';
+      setUserError(msg);
+      toast.error(msg);
     }
   };
 

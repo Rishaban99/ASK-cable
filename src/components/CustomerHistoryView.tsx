@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Customer, MonthlyPayment, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
+import { useToast } from './Toast.js';
 import {
   History,
   Search,
@@ -43,6 +44,7 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
   selectedCustomerId: initialSelectedId,
   onSelectCustomer,
 }) => {
+  const toast = useToast();
   const [selectedCustId, setSelectedCustId] = useState<string>(initialSelectedId || (customers[0]?.id || ''));
   const [searchQuery, setSearchQuery] = useState('');
   const [historyFilter, setHistoryFilter] = useState<'ALL' | 'REGISTRATION' | 'MONTHLY' | 'UNPAID'>('ALL');
@@ -350,7 +352,7 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
     if (!payBalanceTarget) return;
     const addPay = parseFloat(payAmount);
     if (isNaN(addPay) || addPay <= 0) {
-      alert('Please enter a valid payment amount.');
+      toast.error('Please enter a valid payment amount.');
       return;
     }
 
@@ -366,10 +368,12 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
         });
       }
 
+      toast.success(`Payment of ${formatMoney(addPay, currency)} added for ${payBalanceTarget.name}`);
       setPayBalanceTarget(null);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to process balance payment');
+      const msg = err.message || 'Failed to process balance payment';
+      toast.error(msg);
     } finally {
       setIsPaying(false);
     }
@@ -664,80 +668,89 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
               </div>
             </div>
 
-            {/* Mobile Cards View (block md:hidden) */}
-            <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-950 rounded-lg border border-neutral-800">
+            {/* Mobile Cards View (block md:hidden) - Perfectly Aligned */}
+            <div className="block md:hidden space-y-3">
               {filteredHistoryItems.length === 0 ? (
-                <div className="p-6 text-center text-neutral-500 text-xs">
+                <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-950 rounded-xl border border-neutral-800">
                   No payment history records found matching filter "{historyFilter}".
                 </div>
               ) : (
                 filteredHistoryItems.map((item) => (
-                  <div key={item.id} className="p-4 space-y-3 bg-neutral-900/40">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-bold text-white text-sm">{item.title}</p>
-                        <div className="flex items-center gap-1.5 mt-1 font-mono text-[11px]">
-                          <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded font-semibold text-emerald-400">
-                            Box: {item.boxNo}
+                  <div key={item.id} className="p-4 space-y-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all">
+                    {/* Header: Title + Type & Status Badges */}
+                    <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                      <div className="space-y-1">
+                        <h3 className="font-bold text-white text-base leading-tight">{item.title}</h3>
+                        <div className="flex items-center flex-wrap gap-2 pt-0.5">
+                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded font-mono ${
+                            item.itemType === 'REGISTRATION'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                          }`}>
+                            {item.itemType}
                           </span>
-                          <span className="text-neutral-400">{item.periodOrDate}</span>
+                          <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded ${
+                            item.status === 'PAID'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : item.status === 'PARTIAL'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          }`}>
+                            {item.status}
+                          </span>
                         </div>
+                        <p className="text-[11px] font-mono text-neutral-400">Date/Period: {item.periodOrDate}</p>
                       </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded font-mono ${
-                          item.itemType === 'REGISTRATION'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                            : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                        }`}>
-                          {item.itemType}
-                        </span>
-                        <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded ${
-                          item.status === 'PAID'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                            : item.status === 'PARTIAL'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        }`}>
-                          {item.status}
+
+                      <div className="shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-bold text-emerald-400 shadow-xs">
+                          <Box className="w-3 h-3 text-neutral-500" />
+                          <span>{item.boxNo || '-'}</span>
                         </span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 p-2.5 bg-neutral-950 rounded-lg border border-neutral-850 font-mono text-xs">
-                      <div>
-                        <span className="text-[10px] text-neutral-500 block">Fee / Total</span>
-                        <span className="text-neutral-300 font-medium">{formatMoney(item.totalOrFee, currency)}</span>
+                    {/* Financial Metrics 3-Column Card */}
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-neutral-950 rounded-xl border border-neutral-800 text-center font-mono text-xs">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Fee / Total</span>
+                        <span className="text-neutral-200 font-semibold block">{formatMoney(item.totalOrFee, currency)}</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 block">Paid</span>
-                        <span className="text-emerald-400 font-medium">{formatMoney(item.paidAmount, currency)}</span>
+                      <div className="space-y-0.5 border-x border-neutral-850 px-1">
+                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Paid</span>
+                        <span className="text-emerald-400 font-semibold block">{formatMoney(item.paidAmount, currency)}</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 block">Balance</span>
-                        <span className={`font-bold ${item.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Balance</span>
+                        <span className={`font-bold block ${item.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
                           {formatMoney(item.balanceAmount, currency)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <div>
-                        {item.balanceAmount > 0 && (
-                          <button
-                            onClick={() => handleOpenPayBalance(item)}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 rounded text-xs font-semibold cursor-pointer"
-                          >
-                            <CreditCard className="w-3.5 h-3.5" />
-                            <span>Pay Balance</span>
-                          </button>
-                        )}
-                      </div>
+                    {/* Perfectly Aligned Action Buttons Grid */}
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/60">
+                      {item.balanceAmount > 0 ? (
+                        <button
+                          onClick={() => handleOpenPayBalance(item)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Pay Balance</span>
+                        </button>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-medium font-mono">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Fully Paid</span>
+                        </div>
+                      )}
+
                       <button
                         onClick={() => handlePrintHistoryItemBill(item)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-neutral-800 border border-neutral-700 text-neutral-200 rounded text-xs font-medium cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-neutral-950 border border-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-800 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-xs"
                       >
                         <Printer className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Bill</span>
+                        <span>Print Bill</span>
                       </button>
                     </div>
                   </div>

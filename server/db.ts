@@ -636,6 +636,86 @@ export class RelationalDatabaseStore {
     };
   }
 
+  public async bulkCreateMonthlyPayments(dto: {
+    month: string;
+    defaultFee?: number;
+  }): Promise<{
+    month: string;
+    totalActiveCustomers: number;
+    createdCount: number;
+    skippedCount: number;
+    totalBilledAmount: number;
+    skippedCustomerNames: string[];
+    createdCustomerNames: string[];
+  }> {
+    const dbClient = this.monthlyPaymentDb;
+    const custClient = this.customerDb;
+    if (!dbClient || !custClient) {
+      throw new Error('Database connection unavailable');
+    }
+
+    // 1. Fetch active customers (status ACTIVE or missing/null)
+    const allCustomers = await custClient.findMany();
+    const activeCustomers = (allCustomers || []).filter(
+      (c: any) => !c.status || c.status === 'ACTIVE'
+    );
+
+    // 2. Fetch existing monthly payments for target month
+    const existingPayments = await dbClient.findMany({
+      where: { month: dto.month },
+    });
+
+    const existingCustomerIds = new Set(existingPayments.map((p: any) => p.customerId));
+    const existingBoxNos = new Set(existingPayments.map((p: any) => (p.boxNo || '').toLowerCase()));
+
+    let createdCount = 0;
+    let skippedCount = 0;
+    let totalBilledAmount = 0;
+    const skippedCustomerNames: string[] = [];
+    const createdCustomerNames: string[] = [];
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const defaultFee = dto.defaultFee && dto.defaultFee > 0 ? dto.defaultFee : 1300;
+
+    for (const cust of activeCustomers) {
+      const isDuplicate =
+        existingCustomerIds.has(cust.id) ||
+        (cust.boxNo && existingBoxNos.has(cust.boxNo.toLowerCase()));
+
+      if (isDuplicate) {
+        skippedCount++;
+        skippedCustomerNames.push(`${cust.name} (Box: ${cust.boxNo})`);
+        continue;
+      }
+
+      await dbClient.create({
+        data: {
+          customerId: cust.id,
+          customerName: cust.name,
+          boxNo: cust.boxNo,
+          month: dto.month,
+          monthlyFee: defaultFee,
+          paidAmount: 0,
+          paymentDate: todayStr,
+        },
+      });
+
+      createdCount++;
+      totalBilledAmount += defaultFee;
+      createdCustomerNames.push(`${cust.name} (Box: ${cust.boxNo})`);
+    }
+
+    return {
+      month: dto.month,
+      totalActiveCustomers: activeCustomers.length,
+      createdCount,
+      skippedCount,
+      totalBilledAmount,
+      skippedCustomerNames,
+      createdCustomerNames,
+    };
+  }
+
   public async updateMonthlyPayment(
     id: string,
     dto: Partial<{

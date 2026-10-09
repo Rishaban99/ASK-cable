@@ -247,6 +247,24 @@ class ApiClient {
     return res.payment;
   }
 
+  async bulkCreateMonthlyPayments(data: {
+    month: string;
+    defaultFee?: number;
+  }): Promise<{
+    month: string;
+    totalActiveCustomers: number;
+    createdCount: number;
+    skippedCount: number;
+    totalBilledAmount: number;
+    skippedCustomerNames: string[];
+    createdCustomerNames: string[];
+  }> {
+    return await this.request('/monthly-payments/bulk', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async updateMonthlyPayment(id: string, data: Partial<MonthlyPayment>): Promise<MonthlyPayment> {
     const res = await this.request<{ payment: MonthlyPayment }>(`/monthly-payments/${id}`, {
       method: 'PUT',

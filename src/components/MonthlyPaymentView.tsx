@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Customer, MonthlyPayment, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
+import { SuccessModal, SuccessData } from './SuccessModal.js';
+import { useToast } from './Toast.js';
 import {
   Calendar,
   Search,
@@ -16,7 +18,14 @@ import {
   Filter,
   DollarSign,
   Printer,
-  History
+  History,
+  Box,
+  ShieldCheck,
+  Layers,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  CopyCheck
 } from 'lucide-react';
 
 interface MonthlyPaymentViewProps {
@@ -36,6 +45,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   currentUser,
   onViewHistory,
 }) => {
+  const toast = useToast();
   // Current Month YYYY-MM
   const currentMonthStr = new Date().toISOString().slice(0, 7);
   const todayStr = new Date().toISOString().split('T')[0];
@@ -104,6 +114,53 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
     setIsBillModalOpen(true);
   };
 
+  // Success Modal State
+  const [successModalData, setSuccessModalData] = useState<SuccessData | null>(null);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
+  // Bulk Monthly Generator States (Admin Only)
+  const [bulkMonth, setBulkMonth] = useState(() => new Date().toISOString().substring(0, 7));
+  const [bulkDefaultFee, setBulkDefaultFee] = useState('1300');
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+  const [bulkResultCard, setBulkResultCard] = useState<{
+    month: string;
+    totalActiveCustomers: number;
+    createdCount: number;
+    skippedCount: number;
+    totalBilledAmount: number;
+    skippedCustomerNames: string[];
+    createdCustomerNames: string[];
+  } | null>(null);
+  const [showSkippedDetails, setShowSkippedDetails] = useState(false);
+
+  const handleBulkCreateMonthlyPayments = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bulkMonth) {
+      alert('Please select a target month for bulk creation.');
+      return;
+    }
+    const feeNum = parseFloat(bulkDefaultFee) || 1300;
+    if (!confirm(`Generate monthly dues for ALL ACTIVE subscribers for ${bulkMonth} at ${formatMoney(feeNum, currency)} each? Existing subscriber records for this month will be skipped automatically.`)) {
+      return;
+    }
+
+    setIsBulkSubmitting(true);
+    try {
+      const res = await api.bulkCreateMonthlyPayments({
+        month: bulkMonth,
+        defaultFee: feeNum,
+      });
+      setBulkResultCard(res);
+      toast.success(`Bulk monthly dues generated for ${res.createdCount} active subscribers!`);
+      onRefreshData();
+    } catch (err: any) {
+      const msg = err.message || 'Failed to bulk generate monthly payments';
+      toast.error(msg);
+    } finally {
+      setIsBulkSubmitting(false);
+    }
+  };
+
   // Handle Record Monthly Payment Submission
   const handleCreatePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +181,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
     setIsSubmitting(true);
     try {
-      await api.createMonthlyPayment({
+      const createdPmt = await api.createMonthlyPayment({
         customerId: selectedCustomerId,
         month,
         monthlyFee: parsedFee,
@@ -137,9 +194,30 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
       setPaidAmount('');
       setErrorMsg('');
 
+      // Trigger Success Screen Modal
+      setSuccessModalData({
+        title: 'Payment Recorded Successfully!',
+        message: `Monthly payment of ${formatMoney(createdPmt.paidAmount, currency)} for ${createdPmt.customerName} (${createdPmt.month}) has been saved.`,
+        details: {
+          customerName: createdPmt.customerName,
+          boxNo: createdPmt.boxNo,
+          month: createdPmt.month,
+          totalAmount: createdPmt.monthlyFee,
+          paidAmount: createdPmt.paidAmount,
+          balanceAmount: createdPmt.balanceAmount,
+          status: createdPmt.status,
+        },
+        onPrintBill: () => handlePrintMonthlyBill(createdPmt),
+        onViewHistory: onViewHistory && createdPmt.customerId ? () => onViewHistory(createdPmt.customerId) : undefined,
+      });
+      setIsSuccessModalOpen(true);
+      toast.success(`Payment recorded for ${createdPmt.customerName} (${createdPmt.month})`);
+
       onRefreshData();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to record monthly payment');
+      const msg = err.message || 'Failed to record monthly payment';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -167,10 +245,12 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
         paymentDate: editPaymentDate,
       });
 
+      toast.success(`Monthly payment record for "${editingPayment.customerName}" updated!`);
       setEditingPayment(null);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update monthly payment');
+      const msg = err.message || 'Failed to update monthly payment';
+      toast.error(msg);
     }
   };
 
@@ -186,7 +266,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
     if (!payBalancePayment) return;
     const addPay = parseFloat(payAmount);
     if (isNaN(addPay) || addPay <= 0) {
-      alert('Please enter a valid payment amount.');
+      toast.error('Please enter a valid payment amount.');
       return;
     }
 
@@ -198,10 +278,12 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
         paymentDate: todayStr,
       });
 
+      toast.success(`Payment of ${formatMoney(addPay, currency)} added for ${payBalancePayment.customerName}`);
       setPayBalancePayment(null);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to process balance payment');
+      const msg = err.message || 'Failed to process balance payment';
+      toast.error(msg);
     } finally {
       setIsPaying(false);
     }
@@ -212,9 +294,11 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
     if (!confirm(`Are you sure you want to delete monthly payment for ${customerName} (${month})?`)) return;
     try {
       await api.deleteMonthlyPayment(id);
+      toast.success(`Monthly payment for ${customerName} (${month}) deleted!`);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete payment');
+      const msg = err.message || 'Failed to delete payment';
+      toast.error(msg);
     }
   };
 
@@ -364,125 +448,247 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
       {/* Main Grid: Form (Left) & Ledger Table (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 1. Record Monthly Payment Form */}
-        <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 h-fit shadow-xl">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-            <h2 className="text-base font-semibold text-white flex items-center gap-2">
-              <PlusCircle className="w-4 h-4 text-emerald-400" />
-              <span>Record Monthly Payment</span>
-            </h2>
-            <span className="text-[11px] font-mono text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-              Auto Income Sync
-            </span>
-          </div>
-
-          {errorMsg && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-md flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleCreatePayment} className="space-y-4 text-xs">
-            {/* Customer Dropdown */}
-            <div>
-              <label className="block text-neutral-400 font-medium mb-1">Select Customer *</label>
-              <select
-                required
-                value={selectedCustomerId}
-                onChange={(e) => setSelectedCustomerId(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-emerald-500/50"
-              >
-                <option value="">-- Choose Registered Customer --</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} (Box: {c.boxNo})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Box No Display */}
-            {selectedCustomer && (
-              <div className="p-2.5 rounded-md bg-neutral-950 border border-neutral-850 flex items-center justify-between text-neutral-300">
-                <span className="text-neutral-400">Assigned Box No:</span>
-                <span className="font-mono font-bold text-emerald-400">{selectedCustomer.boxNo}</span>
-              </div>
-            )}
-
-            {/* Payment Month */}
-            <div>
-              <label className="block text-neutral-400 font-medium mb-1">Payment Month *</label>
-              <input
-                type="month"
-                required
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
-              />
-            </div>
-
-            {/* Financial Dues */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-neutral-400 font-medium mb-1">Monthly Fee (LKR) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  required
-                  placeholder="1000.00"
-                  value={monthlyFee}
-                  onChange={(e) => setMonthlyFee(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-medium mb-1">Paid Amount (LKR)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={paidAmount}
-                  onChange={(e) => setPaidAmount(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
-                />
-              </div>
-            </div>
-
-            {/* Balance Badge */}
-            <div className="p-3 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between">
-              <span className="text-neutral-400 font-medium">Calculated Balance Due:</span>
-              <span className={`font-mono font-bold text-sm ${
-                calculatedFormBalance === 0 ? 'text-emerald-400' : 'text-amber-400'
-              }`}>
-                {formatMoney(calculatedFormBalance, currency)}
+        {/* 1. Left Column: Individual Form & Admin Bulk Dues Generator */}
+        <div className="space-y-6">
+          {/* Individual Payment Form */}
+          <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 shadow-xl">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-emerald-400" />
+                <span>Record Monthly Payment</span>
+              </h2>
+              <span className="text-[11px] font-mono text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                Auto Income Sync
               </span>
             </div>
 
-            {/* Payment Date */}
-            <div>
-              <label className="block text-neutral-400 font-medium mb-1">Payment Date</label>
-              <input
-                type="date"
-                required
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
-              />
-            </div>
+            {errorMsg && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-md flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-2.5 px-4 text-xs font-semibold text-neutral-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>{isSubmitting ? 'Recording...' : 'Record Monthly Payment'}</span>
-            </button>
-          </form>
+            <form onSubmit={handleCreatePayment} className="space-y-4 text-xs">
+              {/* Customer Dropdown */}
+              <div>
+                <label className="block text-neutral-400 font-medium mb-1">Select Customer *</label>
+                <select
+                  required
+                  value={selectedCustomerId}
+                  onChange={(e) => setSelectedCustomerId(e.target.value)}
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-emerald-500/50"
+                >
+                  <option value="">-- Choose Registered Customer --</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} (Box: {c.boxNo})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Box No Display */}
+              {selectedCustomer && (
+                <div className="p-2.5 rounded-md bg-neutral-950 border border-neutral-850 flex items-center justify-between text-neutral-300">
+                  <span className="text-neutral-400">Assigned Box No:</span>
+                  <span className="font-mono font-bold text-emerald-400">{selectedCustomer.boxNo}</span>
+                </div>
+              )}
+
+              {/* Payment Month */}
+              <div>
+                <label className="block text-neutral-400 font-medium mb-1">Payment Month *</label>
+                <input
+                  type="month"
+                  required
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
+                />
+              </div>
+
+              {/* Financial Dues */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-400 font-medium mb-1">Monthly Fee (LKR) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    placeholder="1000.00"
+                    value={monthlyFee}
+                    onChange={(e) => setMonthlyFee(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-neutral-400 font-medium mb-1">Paid Amount (LKR)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
+                  />
+                </div>
+              </div>
+
+              {/* Balance Badge */}
+              <div className="p-3 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between">
+                <span className="text-neutral-400 font-medium">Calculated Balance Due:</span>
+                <span className={`font-mono font-bold text-sm ${
+                  calculatedFormBalance === 0 ? 'text-emerald-400' : 'text-amber-400'
+                }`}>
+                  {formatMoney(calculatedFormBalance, currency)}
+                </span>
+              </div>
+
+              {/* Payment Date */}
+              <div>
+                <label className="block text-neutral-400 font-medium mb-1">Payment Date</label>
+                <input
+                  type="date"
+                  required
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-2.5 px-4 text-xs font-semibold text-neutral-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>{isSubmitting ? 'Recording...' : 'Record Monthly Payment'}</span>
+              </button>
+            </form>
+          </div>
+
+          {/* 2. Admin-Only Per-Month Bulk Dues Generator */}
+          {currentUser?.role === 'ADMIN' && (
+            <div className="p-6 rounded-xl bg-neutral-900 border border-indigo-500/30 space-y-4 shadow-xl relative overflow-hidden">
+              {/* Card Header */}
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-indigo-400" />
+                  <span>Bulk Create Monthly Bills</span>
+                </h2>
+                <span className="text-[10px] font-mono font-bold text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-indigo-400" />
+                  <span>ADMIN ACCESS ONLY</span>
+                </span>
+              </div>
+
+              <p className="text-xs text-neutral-400 leading-normal">
+                Auto-create monthly dues for all active subscribers for the selected month. <strong className="text-emerald-400 font-semibold">Duplicate prevention</strong> skips existing subscriber bills.
+              </p>
+
+              <form onSubmit={handleBulkCreateMonthlyPayments} className="space-y-4 text-xs">
+                {/* Target Month & Fee */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-neutral-400 font-medium mb-1">Target Month *</label>
+                    <input
+                      type="month"
+                      required
+                      value={bulkMonth}
+                      onChange={(e) => setBulkMonth(e.target.value)}
+                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-indigo-500/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-neutral-400 font-medium mb-1">Fee Per Subscriber (LKR)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="1"
+                      required
+                      value={bulkDefaultFee}
+                      onChange={(e) => setBulkDefaultFee(e.target.value)}
+                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-indigo-500/50"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isBulkSubmitting}
+                  className="w-full py-2.5 px-4 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-md transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Zap className="w-4 h-4 text-indigo-300 fill-indigo-300" />
+                  <span>{isBulkSubmitting ? 'Generating Dues...' : 'Bulk Create Monthly Bills'}</span>
+                </button>
+              </form>
+
+              {/* Status Card Overview */}
+              {bulkResultCard && (
+                <div className="p-4 bg-neutral-950 border border-emerald-500/30 rounded-xl space-y-3 font-mono text-xs animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between border-b border-neutral-850 pb-2">
+                    <span className="font-bold text-emerald-400 flex items-center gap-1.5 font-sans text-xs">
+                      <CopyCheck className="w-4 h-4 text-emerald-400" />
+                      <span>Bulk Generation Status</span>
+                    </span>
+                    <span className="text-[11px] text-neutral-400 font-mono">Period: {bulkResultCard.month}</span>
+                  </div>
+
+                  {/* 3-Column Status Stat Card */}
+                  <div className="grid grid-cols-3 gap-2 p-2 bg-neutral-900 border border-neutral-850 rounded-lg text-center text-[11px]">
+                    <div>
+                      <span className="text-[10px] text-neutral-500 block font-sans uppercase">Active</span>
+                      <span className="font-bold text-white">{bulkResultCard.totalActiveCustomers}</span>
+                    </div>
+                    <div className="border-x border-neutral-850 px-1">
+                      <span className="text-[10px] text-neutral-500 block font-sans uppercase text-emerald-400">Created</span>
+                      <span className="font-bold text-emerald-400">+{bulkResultCard.createdCount}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-neutral-500 block font-sans uppercase text-amber-400">Skipped</span>
+                      <span className="font-bold text-amber-400">{bulkResultCard.skippedCount}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] text-neutral-300 space-y-1 font-sans">
+                    <p className="flex justify-between">
+                      <span className="text-neutral-400">Total Billed Added:</span>
+                      <strong className="text-emerald-400 font-mono">{formatMoney(bulkResultCard.totalBilledAmount, currency)}</strong>
+                    </p>
+                  </div>
+
+                  {/* Skipped Duplicates Collapsible Details */}
+                  {bulkResultCard.skippedCount > 0 && (
+                    <div className="pt-2 border-t border-neutral-850 space-y-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowSkippedDetails(!showSkippedDetails)}
+                        className="w-full flex items-center justify-between text-[11px] text-amber-400 font-medium hover:underline cursor-pointer"
+                      >
+                        <span>View Skipped Duplicates ({bulkResultCard.skippedCount})</span>
+                        {showSkippedDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </button>
+
+                      {showSkippedDetails && (
+                        <div className="max-h-28 overflow-y-auto space-y-1 p-2 bg-neutral-900 border border-neutral-800 rounded-lg text-[10px] font-mono text-neutral-400">
+                          {bulkResultCard.skippedCustomerNames.map((name, idx) => (
+                            <div key={idx} className="flex items-center gap-1 text-neutral-300">
+                              <span className="text-amber-400">•</span>
+                              <span>{name} (Duplicate Skipped)</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 2. Monthly Payments Ledger Table (Right 2 Cols) */}
@@ -542,99 +748,120 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
               </div>
             </div>
 
-            {/* Mobile Cards View (block md:hidden) */}
-            <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-950 rounded-lg border border-neutral-800">
+            {/* Mobile Cards View (block md:hidden) - Perfectly Aligned */}
+            <div className="block md:hidden space-y-3">
               {filteredPayments.length === 0 ? (
-                <div className="p-6 text-center text-neutral-500 text-xs">
+                <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-950 rounded-xl border border-neutral-800">
                   No monthly payment records match the current filters.
                 </div>
               ) : (
                 filteredPayments.map((pmt) => (
-                  <div key={pmt.id} className="p-4 space-y-3 bg-neutral-900/40">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-bold text-white text-sm">{pmt.customerName}</p>
-                        <div className="flex items-center gap-1.5 mt-1 font-mono text-[11px]">
-                          <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded font-semibold text-emerald-400">
-                            {pmt.boxNo}
+                  <div key={pmt.id} className="p-4 space-y-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all">
+                    {/* Header: Name + Status Badge + Box No Pill */}
+                    <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center flex-wrap gap-2">
+                          <h3 className="font-bold text-white text-base leading-tight">{pmt.customerName}</h3>
+                          <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded ${
+                            pmt.status === 'PAID'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : pmt.status === 'PARTIAL'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          }`}>
+                            {pmt.status}
                           </span>
-                          <span className="text-neutral-400">Month: {pmt.month}</span>
                         </div>
+                        <p className="text-[11px] font-mono text-neutral-400 flex items-center gap-1.5">
+                          <Calendar className="w-3 h-3 text-neutral-500 inline" />
+                          <span>Month: <strong className="text-neutral-200">{pmt.month}</strong></span>
+                        </p>
                       </div>
-                      <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded shrink-0 ${
-                        pmt.status === 'PAID'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : pmt.status === 'PARTIAL'
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                      }`}>
-                        {pmt.status}
-                      </span>
+
+                      <div className="shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-bold text-emerald-400 shadow-xs">
+                          <Box className="w-3 h-3 text-neutral-500" />
+                          <span>{pmt.boxNo || '-'}</span>
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 p-2.5 bg-neutral-950 rounded-lg border border-neutral-850 font-mono text-xs">
-                      <div>
-                        <span className="text-[10px] text-neutral-500 block">Monthly Fee</span>
-                        <span className="text-neutral-300 font-medium">{formatMoney(pmt.monthlyFee, currency)}</span>
+                    {/* Financial Metrics 3-Column Card */}
+                    <div className="grid grid-cols-3 gap-2 p-3 bg-neutral-950 rounded-xl border border-neutral-800 text-center font-mono text-xs">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Monthly Fee</span>
+                        <span className="text-neutral-200 font-semibold block">{formatMoney(pmt.monthlyFee, currency)}</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 block">Paid</span>
-                        <span className="text-emerald-400 font-medium">{formatMoney(pmt.paidAmount, currency)}</span>
+                      <div className="space-y-0.5 border-x border-neutral-850 px-1">
+                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Paid</span>
+                        <span className="text-emerald-400 font-semibold block">{formatMoney(pmt.paidAmount, currency)}</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] text-neutral-500 block">Balance</span>
-                        <span className={`font-bold ${pmt.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Balance</span>
+                        <span className={`font-bold block ${pmt.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
                           {formatMoney(pmt.balanceAmount, currency)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                      <div className="flex items-center gap-1.5">
-                        {pmt.balanceAmount > 0 && (
+                    {/* Perfectly Aligned Action Buttons Grid */}
+                    <div className="flex flex-col gap-2 pt-1">
+                      {/* Top Row Primary Actions */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {pmt.balanceAmount > 0 ? (
                           <button
                             onClick={() => handleOpenPayBalance(pmt)}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 rounded text-xs font-semibold cursor-pointer"
+                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
                           >
-                            <CreditCard className="w-3.5 h-3.5" />
+                            <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
                             <span>Pay Balance</span>
                           </button>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-medium font-mono">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Fully Paid</span>
+                          </div>
                         )}
+
                         {onViewHistory && pmt.customerId && (
                           <button
                             onClick={() => onViewHistory(pmt.customerId)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 rounded text-xs font-medium cursor-pointer"
+                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
                           >
-                            <History className="w-3.5 h-3.5" />
+                            <History className="w-3.5 h-3.5 text-indigo-400" />
                             <span>History</span>
                           </button>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      {/* Bottom Row Secondary Actions */}
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/60">
                         <button
                           onClick={() => handlePrintMonthlyBill(pmt)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 bg-neutral-800 border border-neutral-700 text-neutral-200 rounded text-xs font-medium cursor-pointer"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-neutral-950 border border-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-800 rounded-lg text-xs font-medium transition-all cursor-pointer"
                         >
                           <Printer className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Bill</span>
+                          <span>Print Bill</span>
                         </button>
-                        <button
-                          onClick={() => handleOpenEdit(pmt)}
-                          className="p-1.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800 rounded"
-                          title="Edit Record"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        {currentUser?.role !== 'STAFF' && (
+
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <button
-                            onClick={() => handleDelete(pmt.id, pmt.customerName, pmt.month)}
-                            className="p-1.5 text-neutral-400 hover:text-rose-400 bg-neutral-800 rounded"
-                            title="Delete Record"
+                            onClick={() => handleOpenEdit(pmt)}
+                            className="p-2 text-neutral-300 hover:text-emerald-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Record"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                        )}
+                          {currentUser?.role !== 'STAFF' && (
+                            <button
+                              onClick={() => handleDelete(pmt.id, pmt.customerName, pmt.month)}
+                              className="p-2 text-neutral-300 hover:text-rose-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -958,6 +1185,14 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
         isOpen={isBillModalOpen}
         onClose={() => setIsBillModalOpen(false)}
         billData={activeBillData}
+        currency={currency}
+      />
+
+      {/* Success Screen Modal */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        data={successModalData}
         currency={currency}
       />
     </div>

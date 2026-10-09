@@ -12,7 +12,7 @@ import {
   DEFAULT_STAFF_PRIVILEGES
 } from './types/finance.js';
 import { api } from './api/client.js';
-import { Navbar, NavTab } from './components/Navbar.js';
+import { Sidebar, NavTab } from './components/Sidebar.js';
 import { DashboardView } from './components/DashboardView.js';
 import { TransactionsView } from './components/TransactionsView.js';
 import { SummaryView } from './components/SummaryView.js';
@@ -159,20 +159,18 @@ export default function App() {
 
   // Render Login View if Unauthenticated
   if (!currentUser) {
-    return <LoginView onLoginSuccess={handleLoginSuccess} />;
+    return <LoginView onLoginSuccess={handleLoginSuccess} theme={theme} onToggleTheme={toggleTheme} />;
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 flex flex-col font-sans selection:bg-emerald-500/20 selection:text-emerald-300 ${
+    <div className={`min-h-screen transition-colors duration-200 flex flex-col md:flex-row font-sans selection:bg-emerald-500/20 selection:text-emerald-300 ${
       theme === 'light' ? 'theme-light bg-slate-50 text-slate-900' : 'bg-neutral-950 text-neutral-100'
     }`}>
-      {/* Universal Top Navigation */}
-      <Navbar
+      {/* Side Menu Navigation (Desktop Fixed + Mobile Drawer Overlay) */}
+      <Sidebar
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         currency={currency}
-        onOpenRecordModal={() => setIsRecordModalOpen(true)}
-        analytics={analytics}
         currentUser={currentUser}
         onLogout={handleLogout}
         staffPrivileges={staffPrivileges}
@@ -181,7 +179,7 @@ export default function App() {
       />
 
       {/* Main Viewport Content */}
-      <main className="flex-1 pb-16">
+      <main className="flex-1 min-w-0 md:pl-64 lg:pl-72 pb-16">
         {currentTab === 'dashboard' && (
           <DashboardView
             analytics={analytics}

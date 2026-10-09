@@ -41,6 +41,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   onOpenRecordModal,
   currentUser,
 }) => {
+  const toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState<'incomes' | 'expenses' | 'categories'>('incomes');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
@@ -103,10 +104,13 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         icon: 'Tag',
         color: newCatColor,
       });
+      toast.success(`Category "${newCatName.trim()}" created successfully!`);
       setNewCatName('');
       onRefreshData();
     } catch (err: any) {
-      setCatError(err.message || 'Failed to create category');
+      const msg = err.message || 'Failed to create category';
+      setCatError(msg);
+      toast.error(msg);
     }
   };
 
@@ -124,10 +128,12 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         name: editCatName.trim(),
         color: editCatColor,
       });
+      toast.success(`Category "${editCatName.trim()}" updated successfully!`);
       setEditingCategory(null);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update category');
+      const msg = err.message || 'Failed to update category';
+      toast.error(msg);
     }
   };
 
@@ -135,9 +141,11 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     if (!confirm('Are you sure you want to delete this category?')) return;
     try {
       await api.deleteCategory(id);
+      toast.success('Category deleted successfully!');
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete category');
+      const msg = err.message || 'Failed to delete category';
+      toast.error(msg);
     }
   };
 
@@ -156,7 +164,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     if (!editingIncome) return;
     const amt = parseFloat(editIncAmount);
     if (isNaN(amt) || amt <= 0) {
-      alert('Please enter a valid positive amount');
+      toast.error('Please enter a valid positive amount');
       return;
     }
     try {
@@ -167,10 +175,12 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         categoryId: editIncCategoryId,
         paymentMethod: editIncPaymentMethod,
       });
+      toast.success('Income record updated successfully!');
       setEditingIncome(null);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update income record');
+      const msg = err.message || 'Failed to update income record';
+      toast.error(msg);
     }
   };
 
@@ -178,9 +188,11 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     if (!confirm('Are you sure you want to delete this income record?')) return;
     try {
       await api.deleteIncome(id);
+      toast.success('Income record deleted successfully!');
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete income record');
+      const msg = err.message || 'Failed to delete income record';
+      toast.error(msg);
     }
   };
 
@@ -199,7 +211,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     if (!editingExpense) return;
     const amt = parseFloat(editExpAmount);
     if (isNaN(amt) || amt <= 0) {
-      alert('Please enter a valid positive amount');
+      toast.error('Please enter a valid positive amount');
       return;
     }
     try {
@@ -210,10 +222,12 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         categoryId: editExpCategoryId,
         paymentMethod: editExpPaymentMethod,
       });
+      toast.success('Expense record updated successfully!');
       setEditingExpense(null);
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update expense record');
+      const msg = err.message || 'Failed to update expense record';
+      toast.error(msg);
     }
   };
 
@@ -221,9 +235,11 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     if (!confirm('Are you sure you want to delete this expense record?')) return;
     try {
       await api.deleteExpense(id);
+      toast.success('Expense record deleted successfully!');
       onRefreshData();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete expense record');
+      const msg = err.message || 'Failed to delete expense record';
+      toast.error(msg);
     }
   };
 
@@ -338,28 +354,28 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             </select>
           </div>
 
-          {/* Mobile Cards View for Incomes (block md:hidden) */}
-          <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+          {/* Mobile Cards View for Incomes (block md:hidden) - Perfectly Aligned */}
+          <div className="block md:hidden space-y-3">
             {filteredIncomes.length === 0 ? (
-              <div className="p-6 text-center text-neutral-500 text-xs">
+              <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-900 rounded-xl border border-neutral-800">
                 No income records found.
               </div>
             ) : (
               filteredIncomes.map((inc) => (
-                <div key={inc.id} className="p-4 space-y-2.5 bg-neutral-900/50">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-bold text-white text-sm">{inc.description}</p>
-                      <p className="text-[11px] font-mono text-neutral-400 mt-0.5">Date: {inc.date} • Method: {inc.paymentMethod}</p>
+                <div key={inc.id} className="p-4 space-y-3 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all">
+                  <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-2.5">
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-white text-base leading-tight">{inc.description}</h3>
+                      <p className="text-[11px] font-mono text-neutral-400">Date: {inc.date} • Method: <span className="text-neutral-200">{inc.paymentMethod}</span></p>
                     </div>
-                    <span className="font-mono font-bold text-emerald-400 text-sm shrink-0">
+                    <span className="font-mono font-bold text-emerald-400 text-sm px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg shrink-0">
                       +{formatMoney(inc.amount, currency)}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-850">
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
                     <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-medium"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
                       style={{
                         backgroundColor: `${inc.categoryColor || '#10B981'}20`,
                         color: inc.categoryColor || '#10B981',
@@ -369,10 +385,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                       {inc.categoryName}
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleOpenEditIncome(inc)}
-                        className="p-1.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800 rounded"
+                        className="p-2 text-neutral-300 hover:text-emerald-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
                         title="Edit Record"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -380,7 +396,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                       {currentUser?.role !== 'STAFF' && (
                         <button
                           onClick={() => handleDeleteIncome(inc.id)}
-                          className="p-1.5 text-neutral-400 hover:text-rose-400 bg-neutral-800 rounded"
+                          className="p-2 text-neutral-300 hover:text-rose-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
                           title="Delete Record"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -391,7 +407,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 </div>
               ))
             )}
-            <div className="p-3 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono">
+            <div className="p-3.5 bg-neutral-900 rounded-xl border border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono shadow-sm">
               <span>Total Income Inflows:</span>
               <span className="font-bold text-emerald-400 text-sm">
                 +{formatMoney(totalIncomesSum, currency)}
@@ -508,28 +524,28 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             </select>
           </div>
 
-          {/* Mobile Cards View for Expenses (block md:hidden) */}
-          <div className="block md:hidden divide-y divide-neutral-800 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+          {/* Mobile Cards View for Expenses (block md:hidden) - Perfectly Aligned */}
+          <div className="block md:hidden space-y-3">
             {filteredExpenses.length === 0 ? (
-              <div className="p-6 text-center text-neutral-500 text-xs">
+              <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-900 rounded-xl border border-neutral-800">
                 No expense records found.
               </div>
             ) : (
               filteredExpenses.map((exp) => (
-                <div key={exp.id} className="p-4 space-y-2.5 bg-neutral-900/50">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-bold text-white text-sm">{exp.description}</p>
-                      <p className="text-[11px] font-mono text-neutral-400 mt-0.5">Date: {exp.date} • Method: {exp.paymentMethod}</p>
+                <div key={exp.id} className="p-4 space-y-3 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all">
+                  <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-2.5">
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-white text-base leading-tight">{exp.description}</h3>
+                      <p className="text-[11px] font-mono text-neutral-400">Date: {exp.date} • Method: <span className="text-neutral-200">{exp.paymentMethod}</span></p>
                     </div>
-                    <span className="font-mono font-bold text-rose-400 text-sm shrink-0">
+                    <span className="font-mono font-bold text-rose-400 text-sm px-2.5 py-1 bg-rose-500/10 border border-rose-500/20 rounded-lg shrink-0">
                       -{formatMoney(exp.amount, currency)}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-850">
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
                     <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-medium"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
                       style={{
                         backgroundColor: `${exp.categoryColor || '#F43F5E'}20`,
                         color: exp.categoryColor || '#F43F5E',
@@ -539,10 +555,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                       {exp.categoryName}
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleOpenEditExpense(exp)}
-                        className="p-1.5 text-neutral-400 hover:text-emerald-400 bg-neutral-800 rounded"
+                        className="p-2 text-neutral-300 hover:text-emerald-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
                         title="Edit Record"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -550,7 +566,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                       {currentUser?.role !== 'STAFF' && (
                         <button
                           onClick={() => handleDeleteExpense(exp.id)}
-                          className="p-1.5 text-neutral-400 hover:text-rose-400 bg-neutral-800 rounded"
+                          className="p-2 text-neutral-300 hover:text-rose-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
                           title="Delete Record"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -561,7 +577,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 </div>
               ))
             )}
-            <div className="p-3 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono">
+            <div className="p-3.5 bg-neutral-900 rounded-xl border border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono shadow-sm">
               <span>Total Operational Expenses:</span>
               <span className="font-bold text-rose-400 text-sm">
                 -{formatMoney(totalExpensesSum, currency)}
