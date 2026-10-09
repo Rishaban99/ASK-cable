@@ -19,6 +19,7 @@ import { SummaryView } from './components/SummaryView.js';
 import { CustomersView } from './components/CustomersView.js';
 import { MonthlyPaymentView } from './components/MonthlyPaymentView.js';
 import { CustomerHistoryView } from './components/CustomerHistoryView.js';
+import { PaymentCollectionView } from './components/PaymentCollectionView.js';
 import { SettingsView } from './components/SettingsView.js';
 import { LoginView } from './components/LoginView.js';
 import { RecordModal } from './components/RecordModal.js';
@@ -250,6 +251,20 @@ export default function App() {
             currentUser={currentUser}
             selectedCustomerId={selectedHistoryCustomerId}
             onSelectCustomer={(custId) => setSelectedHistoryCustomerId(custId)}
+          />
+        )}
+
+        {currentTab === 'payment-collection' && (
+          <PaymentCollectionView
+            customers={customers}
+            monthlyPayments={monthlyPayments}
+            currency={currency}
+            onRefreshData={loadData}
+            currentUser={currentUser}
+            onNavigateToHistory={(custId) => {
+              setSelectedHistoryCustomerId(custId);
+              setCurrentTab('customer-history');
+            }}
           />
         )}
 

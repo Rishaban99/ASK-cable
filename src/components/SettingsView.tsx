@@ -20,7 +20,8 @@ import {
   CalendarCheck,
   History,
   Save,
-  RotateCcw
+  RotateCcw,
+  Banknote
 } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -69,6 +70,12 @@ const PAGE_DEFINITIONS: {
     label: 'Payment History',
     description: 'Itemized historical payment ledger, statement printing, and customer balance history.',
     icon: History,
+  },
+  {
+    id: 'payment-collection',
+    label: 'Collect Payment',
+    description: 'Rapid payment collection form, subscriber dues settlement, and quick receipt generation.',
+    icon: Banknote,
   },
 ];
 
@@ -176,6 +183,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
       customers: true,
       'monthly-payment': true,
       'customer-history': true,
+      'payment-collection': true,
     };
     savePrivilegesToDb(allEnabled, 'All privileges granted & saved to DB');
   };

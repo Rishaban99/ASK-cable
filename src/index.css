@@ -1,8 +1,75 @@
 @import "tailwindcss";
 
 /* -------------------------------------------------------------------
- * LIGHT MODE OVERRIDES
- * Converts dark palette into clean, high-contrast, user-friendly Light Mode UI
+ * GLOBAL HIGH-VISIBILITY CARD & CONTAINER COLOR RULES (Dark Mode & Universal)
+ * Gives all UI Cards distinct visible background colors, crisp borders, & depth
+ * ------------------------------------------------------------------- */
+
+/* Primary Card Containers in Dark Mode */
+.bg-neutral-900,
+.bg-neutral-900\/90,
+.bg-neutral-900\/80,
+.bg-neutral-900\/70,
+.bg-neutral-900\/60,
+.bg-neutral-900\/50,
+.bg-neutral-900\/40 {
+  background-color: #18181b !important; /* Zinc-900: High-visibility dark card background */
+  border-color: #3f3f46 !important;     /* Zinc-700: Sharp border definition */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Inner nested sub-cards & detail boxes in Dark Mode */
+.bg-neutral-950,
+.bg-neutral-950\/95,
+.bg-neutral-950\/90,
+.bg-neutral-950\/80,
+.bg-neutral-950\/60 {
+  background-color: #09090b !important; /* Rich deep black/zinc inner container */
+  border-color: #3f3f46 !important;
+}
+
+.bg-neutral-850,
+.bg-neutral-850\/50,
+.bg-neutral-800 {
+  background-color: #27272a !important; /* Zinc-800 for secondary cards & chips */
+  border-color: #3f3f46 !important;
+}
+
+.border-neutral-900,
+.border-neutral-850,
+.border-neutral-800 {
+  border-color: #3f3f46 !important;
+}
+
+.border-neutral-750,
+.border-neutral-700 {
+  border-color: #52525b !important;
+}
+
+/* Form controls (Inputs, Selects, Textareas) high visibility border & background */
+input,
+select,
+textarea {
+  background-color: #09090b !important;
+  color: #ffffff !important;
+  border-color: #52525b !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35) !important;
+}
+
+table,
+th,
+td {
+  border-color: #3f3f46 !important;
+}
+
+/* -------------------------------------------------------------------
+ * LIGHT MODE HIGH-VISIBILITY CARD & CONTAINER COLOR OVERRIDES
  * ------------------------------------------------------------------- */
 .theme-light {
   background-color: #f8fafc !important;
@@ -10,9 +77,9 @@
 }
 
 .theme-light header {
-  background-color: rgba(255, 255, 255, 0.98) !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }
 
 .theme-light header button {
@@ -25,14 +92,7 @@
   color: #0f172a !important;
 }
 
-.theme-light .bg-neutral-950,
-.theme-light .bg-neutral-950\/95,
-.theme-light .bg-neutral-950\/90,
-.theme-light .bg-neutral-950\/80,
-.theme-light .bg-neutral-950\/60 {
-  background-color: #f8fafc !important;
-}
-
+/* Light mode primary card container backgrounds & sharp shadows */
 .theme-light .bg-neutral-900,
 .theme-light .bg-neutral-900\/90,
 .theme-light .bg-neutral-900\/80,
@@ -41,20 +101,34 @@
 .theme-light .bg-neutral-900\/50,
 .theme-light .bg-neutral-900\/40 {
   background-color: #ffffff !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Light mode inner nested sub-cards */
+.theme-light .bg-neutral-950,
+.theme-light .bg-neutral-950\/95,
+.theme-light .bg-neutral-950\/90,
+.theme-light .bg-neutral-950\/80,
+.theme-light .bg-neutral-950\/60 {
+  background-color: #f1f5f9 !important; /* Slate-100: Distinct contrast inside white cards */
+  border-color: #cbd5e1 !important;
 }
 
 .theme-light .bg-neutral-850,
 .theme-light .bg-neutral-850\/50,
 .theme-light .bg-neutral-800 {
-  background-color: #f1f5f9 !important;
+  background-color: #e2e8f0 !important; /* Slate-200 */
+  border-color: #cbd5e1 !important;
 }
 
-.theme-light .border-neutral-800,
+/* Light mode high-visibility borders */
+.theme-light .border-neutral-900,
 .theme-light .border-neutral-850,
+.theme-light .border-neutral-800,
 .theme-light .border-neutral-750,
 .theme-light .border-neutral-700 {
-  border-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
 }
 
 .theme-light .text-white {
@@ -68,47 +142,66 @@
 }
 
 .theme-light .text-neutral-400 {
-  color: #475569 !important;
+  color: #334155 !important;
 }
 
 .theme-light .text-neutral-500 {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
+/* Light mode form controls */
 .theme-light input,
 .theme-light select,
 .theme-light textarea {
   background-color: #ffffff !important;
   color: #0f172a !important;
-  border-color: #cbd5e1 !important;
+  border-color: #94a3b8 !important;
 }
 
 .theme-light input::placeholder,
 .theme-light textarea::placeholder {
-  color: #94a3b8 !important;
+  color: #64748b !important;
+}
+
+.theme-light input:focus,
+.theme-light select:focus,
+.theme-light textarea:focus {
+  border-color: #059669 !important;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25) !important;
+}
+
+.theme-light table {
+  border-color: #cbd5e1 !important;
 }
 
 .theme-light table thead {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
 }
 
 .theme-light table thead th {
-  color: #475569 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.theme-light table tbody td {
+  border-color: #e2e8f0 !important;
 }
 
 .theme-light table tbody tr {
-  border-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
 }
 
 .theme-light table tbody tr:hover {
   background-color: #f8fafc !important;
 }
 
+/* Highlight / Stat Badge Card Colors */
 .theme-light .bg-emerald-500\/10,
 .theme-light .bg-emerald-500\/15,
 .theme-light .bg-emerald-500\/20 {
   background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
 }
 
 .theme-light .text-emerald-400,
@@ -120,6 +213,7 @@
 .theme-light .bg-indigo-500\/15,
 .theme-light .bg-indigo-500\/20 {
   background-color: #eef2ff !important;
+  border-color: #c7d2fe !important;
 }
 
 .theme-light .text-indigo-400,
@@ -131,6 +225,7 @@
 .theme-light .bg-amber-500\/15,
 .theme-light .bg-amber-500\/20 {
   background-color: #fffbeb !important;
+  border-color: #fde68a !important;
 }
 
 .theme-light .text-amber-400,
@@ -142,6 +237,7 @@
 .theme-light .bg-rose-500\/15,
 .theme-light .bg-rose-500\/20 {
   background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
 }
 
 .theme-light .text-rose-400,

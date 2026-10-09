@@ -15,6 +15,7 @@ export interface StaffPrivileges {
   customers: boolean;
   'monthly-payment': boolean;
   'customer-history': boolean;
+  'payment-collection': boolean;
 }
 
 export const DEFAULT_STAFF_PRIVILEGES: StaffPrivileges = {
@@ -24,6 +25,7 @@ export const DEFAULT_STAFF_PRIVILEGES: StaffPrivileges = {
   customers: true,
   'monthly-payment': true,
   'customer-history': true,
+  'payment-collection': true,
 };
 
 export interface Category {

@@ -16,10 +16,11 @@ import {
   Moon,
   Menu,
   X,
-  Tv
+  Tv,
+  Banknote
 } from 'lucide-react';
 
-export type NavTab = 'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment' | 'customer-history' | 'settings';
+export type NavTab = 'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment' | 'customer-history' | 'payment-collection' | 'settings';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -42,6 +43,7 @@ interface NavItemDef {
 const ALL_NAV_ITEMS: NavItemDef[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, section: 'main' },
   { id: 'transactions', label: 'Income & Expenses', icon: Receipt, section: 'main' },
+  { id: 'payment-collection', label: 'Collect Payment', icon: Banknote, section: 'main' },
   { id: 'customers', label: 'Customers', icon: Users, section: 'main' },
   { id: 'monthly-payment', label: 'Monthly Payment', icon: CalendarCheck, section: 'main' },
   { id: 'customer-history', label: 'Payment History', icon: History, section: 'main' },

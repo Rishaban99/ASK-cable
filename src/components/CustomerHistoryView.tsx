@@ -381,33 +381,63 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
 
   return (
     <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
-      {/* Header & Customer Selector Bar */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-xl shadow-xl">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <History className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
-            <span>Customer Payment History & Ledger</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-            Select a subscriber to view their full customer card, registration fee status, and monthly payment records.
-          </p>
+      {/* FIRST SECTION: Top Search & Customer Selection Hero Banner */}
+      <div className="bg-neutral-900 border border-neutral-800 p-5 sm:p-6 rounded-xl shadow-xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
+              <History className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
+              <span>Customer Payment History & Ledger</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+              Search by subscriber name, box number, NIC, or phone number to view details and payment records.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-bold text-emerald-400 self-start md:self-auto">
+            <UserCheck className="w-4 h-4 text-emerald-400" />
+            <span>Subscribers: {customers.length}</span>
+          </div>
         </div>
 
-        {/* Customer Select Dropdown / Search */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
-          <div className="relative min-w-[260px]">
-            <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-3" />
+        {/* Dual Search Input & Dropdown Selector */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2 border-t border-neutral-800/80">
+          {/* Quick Search Input */}
+          <div className="relative md:col-span-6">
+            <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
+            <input
+              type="text"
+              placeholder="Search by Name, Box No, NIC, or Phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-9 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs font-semibold text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50 shadow-inner"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-2.5 text-neutral-400 hover:text-white text-xs font-bold px-1 rounded"
+                title="Clear Search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Customer Dropdown Select */}
+          <div className="relative md:col-span-6">
+            <UserIcon className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
             <select
               value={selectedCustId}
               onChange={(e) => handleCustChange(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-semibold text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer shadow-inner"
+              className="w-full pl-10 pr-8 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer shadow-inner"
             >
               {customers.length === 0 ? (
                 <option value="">No customers available</option>
+              ) : filteredCustomerOptions.length === 0 ? (
+                <option value="">No customer matching "{searchQuery}"</option>
               ) : (
                 filteredCustomerOptions.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.boxNo}) - {c.status}
+                    {c.name} (Box: {c.boxNo}) - {c.phoneNo || c.nicNo} [{c.status}]
                   </option>
                 ))
               )}
