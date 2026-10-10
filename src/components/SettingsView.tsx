@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES } from '../types/finance.js';
 import { api } from '../api/client.js';
 import { useToast } from './Toast.js';
+import { ConfirmModal } from './ConfirmModal.js';
 import {
   Settings,
   Shield,
@@ -232,29 +233,51 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
     }
   };
 
+  // Confirm Modal State
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    variant?: 'danger' | 'emerald' | 'indigo';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
   // Delete User Handler
-  const handleDeleteUser = async (userToDelete: User) => {
+  const handleDeleteUser = (userToDelete: User) => {
     if (userToDelete.username.toLowerCase() === currentUser.username.toLowerCase()) {
       const msg = 'You cannot delete your own active account!';
       toast.error(msg);
       return;
     }
-    if (!confirm(`Are you sure you want to delete user account "${userToDelete.name}" (${userToDelete.username})?`)) {
-      return;
-    }
 
-    try {
-      await api.deleteUser(userToDelete.id);
-      const msg = `User "${userToDelete.username}" deleted successfully.`;
-      setUserSuccess(msg);
-      toast.success(msg);
-      await fetchUsers();
-      setTimeout(() => setUserSuccess(null), 3000);
-    } catch (err: any) {
-      const msg = err?.message || 'Failed to delete user.';
-      setUserError(msg);
-      toast.error(msg);
-    }
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Delete System User Account',
+      message: `Are you sure you want to delete user account "${userToDelete.name}" (${userToDelete.username})? This account will lose system access.`,
+      confirmText: 'Delete User Account',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        try {
+          await api.deleteUser(userToDelete.id);
+          const msg = `User "${userToDelete.username}" deleted successfully.`;
+          setUserSuccess(msg);
+          toast.success(msg);
+          await fetchUsers();
+          setTimeout(() => setUserSuccess(null), 3000);
+        } catch (err: any) {
+          const msg = err?.message || 'Failed to delete user.';
+          setUserError(msg);
+          toast.error(msg);
+        }
+      },
+    });
   };
 
   // Non-Admin Access Guard
@@ -612,6 +635,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
           </div>
         </div>
       )}
+      {/* Confirmation Dialog Modal Card */}
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModalConfig.onConfirm}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        confirmText={confirmModalConfig.confirmText}
+        variant={confirmModalConfig.variant}
+      />
     </div>
   );
 };

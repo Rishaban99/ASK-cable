@@ -149,62 +149,76 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Top Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Net Balance */}
-        <div className="p-5 rounded-lg bg-neutral-900 border border-neutral-800">
-          <div className="flex items-center justify-between text-xs text-neutral-400">
-            <span>Overall Net Cash Balance</span>
-            <Wallet className="w-4 h-4 text-emerald-400" />
+        <div className="p-5 rounded-xl bg-gradient-to-br from-emerald-950/40 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-lg transition-all hover:border-emerald-500/50">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Overall Net Cash Balance</span>
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <Wallet className="w-4 h-4" />
+            </div>
           </div>
-          <div className="mt-3 text-2xl font-bold tracking-tight text-white font-mono tabular-nums">
+          <div className="mt-3 text-3xl font-extrabold tracking-tight text-white font-mono tabular-nums">
             {formatMoney(netWorth, currency)}
           </div>
-          <div className="mt-2 flex items-center gap-1 text-xs text-neutral-400">
-            <span className="text-emerald-400 font-mono font-semibold">Total Revenue - Total Expenses</span>
+          <div className="mt-2.5 flex items-center gap-1.5 text-xs">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono text-[11px] font-semibold">
+              Total Revenue - Expenses
+            </span>
           </div>
         </div>
 
         {/* Metric 2: Monthly Income Inflow */}
-        <div className="p-5 rounded-lg bg-neutral-900 border border-neutral-800">
-          <div className="flex items-center justify-between text-xs text-neutral-400">
-            <span>Monthly Income Inflow</span>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+        <div className="p-5 rounded-xl bg-gradient-to-br from-emerald-950/30 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-lg transition-all hover:border-emerald-500/50">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Monthly Income Inflow</span>
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
           </div>
-          <div className="mt-3 text-2xl font-bold tracking-tight text-emerald-400 font-mono tabular-nums">
+          <div className="mt-3 text-3xl font-extrabold tracking-tight text-emerald-400 font-mono tabular-nums">
             +{formatMoney(monthlyCashFlow.totalIncome, currency)}
           </div>
-          <div className="mt-2 text-xs text-neutral-400 font-mono tabular-nums">
-            {monthlyCashFlow.incomeTransactionsCount} revenue transactions
+          <div className="mt-2.5 text-xs text-neutral-300 font-mono tabular-nums flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+            <span>{monthlyCashFlow.incomeTransactionsCount} revenue transactions</span>
           </div>
         </div>
 
         {/* Metric 3: Monthly Expenses */}
-        <div className="p-5 rounded-lg bg-neutral-900 border border-neutral-800">
-          <div className="flex items-center justify-between text-xs text-neutral-400">
-            <span>Monthly Expenses</span>
-            <TrendingDown className="w-4 h-4 text-rose-400" />
+        <div className="p-5 rounded-xl bg-gradient-to-br from-rose-950/30 via-neutral-900 to-neutral-900 border border-rose-500/30 shadow-lg transition-all hover:border-rose-500/50">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-rose-300">Monthly Expenses</span>
+            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
+              <TrendingDown className="w-4 h-4" />
+            </div>
           </div>
-          <div className="mt-3 text-2xl font-bold tracking-tight text-rose-400 font-mono tabular-nums">
+          <div className="mt-3 text-3xl font-extrabold tracking-tight text-rose-400 font-mono tabular-nums">
             -{formatMoney(monthlyCashFlow.totalExpense, currency)}
           </div>
-          <div className="mt-2 text-xs text-neutral-400 font-mono tabular-nums">
-            {monthlyCashFlow.expenseTransactionsCount} expense deductions
+          <div className="mt-2.5 text-xs text-neutral-300 font-mono tabular-nums flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
+            <span>{monthlyCashFlow.expenseTransactionsCount} expense deductions</span>
           </div>
         </div>
 
         {/* Metric 4: Net Savings & Rate */}
-        <div className="p-5 rounded-lg bg-neutral-900 border border-neutral-800">
-          <div className="flex items-center justify-between text-xs text-neutral-400">
-            <span>Monthly Surplus / Deficit</span>
-            <Receipt className="w-4 h-4 text-neutral-400" />
+        <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-950/30 via-neutral-900 to-neutral-900 border border-indigo-500/30 shadow-lg transition-all hover:border-indigo-500/50">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300">Monthly Surplus / Deficit</span>
+            <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+              <Receipt className="w-4 h-4" />
+            </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className={`text-2xl font-bold tracking-tight font-mono tabular-nums ${
+            <span className={`text-3xl font-extrabold tracking-tight font-mono tabular-nums ${
               isNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
             }`}>
               {isNetSavingsPositive ? '+' : ''}{formatMoney(monthlyCashFlow.netSavings, currency)}
             </span>
           </div>
-          <div className="mt-2 flex items-center gap-1 text-xs text-neutral-400">
-            <span className="font-mono tabular-nums font-semibold text-white">{monthlyCashFlow.savingsRatePct}%</span>
+          <div className="mt-2.5 flex items-center gap-1.5 text-xs text-neutral-300">
+            <span className="font-mono tabular-nums font-bold text-white bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded text-[11px]">
+              {monthlyCashFlow.savingsRatePct}%
+            </span>
             <span>savings rate this month</span>
           </div>
         </div>

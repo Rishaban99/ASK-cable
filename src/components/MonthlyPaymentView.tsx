@@ -3,6 +3,7 @@ import { Customer, MonthlyPayment, SupportedCurrency, User } from '../types/fina
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
 import { SuccessModal, SuccessData } from './SuccessModal.js';
+import { ConfirmModal } from './ConfirmModal.js';
 import { useToast } from './Toast.js';
 import {
   Calendar,
@@ -133,32 +134,54 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   } | null>(null);
   const [showSkippedDetails, setShowSkippedDetails] = useState(false);
 
+  // Confirm Modal State
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    variant?: 'danger' | 'emerald' | 'indigo';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
   const handleBulkCreateMonthlyPayments = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bulkMonth) {
-      alert('Please select a target month for bulk creation.');
+      toast.error('Please select a target month for bulk creation.');
       return;
     }
     const feeNum = parseFloat(bulkDefaultFee) || 1300;
-    if (!confirm(`Generate monthly dues for ALL ACTIVE subscribers for ${bulkMonth} at ${formatMoney(feeNum, currency)} each? Existing subscriber records for this month will be skipped automatically.`)) {
-      return;
-    }
 
-    setIsBulkSubmitting(true);
-    try {
-      const res = await api.bulkCreateMonthlyPayments({
-        month: bulkMonth,
-        defaultFee: feeNum,
-      });
-      setBulkResultCard(res);
-      toast.success(`Bulk monthly dues generated for ${res.createdCount} active subscribers!`);
-      onRefreshData();
-    } catch (err: any) {
-      const msg = err.message || 'Failed to bulk generate monthly payments';
-      toast.error(msg);
-    } finally {
-      setIsBulkSubmitting(false);
-    }
+    setConfirmModalConfig({
+      isOpen: true,
+      title: `Generate Bulk Dues (${bulkMonth})`,
+      message: `Generate monthly dues for ALL ACTIVE subscribers for ${bulkMonth} at ${formatMoney(feeNum, currency)} each? Existing subscriber records for this month will be skipped automatically.`,
+      confirmText: 'Generate Monthly Dues',
+      variant: 'emerald',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        setIsBulkSubmitting(true);
+        try {
+          const res = await api.bulkCreateMonthlyPayments({
+            month: bulkMonth,
+            defaultFee: feeNum,
+          });
+          setBulkResultCard(res);
+          toast.success(`Bulk monthly dues generated for ${res.createdCount} active subscribers!`);
+          onRefreshData();
+        } catch (err: any) {
+          const msg = err.message || 'Failed to bulk generate monthly payments';
+          toast.error(msg);
+        } finally {
+          setIsBulkSubmitting(false);
+        }
+      },
+    });
   };
 
   // Handle Record Monthly Payment Submission
@@ -290,16 +313,25 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   };
 
   // Delete Monthly Payment
-  const handleDelete = async (id: string, customerName: string, month: string) => {
-    if (!confirm(`Are you sure you want to delete monthly payment for ${customerName} (${month})?`)) return;
-    try {
-      await api.deleteMonthlyPayment(id);
-      toast.success(`Monthly payment for ${customerName} (${month}) deleted!`);
-      onRefreshData();
-    } catch (err: any) {
-      const msg = err.message || 'Failed to delete payment';
-      toast.error(msg);
-    }
+  const handleDelete = (id: string, customerName: string, month: string) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Delete Monthly Payment Record',
+      message: `Are you sure you want to delete monthly payment for ${customerName} (${month})? This action cannot be undone.`,
+      confirmText: 'Delete Record',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        try {
+          await api.deleteMonthlyPayment(id);
+          toast.success(`Monthly payment for ${customerName} (${month}) deleted!`);
+          onRefreshData();
+        } catch (err: any) {
+          const msg = err.message || 'Failed to delete payment';
+          toast.error(msg);
+        }
+      },
+    });
   };
 
   // Filtered Payments
@@ -1194,6 +1226,17 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
         onClose={() => setIsSuccessModalOpen(false)}
         data={successModalData}
         currency={currency}
+      />
+
+      {/* Confirmation Dialog Modal Card */}
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModalConfig.onConfirm}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        confirmText={confirmModalConfig.confirmText}
+        variant={confirmModalConfig.variant}
       />
     </div>
   );

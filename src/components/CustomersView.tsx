@@ -3,6 +3,7 @@ import { Customer, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
 import { SuccessModal, SuccessData } from './SuccessModal.js';
+import { ConfirmModal } from './ConfirmModal.js';
 import { useToast } from './Toast.js';
 import {
   UserPlus,
@@ -245,17 +246,41 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     }
   };
 
+  // Confirm Modal State
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    variant?: 'danger' | 'emerald' | 'indigo';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
   // Delete Customer
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete customer "${name}"? This action cannot be undone.`)) return;
-    try {
-      await api.deleteCustomer(id);
-      toast.success(`Customer "${name}" deleted successfully!`);
-      onRefreshData();
-    } catch (err: any) {
-      const msg = err.message || 'Failed to delete customer';
-      toast.error(msg);
-    }
+  const handleDelete = (id: string, name: string) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Delete Customer Account',
+      message: `Are you sure you want to delete customer "${name}"? This action cannot be undone and will remove subscriber records.`,
+      confirmText: 'Delete Customer',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        try {
+          await api.deleteCustomer(id);
+          toast.success(`Customer "${name}" deleted successfully!`);
+          onRefreshData();
+        } catch (err: any) {
+          const msg = err.message || 'Failed to delete customer';
+          toast.error(msg);
+        }
+      },
+    });
   };
 
   // Filtered customers
@@ -1027,6 +1052,17 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         onClose={() => setIsSuccessModalOpen(false)}
         data={successModalData}
         currency={currency}
+      />
+
+      {/* Confirmation Dialog Modal Card */}
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModalConfig.onConfirm}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        confirmText={confirmModalConfig.confirmText}
+        variant={confirmModalConfig.variant}
       />
     </div>
   );

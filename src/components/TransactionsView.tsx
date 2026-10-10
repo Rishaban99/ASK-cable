@@ -7,6 +7,8 @@ import {
   User
 } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
+import { useToast } from './Toast.js';
+import { ConfirmModal } from './ConfirmModal.js';
 import {
   Plus,
   Trash2,
@@ -16,11 +18,9 @@ import {
   Tag,
   Search,
   Download,
-  Sparkles,
   X
 } from 'lucide-react';
-import { useToast } from './Toast.tsx';
-import { Spinner } from './Spinner.tsx';
+import { Spinner } from './Spinner.js';
 
 interface TransactionsViewProps {
   incomes: IncomeRecord[];
@@ -137,16 +137,40 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     }
   };
 
-  const handleDeleteCategory = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
-    try {
-      await api.deleteCategory(id);
-      toast.success('Category deleted successfully!');
-      onRefreshData();
-    } catch (err: any) {
-      const msg = err.message || 'Failed to delete category';
-      toast.error(msg);
-    }
+  // Confirm Modal State
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    variant?: 'danger' | 'emerald' | 'indigo';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const handleDeleteCategory = (id: string) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Delete Category',
+      message: 'Are you sure you want to delete this category? Associated records will remain.',
+      confirmText: 'Delete Category',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        try {
+          await api.deleteCategory(id);
+          toast.success('Category deleted successfully!');
+          onRefreshData();
+        } catch (err: any) {
+          const msg = err.message || 'Failed to delete category';
+          toast.error(msg);
+        }
+      },
+    });
   };
 
   // Income edit & delete
@@ -184,16 +208,25 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     }
   };
 
-  const handleDeleteIncome = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this income record?')) return;
-    try {
-      await api.deleteIncome(id);
-      toast.success('Income record deleted successfully!');
-      onRefreshData();
-    } catch (err: any) {
-      const msg = err.message || 'Failed to delete income record';
-      toast.error(msg);
-    }
+  const handleDeleteIncome = (id: string) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Delete Income Record',
+      message: 'Are you sure you want to delete this income record? This action cannot be undone.',
+      confirmText: 'Delete Income',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        try {
+          await api.deleteIncome(id);
+          toast.success('Income record deleted successfully!');
+          onRefreshData();
+        } catch (err: any) {
+          const msg = err.message || 'Failed to delete income record';
+          toast.error(msg);
+        }
+      },
+    });
   };
 
   // Expense edit & delete
@@ -231,16 +264,25 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
     }
   };
 
-  const handleDeleteExpense = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this expense record?')) return;
-    try {
-      await api.deleteExpense(id);
-      toast.success('Expense record deleted successfully!');
-      onRefreshData();
-    } catch (err: any) {
-      const msg = err.message || 'Failed to delete expense record';
-      toast.error(msg);
-    }
+  const handleDeleteExpense = (id: string) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Delete Expense Record',
+      message: 'Are you sure you want to delete this expense record? This action cannot be undone.',
+      confirmText: 'Delete Expense',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        try {
+          await api.deleteExpense(id);
+          toast.success('Expense record deleted successfully!');
+          onRefreshData();
+        } catch (err: any) {
+          const msg = err.message || 'Failed to delete expense record';
+          toast.error(msg);
+        }
+      },
+    });
   };
 
   const totalIncomesSum = filteredIncomes.reduce((sum, r) => sum + r.amount, 0);
@@ -1115,6 +1157,16 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           </div>
         </div>
       )}
+      {/* Confirmation Dialog Modal Card */}
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModalConfig.onConfirm}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        confirmText={confirmModalConfig.confirmText}
+        variant={confirmModalConfig.variant}
+      />
     </div>
   );
 };

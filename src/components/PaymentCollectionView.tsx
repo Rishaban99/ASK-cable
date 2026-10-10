@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Customer, MonthlyPayment, SupportedCurrency, User } from '../types/finance.js';
+import { Customer, MonthlyPayment, IncomeRecord, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
 import { useToast } from './Toast.js';
@@ -16,7 +16,6 @@ import {
   Tag,
   Clock,
   Check,
-  RotateCcw,
   Box,
   DollarSign
 } from 'lucide-react';
@@ -24,27 +23,32 @@ import {
 interface PaymentCollectionViewProps {
   customers: Customer[];
   monthlyPayments: MonthlyPayment[];
+  incomes?: IncomeRecord[];
   currency: SupportedCurrency;
   onRefreshData: () => void;
   currentUser?: User | null;
   onNavigateToHistory?: (customerId: string) => void;
 }
 
-interface RecentCollectionRecord {
+interface LiveDbCollectionLog {
   id: string;
-  timestamp: string;
   customerName: string;
   boxNo: string;
-  type: 'MONTHLY' | 'REGISTRATION';
   periodOrTitle: string;
-  amountPaid: number;
+  installmentAmount: number;
   balanceRemaining: number;
-  billData: BillData;
+  dateDisplay: string;
+  timeDisplay: string;
+  paymentMethod: string;
+  isPartial: boolean;
+  rawDateSort: number;
+  rawBillData: BillData;
 }
 
 export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
   customers,
   monthlyPayments,
+  incomes = [],
   currency,
   onRefreshData,
   currentUser,
@@ -63,15 +67,11 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
   const [payAmount, setPayAmount] = useState<string>('');
   const [paymentDate, setPaymentDate] = useState<string>(todayStr);
   const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
-  const [remarks, setRemarks] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Bill Printing Modal States
   const [activeBillData, setActiveBillData] = useState<BillData | null>(null);
   const [isBillModalOpen, setIsBillModalOpen] = useState<boolean>(false);
-
-  // Session Recent Collections History
-  const [recentCollections, setRecentCollections] = useState<RecentCollectionRecord[]>([]);
 
   // Filtered customer list for search box
   const filteredCustomers = customers.filter((c) => {
@@ -160,6 +160,150 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
     setPayAmount(amt.toString());
   };
 
+  // Construct Live DB-Connected Collection Logs (Creating Individual Cards for Each Partial Payment Installment)
+  const liveDbCollectionLogs: LiveDbCollectionLog[] = [];
+
+  if (incomes && incomes.length > 0) {
+    incomes.forEach((inc) => {
+      const desc = inc.description || '';
+      const isCableIncome =
+        desc.toLowerCase().includes('cable') ||
+        desc.toLowerCase().includes('monthly') ||
+        desc.toLowerCase().includes('box') ||
+        desc.toLowerCase().includes('subscriber') ||
+        desc.toLowerCase().includes('registration') ||
+        (inc.tags && inc.tags.some((t) => t.includes('monthly') || t.includes('fee')));
+
+      if (!isCableIncome) return;
+
+      let custName = 'Subscriber';
+      let boxNo = '-';
+      let title = desc;
+      let monthStr = '';
+
+      const matchedCust = customers.find(
+        (c) =>
+          (c.name && desc.toLowerCase().includes(c.name.toLowerCase())) ||
+          (c.boxNo && c.boxNo !== '-' && desc.toLowerCase().includes(c.boxNo.toLowerCase()))
+      );
+
+      if (matchedCust) {
+        custName = matchedCust.name;
+        boxNo = matchedCust.boxNo;
+      } else {
+        const nameMatch = desc.match(/-\s*([^(\n]+)(?:\(Box:\s*([^)\n]+)\))?/i);
+        if (nameMatch) {
+          custName = nameMatch[1]?.trim() || 'Subscriber';
+          if (nameMatch[2]) boxNo = nameMatch[2].trim();
+        }
+      }
+
+      const monthMatch = desc.match(/\((\d{4}-\d{2})\)/);
+      if (monthMatch) {
+        monthStr = monthMatch[1];
+        title = `Monthly Bill (${monthStr})`;
+      } else if (
+        desc.toLowerCase().includes('setup') ||
+        desc.toLowerCase().includes('connection') ||
+        desc.toLowerCase().includes('registration')
+      ) {
+        title = 'Box Setup & Connection Fee';
+      }
+
+      let balanceRemaining = 0;
+      if (matchedCust) {
+        if (monthStr) {
+          const mPmt = monthlyPayments.find(
+            (p) => (p.customerId === matchedCust.id || (p.boxNo && p.boxNo.toLowerCase() === matchedCust.boxNo.toLowerCase())) && p.month === monthStr
+          );
+          if (mPmt) balanceRemaining = mPmt.balanceAmount;
+        } else {
+          balanceRemaining = matchedCust.balanceAmount;
+        }
+      }
+
+      const createdDate = inc.createdAt ? new Date(inc.createdAt) : new Date(inc.date || todayStr);
+      const dateDisplay = inc.date || createdDate.toISOString().split('T')[0];
+      const timeDisplay = inc.createdAt
+        ? new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '';
+
+      liveDbCollectionLogs.push({
+        id: `inc-installment-${inc.id}`,
+        customerName: custName,
+        boxNo: boxNo,
+        periodOrTitle: title,
+        installmentAmount: inc.amount,
+        balanceRemaining,
+        dateDisplay,
+        timeDisplay,
+        rawDateSort: createdDate.getTime(),
+        paymentMethod: inc.paymentMethod || 'CASH',
+        isPartial: balanceRemaining > 0,
+        rawBillData: {
+          type: monthStr ? 'MONTHLY' : 'CUSTOMER',
+          billNo: `REC-${boxNo.replace(/[^a-zA-Z0-9]/g, '') || '0'}-${inc.id.slice(-6)}`,
+          date: dateDisplay,
+          customerName: custName,
+          nicNo: matchedCust?.nicNo,
+          phoneNo: matchedCust?.phoneNo,
+          address: matchedCust?.address,
+          boxNo: boxNo,
+          month: monthStr || undefined,
+          totalOrFeeAmount: inc.amount + balanceRemaining,
+          paidAmount: inc.amount,
+          balanceAmount: balanceRemaining,
+          status: balanceRemaining === 0 ? 'PAID' : 'PARTIAL',
+          paymentDate: dateDisplay,
+        },
+      });
+    });
+  }
+
+  // Fallback if incomes array is empty or no matched income records
+  if (liveDbCollectionLogs.length === 0) {
+    monthlyPayments.forEach((pmt) => {
+      if (pmt.paidAmount > 0) {
+        const cust = customers.find(
+          (c) => c.id === pmt.customerId || (c.boxNo && c.boxNo.toLowerCase() === pmt.boxNo.toLowerCase())
+        );
+        const createdDate = pmt.createdAt ? new Date(pmt.createdAt) : new Date();
+        liveDbCollectionLogs.push({
+          id: `pmt-fallback-${pmt.id}`,
+          customerName: pmt.customerName || cust?.name || 'Subscriber',
+          boxNo: pmt.boxNo || cust?.boxNo || '-',
+          periodOrTitle: `Monthly Bill (${pmt.month})`,
+          installmentAmount: pmt.paidAmount,
+          balanceRemaining: pmt.balanceAmount,
+          dateDisplay: pmt.paymentDate ? pmt.paymentDate.split('T')[0] : todayStr,
+          timeDisplay: createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          rawDateSort: createdDate.getTime(),
+          paymentMethod: 'CASH',
+          isPartial: pmt.balanceAmount > 0,
+          rawBillData: {
+            type: 'MONTHLY',
+            billNo: `BILL-${pmt.boxNo}-${pmt.month.replace('-', '')}`,
+            date: pmt.paymentDate ? pmt.paymentDate.split('T')[0] : todayStr,
+            customerName: pmt.customerName || cust?.name || 'Subscriber',
+            nicNo: cust?.nicNo,
+            phoneNo: cust?.phoneNo,
+            address: cust?.address,
+            boxNo: pmt.boxNo,
+            month: pmt.month,
+            totalOrFeeAmount: pmt.monthlyFee,
+            paidAmount: pmt.paidAmount,
+            balanceAmount: pmt.balanceAmount,
+            status: pmt.status,
+            paymentDate: pmt.paymentDate ? pmt.paymentDate.split('T')[0] : todayStr,
+          },
+        });
+      }
+    });
+  }
+
+  // Sort newest payment dates & timestamps first
+  liveDbCollectionLogs.sort((a, b) => b.rawDateSort - a.rawDateSort);
+
   // Submit Payment Collection
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,7 +323,6 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
 
     try {
       let createdBillData: BillData;
-      let title = '';
 
       if (paymentTargetType === 'MONTHLY') {
         if (!selectedMonthlyPmt) {
@@ -195,7 +338,6 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
         });
 
         const newBalance = Math.max(0, selectedMonthlyPmt.monthlyFee - newPaidAmount);
-        title = `Monthly Bill (${selectedMonthlyPmt.month})`;
 
         createdBillData = {
           type: 'MONTHLY',
@@ -223,7 +365,6 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
         });
 
         const newBalance = Math.max(0, currentCustomer.totalAmount - newPaidAmount);
-        title = 'Box Connection & Registration Setup Fee';
 
         createdBillData = {
           type: 'CUSTOMER',
@@ -243,21 +384,6 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
 
         toast.success(`Registration Fee payment of ${formatMoney(addPay, currency)} collected for ${currentCustomer.name}`);
       }
-
-      // Record in Session Recent Collections List
-      const newRecord: RecentCollectionRecord = {
-        id: `col-${Date.now()}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        customerName: currentCustomer.name,
-        boxNo: currentCustomer.boxNo,
-        type: paymentTargetType,
-        periodOrTitle: title,
-        amountPaid: addPay,
-        balanceRemaining: createdBillData.balanceAmount,
-        billData: createdBillData,
-      };
-
-      setRecentCollections((prev) => [newRecord, ...prev]);
 
       // Automatically open print modal for receipt
       setActiveBillData(createdBillData);
@@ -625,16 +751,26 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                       Full Reg Balance ({regBalance})
                     </button>
                   )}
-                  {[1000, 1500, 2000, 5000].map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      onClick={() => setPresetAmount(amt)}
-                      className="px-2.5 py-1 bg-neutral-950 border border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg text-xs font-mono transition-colors cursor-pointer"
-                    >
-                      + Rs.{amt.toLocaleString()}
-                    </button>
-                  ))}
+
+                  {/* Filter preset amounts to ONLY show values LESS THAN OR EQUAL TO the current target balance due */}
+                  {(() => {
+                    const currentDue = paymentTargetType === 'MONTHLY'
+                      ? (selectedMonthlyPmt ? selectedMonthlyPmt.balanceAmount : 0)
+                      : regBalance;
+                    const candidates = [100, 200, 300, 500, 1000, 1500, 2000, 5000];
+                    const validPresets = candidates.filter((amt) => amt < currentDue);
+
+                    return validPresets.map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setPresetAmount(amt)}
+                        className="px-2.5 py-1 bg-neutral-950 border border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg text-xs font-mono transition-colors cursor-pointer"
+                      >
+                        + Rs.{amt.toLocaleString()}
+                      </button>
+                    ));
+                  })()}
                 </div>
               </div>
 
@@ -687,61 +823,74 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
         </div>
       )}
 
-      {/* Session Recent Collections List */}
-      {recentCollections.length > 0 && (
+      {/* Live DB-Connected Payment Collections History Log (Partial & Full Payment Cards) */}
+      {liveDbCollectionLogs.length > 0 && (
         <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl">
           <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
             <div>
               <h3 className="text-base font-semibold text-white flex items-center gap-2">
                 <Clock className="w-4 h-4 text-emerald-400" />
-                <span>Recent Session Collections ({recentCollections.length})</span>
+                <span>Payment Collections History Log ({liveDbCollectionLogs.length} Installments)</span>
               </h3>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Payments collected during this session. Re-print bills anytime.
+                Itemized log of every partial and full payment collected with exact date and time.
               </p>
             </div>
-            <button
-              onClick={() => setRecentCollections([])}
-              className="text-xs text-neutral-400 hover:text-white flex items-center gap-1"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Clear Log</span>
-            </button>
           </div>
 
-          <div className="space-y-2">
-            {recentCollections.map((rec) => (
+          <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+            {liveDbCollectionLogs.map((log) => (
               <div
-                key={rec.id}
-                className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs"
+                key={log.id}
+                className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs shadow-xs hover:border-neutral-750 transition-all"
               >
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white text-sm">{rec.customerName}</span>
+                  <div className="flex items-center flex-wrap gap-2">
+                    <span className="font-bold text-white text-sm">{log.customerName}</span>
                     <span className="px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded font-mono font-bold text-[10px] text-emerald-400">
-                      Box: {rec.boxNo}
+                      Box: {log.boxNo}
                     </span>
-                    <span className="text-[10px] text-neutral-500 font-mono">{rec.timestamp}</span>
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[10px] font-mono text-neutral-300">
+                      <Calendar className="w-3 h-3 text-neutral-400" />
+                      <span>{log.dateDisplay}</span>
+                      {log.timeDisplay && <span className="text-emerald-400 font-bold ml-1">{log.timeDisplay}</span>}
+                    </div>
+                    <span className="px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[9px] font-mono text-neutral-400 uppercase">
+                      {log.paymentMethod}
+                    </span>
                   </div>
-                  <p className="text-neutral-400">{rec.periodOrTitle}</p>
+
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <p className="text-neutral-400 font-medium">{log.periodOrTitle}</p>
+                    <span
+                      className={`px-1.5 py-0.5 text-[9px] font-bold font-mono rounded ${
+                        log.isPartial
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      }`}
+                    >
+                      {log.isPartial ? 'PARTIAL PAYMENT' : 'FULL PAYMENT'}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-4">
+                <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
                   <div className="text-right font-mono">
                     <span className="font-bold text-emerald-400 text-sm block">
-                      +{formatMoney(rec.amountPaid, currency)}
+                      +{formatMoney(log.installmentAmount, currency)}
                     </span>
-                    <span className="text-[10px] text-neutral-400 block">
-                      Bal: {formatMoney(rec.balanceRemaining, currency)}
+                    <span className={`text-[10px] block ${log.balanceRemaining > 0 ? 'text-amber-400 font-semibold' : 'text-neutral-400'}`}>
+                      Bal: {formatMoney(log.balanceRemaining, currency)}
                     </span>
                   </div>
 
                   <button
                     onClick={() => {
-                      setActiveBillData(rec.billData);
+                      setActiveBillData(log.rawBillData);
                       setIsBillModalOpen(true);
                     }}
-                    className="py-1.5 px-3 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-neutral-200 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="py-1.5 px-3 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-neutral-200 hover:text-white rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    title="Print Receipt Bill for this Installment"
                   >
                     <Printer className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Print Bill</span>

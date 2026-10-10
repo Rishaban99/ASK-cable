@@ -290,7 +290,7 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
     if (!currentCustomer) return;
 
     if (customerMonthlyPayments.length === 0) {
-      alert('No monthly bills recorded yet for this customer.');
+      toast.error('No monthly bills recorded yet for this customer.');
       return;
     }
 

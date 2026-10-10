@@ -177,7 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                             isActive
                               ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs'
-                              : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900'
+                              : 'text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10'
                           }`}
                         >
                           <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-neutral-400'}`} />
@@ -204,7 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                               isActive
                                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs'
-                                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900'
+                                : 'text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10'
                             }`}
                           >
                             <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-neutral-400'}`} />
@@ -275,7 +275,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div>
               <button
                 onClick={() => onSelectTab('dashboard')}
-                className="text-left font-bold text-lg text-white tracking-tight hover:text-emerald-300 transition-colors"
+                className="text-left font-bold text-lg text-white tracking-tight hover:text-emerald-300 transition-colors cursor-pointer"
               >
                 <span className="text-emerald-400">ASK</span> Cable
               </button>
@@ -301,8 +301,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={() => onSelectTab(item.id)}
                       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm font-bold'
-                          : 'text-neutral-400 hover:text-white hover:bg-neutral-900/80'
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm font-bold'
+                          : 'text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -334,8 +334,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onClick={() => onSelectTab(item.id)}
                         className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                           isActive
-                            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm font-bold'
-                            : 'text-neutral-400 hover:text-white hover:bg-neutral-900/80'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm font-bold'
+                            : 'text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10'
                         }`}
                       >
                         <div className="flex items-center gap-3">

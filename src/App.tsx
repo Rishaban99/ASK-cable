@@ -258,6 +258,7 @@ export default function App() {
           <PaymentCollectionView
             customers={customers}
             monthlyPayments={monthlyPayments}
+            incomes={incomes}
             currency={currency}
             onRefreshData={loadData}
             currentUser={currentUser}

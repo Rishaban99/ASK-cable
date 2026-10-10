@@ -1,6 +1,19 @@
 @import "tailwindcss";
 
 /* -------------------------------------------------------------------
+ * GLOBAL CURSOR POINTER & INTERACTIVE CONTROL ENHANCEMENTS
+ * Guarantees every button and interactive control displays cursor: pointer
+ * ------------------------------------------------------------------- */
+button,
+a,
+select,
+summary,
+[role="button"],
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+/* -------------------------------------------------------------------
  * GLOBAL HIGH-VISIBILITY CARD & CONTAINER COLOR RULES (Dark Mode & Universal)
  * Gives all UI Cards distinct visible background colors, crisp borders, & depth
  * ------------------------------------------------------------------- */
@@ -90,6 +103,21 @@ td {
 }
 .theme-light header .text-white {
   color: #0f172a !important;
+}
+
+/* Light mode Sidebar styling */
+.theme-light aside {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+.theme-light aside button:hover:not(.bg-emerald-500\/15):not(.bg-rose-500\/10) {
+  background-color: #ecfdf5 !important;
+  color: #059669 !important;
+}
+
+.theme-light aside button:hover .text-neutral-400 {
+  color: #059669 !important;
 }
 
 /* Light mode primary card container backgrounds & sharp shadows */
@@ -244,3 +272,20 @@ td {
 .theme-light .text-rose-300 {
   color: #e11d48 !important;
 }
+
+/* Light mode gradient stat cards */
+.theme-light [class*="from-emerald-950"] {
+  background: linear-gradient(to bottom right, #ecfdf5, #ffffff) !important;
+  border-color: #a7f3d0 !important;
+}
+
+.theme-light [class*="from-rose-950"] {
+  background: linear-gradient(to bottom right, #fff1f2, #ffffff) !important;
+  border-color: #fecdd3 !important;
+}
+
+.theme-light [class*="from-indigo-950"] {
+  background: linear-gradient(to bottom right, #eef2ff, #ffffff) !important;
+  border-color: #c7d2fe !important;
+}
+
