@@ -249,6 +249,7 @@ export default function App() {
           <CustomerHistoryView
             customers={customers}
             monthlyPayments={monthlyPayments}
+            incomes={incomes}
             currency={currency}
             onRefreshData={loadData}
             currentUser={currentUser}

@@ -111,23 +111,29 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
   const monthlyBalanceSum = customerMonthlyPayments.reduce((sum, p) => sum + p.balanceAmount, 0);
   const grandBalance = regBalance + monthlyBalanceSum;
 
+  // Dues availability flags
+  const hasMonthlyDue = monthlyBalanceSum > 0 && unpaidMonthlyPayments.length > 0;
+  const hasRegDue = regBalance > 0;
+
   // Selected monthly payment item object
   const selectedMonthlyPmt = customerMonthlyPayments.find((p) => p.id === selectedMonthlyPaymentId) || unpaidMonthlyPayments[0];
 
   // Auto-sync initial selection when customer changes
   useEffect(() => {
-    if (unpaidMonthlyPayments.length > 0) {
-      setSelectedMonthlyPaymentId(unpaidMonthlyPayments[0].id);
-      if (paymentTargetType === 'MONTHLY') {
+    if (hasMonthlyDue) {
+      setPaymentTargetType('MONTHLY');
+      if (unpaidMonthlyPayments.length > 0) {
+        setSelectedMonthlyPaymentId(unpaidMonthlyPayments[0].id);
         setPayAmount(unpaidMonthlyPayments[0].balanceAmount.toString());
       }
-    } else if (regBalance > 0) {
+    } else if (hasRegDue) {
       setPaymentTargetType('REGISTRATION');
       setPayAmount(regBalance.toString());
     } else {
+      setPaymentTargetType('MONTHLY');
       setPayAmount('');
     }
-  }, [selectedCustId]);
+  }, [selectedCustId, customerMonthlyPayments.length, regBalance, monthlyBalanceSum]);
 
   // Update default pay amount when payment target type or selected monthly payment changes
   const handleTargetTypeChange = (type: 'MONTHLY' | 'REGISTRATION') => {
@@ -539,20 +545,30 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono pt-2 border-t border-neutral-850">
-                <div className="p-2 rounded bg-neutral-900 border border-neutral-850">
-                  <span className="text-neutral-400 block text-[10px]">Box Connection:</span>
-                  <span className={regBalance > 0 ? 'text-amber-400 font-bold' : 'text-emerald-400'}>
-                    {formatMoney(regBalance, currency)}
-                  </span>
-                </div>
+              <div className={`grid ${regBalance > 0 && monthlyBalanceSum > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 text-[11px] font-mono pt-2 border-t border-neutral-850`}>
+                {regBalance > 0 && (
+                  <div className="p-2 rounded bg-neutral-900 border border-neutral-850">
+                    <span className="text-neutral-400 block text-[10px]">Box Connection:</span>
+                    <span className="text-amber-400 font-bold">
+                      {formatMoney(regBalance, currency)}
+                    </span>
+                  </div>
+                )}
 
-                <div className="p-2 rounded bg-neutral-900 border border-neutral-850">
-                  <span className="text-neutral-400 block text-[10px]">Monthly Dues:</span>
-                  <span className={monthlyBalanceSum > 0 ? 'text-amber-400 font-bold' : 'text-emerald-400'}>
-                    {formatMoney(monthlyBalanceSum, currency)}
-                  </span>
-                </div>
+                {monthlyBalanceSum > 0 && (
+                  <div className="p-2 rounded bg-neutral-900 border border-neutral-850">
+                    <span className="text-neutral-400 block text-[10px]">Monthly Dues:</span>
+                    <span className="text-amber-400 font-bold">
+                      {formatMoney(monthlyBalanceSum, currency)}
+                    </span>
+                  </div>
+                )}
+
+                {regBalance === 0 && monthlyBalanceSum === 0 && (
+                  <div className="p-2 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-center font-bold text-xs">
+                    ✓ All Balance Cleared (Rs. 0.00)
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -571,48 +587,59 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
               </div>
 
               {/* Target Payment Selection Radio */}
-              <div className="space-y-1">
-                <label className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider">
-                  Payment Item / Category *
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => handleTargetTypeChange('MONTHLY')}
-                    className={`p-2.5 sm:p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                      paymentTargetType === 'MONTHLY'
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-xs'
-                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <div className="min-w-0 pr-1">
-                      <span className="font-bold block text-xs">Monthly Subscription</span>
-                      <span className="text-[10px] text-neutral-400 truncate block">
-                        {customerMonthlyPayments.length} billing cycle(s)
-                      </span>
-                    </div>
-                    {paymentTargetType === 'MONTHLY' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-                  </button>
+              {hasMonthlyDue || hasRegDue ? (
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider">
+                    Payment Item / Category *
+                  </label>
+                  <div className={`grid ${hasMonthlyDue && hasRegDue ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-2.5`}>
+                    {hasMonthlyDue && (
+                      <button
+                        type="button"
+                        onClick={() => handleTargetTypeChange('MONTHLY')}
+                        className={`p-2.5 sm:p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                          paymentTargetType === 'MONTHLY'
+                            ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-xs'
+                            : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        <div className="min-w-0 pr-1">
+                          <span className="font-bold block text-xs">Monthly Subscription</span>
+                          <span className="text-[10px] text-neutral-400 truncate block">
+                            {unpaidMonthlyPayments.length} pending bill(s) • Due: {formatMoney(monthlyBalanceSum, currency)}
+                          </span>
+                        </div>
+                        {paymentTargetType === 'MONTHLY' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                      </button>
+                    )}
 
-                  <button
-                    type="button"
-                    onClick={() => handleTargetTypeChange('REGISTRATION')}
-                    className={`p-2.5 sm:p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                      paymentTargetType === 'REGISTRATION'
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-xs'
-                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <div className="min-w-0 pr-1">
-                      <span className="font-bold block text-xs">Box Setup & Registration</span>
-                      <span className="text-[10px] text-neutral-400 truncate block">
-                        Remaining: {formatMoney(regBalance, currency)}
-                      </span>
-                    </div>
-                    {paymentTargetType === 'REGISTRATION' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-                  </button>
+                    {hasRegDue && (
+                      <button
+                        type="button"
+                        onClick={() => handleTargetTypeChange('REGISTRATION')}
+                        className={`p-2.5 sm:p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                          paymentTargetType === 'REGISTRATION'
+                            ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-xs'
+                            : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        <div className="min-w-0 pr-1">
+                          <span className="font-bold block text-xs">Box Setup & Registration</span>
+                          <span className="text-[10px] text-neutral-400 truncate block">
+                            Remaining: {formatMoney(regBalance, currency)}
+                          </span>
+                        </div>
+                        {paymentTargetType === 'REGISTRATION' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <span>All payment categories are fully settled! Remaining balance is Rs. 0.00.</span>
+                </div>
+              )}
 
               {/* Side-by-Side: Billing Month (or item) & Payment Amount Input */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -691,6 +718,8 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                 const candidates = [100, 200, 300, 500, 1000, 1500, 2000, 5000];
                 const validPresets = candidates.filter((amt) => amt < currentDue);
                 const isFullDueSelected = currentDue > 0 && parseFloat(payAmount) === currentDue;
+
+                if (currentDue <= 0) return null;
 
                 return (
                   <div className="p-2.5 sm:p-3 rounded-xl bg-neutral-950/70 border border-neutral-800 space-y-2 shadow-xs">
@@ -823,11 +852,17 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
               <div className="pt-1">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || grandBalance === 0}
                   className="w-full py-2.5 px-4 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-neutral-950 font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
                 >
                   <Banknote className="w-4 h-4 text-neutral-950" />
-                  <span>{isSubmitting ? 'Processing Payment...' : 'Collect Payment & Print Receipt'}</span>
+                  <span>
+                    {isSubmitting
+                      ? 'Processing Payment...'
+                      : grandBalance === 0
+                      ? 'All Dues Paid (Balance: Rs. 0.00)'
+                      : 'Collect Payment & Print Receipt'}
+                  </span>
                 </button>
               </div>
             </form>

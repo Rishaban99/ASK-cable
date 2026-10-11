@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Customer, MonthlyPayment, SupportedCurrency, User } from '../types/finance.js';
+import { Customer, MonthlyPayment, IncomeRecord, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
 import { useToast } from './Toast.js';
@@ -28,6 +28,7 @@ import {
 interface CustomerHistoryViewProps {
   customers: Customer[];
   monthlyPayments: MonthlyPayment[];
+  incomes?: IncomeRecord[];
   currency: SupportedCurrency;
   onRefreshData: () => void;
   currentUser?: User | null;
@@ -38,6 +39,7 @@ interface CustomerHistoryViewProps {
 export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
   customers,
   monthlyPayments,
+  incomes = [],
   currency,
   onRefreshData,
   currentUser,
@@ -48,6 +50,8 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
   const [selectedCustId, setSelectedCustId] = useState<string>(initialSelectedId || (customers[0]?.id || ''));
   const [searchQuery, setSearchQuery] = useState('');
   const [historyFilter, setHistoryFilter] = useState<'ALL' | 'REGISTRATION' | 'MONTHLY' | 'UNPAID'>('ALL');
+  const [historyViewTab, setHistoryViewTab] = useState<'ALL' | 'TRANSACTIONS' | 'LEDGER'>('ALL');
+  const [txSearchQuery, setTxSearchQuery] = useState('');
 
   // Pay Balance Modal States
   const [payBalanceTarget, setPayBalanceTarget] = useState<{
@@ -193,6 +197,105 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
     if (historyFilter === 'UNPAID') return item.balanceAmount > 0;
     return true;
   });
+
+  // Filter all income transactions belonging to currentCustomer
+  const customerIncomes = (incomes || []).filter((inc) => {
+    if (!currentCustomer) return false;
+    const desc = (inc.description || '').toLowerCase();
+    const custName = (currentCustomer.name || '').trim().toLowerCase();
+    const boxNo = (currentCustomer.boxNo || '').trim().toLowerCase();
+
+    // 1. Tag matches box number or customer id
+    if (inc.tags && Array.isArray(inc.tags)) {
+      if (boxNo && boxNo !== '-' && inc.tags.some((t) => t.toLowerCase() === boxNo)) return true;
+      if (inc.tags.some((t) => t === currentCustomer.id)) return true;
+    }
+
+    // 2. Box number match in description (e.g. "(Box: 2)" or "Box: 2")
+    if (boxNo && boxNo !== '-') {
+      const boxPattern = new RegExp(`\\bbox[:\\s-]*${boxNo}\\b`, 'i');
+      if (boxPattern.test(desc) || desc.includes(`(box: ${boxNo})`) || desc.includes(`box ${boxNo}`)) {
+        return true;
+      }
+    }
+
+    // 3. Customer name match in description (e.g. "Eramaiyya manoj")
+    if (custName && custName.length >= 2 && desc.includes(custName)) {
+      return true;
+    }
+
+    return false;
+  });
+
+  // Sort customer incomes: newest first
+  const sortedCustomerIncomes = [...customerIncomes].sort((a, b) => {
+    const tA = a.createdAt ? new Date(a.createdAt).getTime() : (a.date ? new Date(a.date).getTime() : 0);
+    const tB = b.createdAt ? new Date(b.createdAt).getTime() : (b.date ? new Date(b.date).getTime() : 0);
+    return tB - tA;
+  });
+
+  // Filtered customer incomes by search query
+  const filteredCustomerIncomes = sortedCustomerIncomes.filter((inc) => {
+    if (!txSearchQuery) return true;
+    const q = txSearchQuery.toLowerCase();
+    return (
+      (inc.description || '').toLowerCase().includes(q) ||
+      (inc.paymentMethod || '').toLowerCase().includes(q) ||
+      (inc.categoryName || '').toLowerCase().includes(q) ||
+      (inc.date || '').includes(q)
+    );
+  });
+
+  const totalCollectedSum = customerIncomes.reduce((sum, inc) => sum + (inc.amount || 0), 0);
+
+  const formatTransactionDateTime = (inc: IncomeRecord) => {
+    let dateDisplay = inc.date || '';
+    let timeDisplay = '';
+
+    if (inc.createdAt) {
+      try {
+        const dt = new Date(inc.createdAt);
+        if (!isNaN(dt.getTime())) {
+          if (!dateDisplay) {
+            dateDisplay = dt.toISOString().split('T')[0];
+          }
+          timeDisplay = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+      } catch {}
+    }
+
+    if (!dateDisplay) {
+      dateDisplay = 'N/A';
+    }
+
+    return { dateDisplay, timeDisplay };
+  };
+
+  const handlePrintIncomeBill = (inc: IncomeRecord) => {
+    if (!currentCustomer) return;
+    const desc = inc.description || '';
+    const monthMatch = desc.match(/\((\d{4}-\d{2})\)/);
+    const monthStr = monthMatch ? monthMatch[1] : undefined;
+    const { dateDisplay, timeDisplay } = formatTransactionDateTime(inc);
+
+    setActiveBillData({
+      type: monthStr ? 'MONTHLY' : 'CUSTOMER',
+      billNo: `RCPT-${currentCustomer.boxNo || 'BOX'}-${inc.id.slice(-6).toUpperCase()}`,
+      date: dateDisplay !== 'N/A' ? dateDisplay : todayStr,
+      customerName: currentCustomer.name,
+      nicNo: currentCustomer.nicNo,
+      phoneNo: currentCustomer.phoneNo,
+      address: currentCustomer.address,
+      boxNo: currentCustomer.boxNo,
+      month: monthStr,
+      totalOrFeeAmount: inc.amount,
+      paidAmount: inc.amount,
+      balanceAmount: 0,
+      status: 'PAID',
+      paymentDate: timeDisplay ? `${dateDisplay} ${timeDisplay}` : (dateDisplay !== 'N/A' ? dateDisplay : todayStr),
+    });
+    setIsBillModalOpen(true);
+  };
 
   // Bill Printing Handlers
   const handlePrintHistoryItemBill = (item: CombinedHistoryItem) => {
@@ -661,8 +764,258 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
             </div>
           </div>
 
+          {/* Sub-Navigation: Switch between All History, Transactions Log, and Billing Ledger */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-neutral-900 border border-neutral-800 p-3 rounded-xl shadow-xl">
+            <div className="flex items-center flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setHistoryViewTab('ALL')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  historyViewTab === 'ALL'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs font-bold'
+                    : 'text-neutral-400 hover:text-white bg-neutral-950 border border-neutral-800'
+                }`}
+              >
+                All History View
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryViewTab('TRANSACTIONS')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  historyViewTab === 'TRANSACTIONS'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs font-bold'
+                    : 'text-neutral-400 hover:text-white bg-neutral-950 border border-neutral-800'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Payment Transactions Log ({customerIncomes.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryViewTab('LEDGER')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  historyViewTab === 'LEDGER'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs font-bold'
+                    : 'text-neutral-400 hover:text-white bg-neutral-950 border border-neutral-800'
+                }`}
+              >
+                <History className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Billing Ledger ({historyItems.length})</span>
+              </button>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 self-end sm:self-auto">
+              <span>Total Inflows:</span>
+              <span className="text-emerald-400 font-bold">+{formatMoney(totalCollectedSum, currency)}</span>
+            </div>
+          </div>
+
+          {/* SECTION: Payment Transactions Log (Timestamped Payments - Second Image UI) */}
+          {(historyViewTab === 'ALL' || historyViewTab === 'TRANSACTIONS') && (
+            <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-800 pb-3">
+                <div>
+                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <span>Payment Transactions Log ({customerIncomes.length} Records)</span>
+                  </h3>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    Individual payments collected with exact date & time logs and receipt vouchers
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Search description, method..."
+                      value={txSearchQuery}
+                      onChange={(e) => setTxSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-7 py-1.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                    />
+                    {txSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setTxSearchQuery('')}
+                        className="absolute right-2.5 top-1.5 text-neutral-400 hover:text-white text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Cards View for Transactions (block md:hidden) */}
+              <div className="block md:hidden space-y-3">
+                {filteredCustomerIncomes.length === 0 ? (
+                  <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-950 rounded-xl border border-neutral-800">
+                    {txSearchQuery
+                      ? `No payment transactions match "${txSearchQuery}".`
+                      : 'No payment transaction records found for this subscriber.'}
+                  </div>
+                ) : (
+                  filteredCustomerIncomes.map((inc) => {
+                    const { dateDisplay, timeDisplay } = formatTransactionDateTime(inc);
+                    return (
+                      <div
+                        key={inc.id}
+                        className="p-4 space-y-3 bg-neutral-950 border border-neutral-800 rounded-2xl shadow-md transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-2.5">
+                          <div className="space-y-1">
+                            <h4 className="font-bold text-white text-sm leading-tight">{inc.description}</h4>
+                            <div className="flex items-center flex-wrap gap-2 pt-0.5 text-[11px] font-mono text-neutral-400">
+                              <span className="inline-flex items-center gap-1 text-neutral-300">
+                                <Calendar className="w-3 h-3 text-neutral-400" />
+                                {dateDisplay}
+                              </span>
+                              {timeDisplay && (
+                                <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
+                                  <Clock className="w-3 h-3 text-emerald-400/80" />
+                                  {timeDisplay}
+                                </span>
+                              )}
+                              <span>•</span>
+                              <span>
+                                Method: <span className="text-neutral-200 font-semibold">{inc.paymentMethod || 'CASH'}</span>
+                              </span>
+                            </div>
+                          </div>
+                          <span className="font-mono font-bold text-emerald-400 text-sm px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg shrink-0">
+                            +{formatMoney(inc.amount, currency)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 pt-0.5">
+                          <span
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
+                            style={{
+                              backgroundColor: `${inc.categoryColor || '#10B981'}20`,
+                              color: inc.categoryColor || '#10B981',
+                              border: `1px solid ${inc.categoryColor || '#10B981'}40`,
+                            }}
+                          >
+                            <Tag className="w-3 h-3 shrink-0" />
+                            <span>{inc.categoryName || 'Customer Cable Payments'}</span>
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handlePrintIncomeBill(inc)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                            title="Print Receipt"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Receipt</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+
+                <div className="p-3.5 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono shadow-sm">
+                  <span>Total Payments Collected:</span>
+                  <span className="font-bold text-emerald-400 text-sm">
+                    +{formatMoney(totalCollectedSum, currency)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Desktop Table View for Transactions (hidden md:block) - Matching Second Image UI */}
+              <div className="hidden md:block rounded-lg bg-neutral-950 border border-neutral-800 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono">
+                      <tr>
+                        <th className="px-4 py-3">Date & Time</th>
+                        <th className="px-4 py-3">Description</th>
+                        <th className="px-4 py-3">Category</th>
+                        <th className="px-4 py-3">Payment Method</th>
+                        <th className="px-4 py-3 text-right">Amount ({currency})</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-850">
+                      {filteredCustomerIncomes.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">
+                            {txSearchQuery
+                              ? `No payment transactions match "${txSearchQuery}".`
+                              : 'No payment transaction records found for this subscriber.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredCustomerIncomes.map((inc) => {
+                          const { dateDisplay, timeDisplay } = formatTransactionDateTime(inc);
+                          return (
+                            <tr key={inc.id} className="hover:bg-neutral-900/60 transition-colors">
+                              <td className="px-4 py-3">
+                                <div className="flex flex-col">
+                                  <span className="font-mono text-neutral-200 font-medium flex items-center gap-1.5">
+                                    <Calendar className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                                    <span>{dateDisplay}</span>
+                                  </span>
+                                  {timeDisplay ? (
+                                    <span className="font-mono text-[11px] text-emerald-400 flex items-center gap-1 mt-0.5 font-semibold">
+                                      <Clock className="w-3 h-3 text-emerald-400/80 shrink-0" />
+                                      <span>{timeDisplay}</span>
+                                    </span>
+                                  ) : (
+                                    <span className="font-mono text-[10px] text-neutral-500 mt-0.5">Recorded on date</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 font-medium text-white">
+                                {inc.description}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-medium"
+                                  style={{
+                                    backgroundColor: `${inc.categoryColor || '#10B981'}20`,
+                                    color: inc.categoryColor || '#10B981',
+                                    border: `1px solid ${inc.categoryColor || '#10B981'}40`,
+                                  }}
+                                >
+                                  <Tag className="w-3 h-3 shrink-0" />
+                                  <span>{inc.categoryName || 'Customer Cable Payments'}</span>
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 font-mono text-neutral-300">
+                                <span className="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[11px]">
+                                  {inc.paymentMethod || 'CASH'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400 text-sm">
+                                +{formatMoney(inc.amount, currency)}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handlePrintIncomeBill(inc)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white rounded text-[11px] font-medium transition-colors cursor-pointer"
+                                  title="Print Receipt"
+                                >
+                                  <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span>Receipt</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Bottom Section: Payment History Ledger Table */}
-          <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl">
+          {(historyViewTab === 'ALL' || historyViewTab === 'LEDGER') && (
+            <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-800 pb-3">
               <div>
                 <h3 className="text-base font-semibold text-white flex items-center gap-2">
@@ -892,6 +1245,7 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
               </div>
             </div>
           </div>
+          )}
         </>
       )}
 

@@ -115,6 +115,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   const selectedCustomerRegMonth = selectedCustomer?.createdAt ? getRegistrationMonth(selectedCustomer.createdAt) : '';
   const minEligibleMonth = selectedCustomerRegMonth ? getNextBillingMonth(selectedCustomerRegMonth) : '';
   const isSelectedMonthIneligible = Boolean(selectedCustomerRegMonth && month && month <= selectedCustomerRegMonth);
+  const isSelectedCustomerInactive = Boolean(selectedCustomer && (selectedCustomer.status || 'ACTIVE') !== 'ACTIVE');
 
   // Automatically adjust month if selected customer registered in or after selected month
   useEffect(() => {
@@ -293,6 +294,12 @@ Monthly bills or payment records are not created for new subscribers during thei
 
     if (!selectedCustomerId) {
       setErrorMsg('Please select a customer.');
+      return;
+    }
+    if (isSelectedCustomerInactive) {
+      const msg = `Cannot record monthly payment for inactive customer "${selectedCustomer?.name || ''}". Only active subscribers are eligible for monthly payment records.`;
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
     if (!month) {
@@ -633,28 +640,35 @@ Monthly bills or payment records are not created for new subscribers during thei
             <form onSubmit={handleCreatePayment} className="space-y-4 text-xs">
               {/* Customer Dropdown */}
               <div>
-                <label className="block text-neutral-400 font-medium mb-1">Select Customer *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-neutral-400 font-medium">Select Customer *</label>
+                  <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">
+                    Active Subscribers Only
+                  </span>
+                </div>
                 <select
                   required
                   value={selectedCustomerId}
                   onChange={(e) => handleCustomerSelect(e.target.value)}
                   className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-emerald-500/50"
                 >
-                  <option value="">-- Choose Registered Customer --</option>
-                  {customers.map((c) => {
-                    const cRegMonth = getRegistrationMonth(c.createdAt);
-                    const isRegisteredThisMonth = cRegMonth === currentMonthStr;
-                    return (
-                      <option key={c.id} value={c.id}>
-                        {c.name} (Box: {c.boxNo})
-                        {isRegisteredThisMonth
-                          ? ` • [New - Registered This Month: ${cRegMonth}]`
-                          : cRegMonth
-                          ? ` • [Joined: ${cRegMonth}]`
-                          : ''}
-                      </option>
-                    );
-                  })}
+                  <option value="">-- Choose Registered Active Customer --</option>
+                  {customers
+                    .filter((c) => (c.status || 'ACTIVE') === 'ACTIVE')
+                    .map((c) => {
+                      const cRegMonth = getRegistrationMonth(c.createdAt);
+                      const isRegisteredThisMonth = cRegMonth === currentMonthStr;
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.name} (Box: {c.boxNo})
+                          {isRegisteredThisMonth
+                            ? ` • [New - Registered This Month: ${cRegMonth}]`
+                            : cRegMonth
+                            ? ` • [Joined: ${cRegMonth}]`
+                            : ''}
+                        </option>
+                      );
+                    })}
                 </select>
               </div>
 
@@ -663,7 +677,16 @@ Monthly bills or payment records are not created for new subscribers during thei
                 <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-850 space-y-2">
                   <div className="flex items-center justify-between text-neutral-300 text-xs">
                     <span className="text-neutral-400">Assigned Box No:</span>
-                    <span className="font-mono font-bold text-emerald-400">{selectedCustomer.boxNo}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-emerald-400">{selectedCustomer.boxNo}</span>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${
+                        (selectedCustomer.status || 'ACTIVE') === 'ACTIVE'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                      }`}>
+                        {selectedCustomer.status || 'ACTIVE'}
+                      </span>
+                    </div>
                   </div>
                   {selectedCustomerRegMonth && (
                     <div className="flex items-center justify-between text-[11px] border-t border-neutral-850 pt-1.5 text-neutral-400">
@@ -786,9 +809,9 @@ Monthly bills or payment records are not created for new subscribers during thei
 
               <button
                 type="submit"
-                disabled={isSubmitting || isSelectedMonthIneligible}
+                disabled={isSubmitting || isSelectedMonthIneligible || isSelectedCustomerInactive}
                 className={`w-full py-2.5 px-4 text-xs font-semibold rounded-md transition-colors shadow-lg flex items-center justify-center gap-2 ${
-                  isSelectedMonthIneligible
+                  isSelectedMonthIneligible || isSelectedCustomerInactive
                     ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed border border-neutral-700'
                     : 'text-neutral-950 bg-emerald-400 hover:bg-emerald-300 cursor-pointer'
                 }`}
@@ -797,6 +820,8 @@ Monthly bills or payment records are not created for new subscribers during thei
                 <span>
                   {isSubmitting
                     ? 'Recording...'
+                    : isSelectedCustomerInactive
+                    ? 'Customer is Inactive (Only Active Customers Eligible)'
                     : isSelectedMonthIneligible
                     ? 'Ineligible Billing Month (Select Next Month)'
                     : 'Record Monthly Payment'}

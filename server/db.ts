@@ -610,6 +610,13 @@ export class RelationalDatabaseStore {
     const cust = await custClient.findUnique({ where: { id: dto.customerId } });
     if (!cust) throw new Error(`Customer not found for ID "${dto.customerId}"`);
 
+    // Ensure customer is active
+    if ((cust.status || 'ACTIVE') !== 'ACTIVE') {
+      throw new Error(
+        `Cannot record monthly payment for inactive customer "${cust.name}" (Box ${cust.boxNo}). Only active subscribers can have monthly bills created.`
+      );
+    }
+
     // Prevent creating bills or payment records for registration month or prior months
     const regMonth = this.getCustomerRegistrationMonth(cust.createdAt, cust.id);
     if (regMonth && dto.month <= regMonth) {
