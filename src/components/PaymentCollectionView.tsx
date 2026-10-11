@@ -17,7 +17,8 @@ import {
   Clock,
   Check,
   Box,
-  DollarSign
+  DollarSign,
+  Zap
 } from 'lucide-react';
 
 interface PaymentCollectionViewProps {
@@ -399,9 +400,9 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5">
       {/* Header Banner */}
-      <div className="bg-neutral-900 border border-neutral-800 p-5 sm:p-6 rounded-xl shadow-xl space-y-4">
+      <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-xl shadow-xl space-y-3">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
@@ -472,15 +473,14 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Customer Profile & Dues Overview (5 Cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Customer Summary Card */}
-            <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 shadow-xl">
-              <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-white">{currentCustomer.name}</h2>
+        <div className="rounded-2xl bg-neutral-900 border border-neutral-800 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+          {/* Left Column: Customer Profile & Dues Overview (Joined seamlessly) */}
+          <div className="lg:col-span-5 p-4 sm:p-5 lg:p-6 bg-neutral-950/40 border-b lg:border-b-0 lg:border-r border-neutral-800 flex flex-col justify-between space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-start justify-between border-b border-neutral-800 pb-3">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-bold text-white truncate">{currentCustomer.name}</h2>
                     <span
                       className={`px-2 py-0.5 text-[10px] font-bold rounded ${
                         (currentCustomer.status || 'ACTIVE') === 'ACTIVE'
@@ -502,7 +502,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                 {onNavigateToHistory && (
                   <button
                     onClick={() => onNavigateToHistory(currentCustomer.id)}
-                    className="text-[11px] text-emerald-400 hover:underline font-semibold flex items-center gap-1"
+                    className="text-[11px] text-emerald-400 hover:underline font-semibold flex items-center gap-1 shrink-0 ml-2"
                   >
                     <span>View History</span>
                   </button>
@@ -510,274 +510,286 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
               </div>
 
               {/* Contact Details */}
-              <div className="space-y-2.5 text-xs">
+              <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between py-1 border-b border-neutral-850">
                   <span className="text-neutral-400">NIC No:</span>
-                  <span className="font-mono text-white font-medium">{currentCustomer.nicNo}</span>
+                  <span className="font-mono text-white font-medium">{currentCustomer.nicNo || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-neutral-850">
                   <span className="text-neutral-400">Phone No:</span>
-                  <span className="font-mono text-white font-medium">{currentCustomer.phoneNo}</span>
+                  <span className="font-mono text-white font-medium">{currentCustomer.phoneNo || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-neutral-400">Address:</span>
-                  <span className="text-right text-neutral-200 max-w-[180px] truncate">{currentCustomer.address || 'N/A'}</span>
+                  <span className="text-right text-neutral-200 max-w-[200px] truncate">{currentCustomer.address || 'N/A'}</span>
                 </div>
               </div>
+            </div>
 
-              {/* Combined Grand Dues Card */}
-              <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-neutral-400">Grand Outstanding Dues:</span>
-                  <span
-                    className={`font-mono text-lg font-bold ${
-                      grandBalance === 0 ? 'text-emerald-400' : 'text-amber-400'
-                    }`}
-                  >
-                    {formatMoney(grandBalance, currency)}
+            {/* Combined Grand Dues Card */}
+            <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-neutral-400">Grand Outstanding Dues:</span>
+                <span
+                  className={`font-mono text-base sm:text-lg font-bold ${
+                    grandBalance === 0 ? 'text-emerald-400' : 'text-amber-400'
+                  }`}
+                >
+                  {formatMoney(grandBalance, currency)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono pt-2 border-t border-neutral-850">
+                <div className="p-2 rounded bg-neutral-900 border border-neutral-850">
+                  <span className="text-neutral-400 block text-[10px]">Box Connection:</span>
+                  <span className={regBalance > 0 ? 'text-amber-400 font-bold' : 'text-emerald-400'}>
+                    {formatMoney(regBalance, currency)}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono pt-2 border-t border-neutral-850">
-                  <div className="p-2 rounded bg-neutral-900 border border-neutral-850">
-                    <span className="text-neutral-400 block text-[10px]">Box Connection:</span>
-                    <span className={regBalance > 0 ? 'text-amber-400 font-bold' : 'text-emerald-400'}>
-                      {formatMoney(regBalance, currency)}
-                    </span>
-                  </div>
-
-                  <div className="p-2 rounded bg-neutral-900 border border-neutral-850">
-                    <span className="text-neutral-400 block text-[10px]">Monthly Dues:</span>
-                    <span className={monthlyBalanceSum > 0 ? 'text-amber-400 font-bold' : 'text-emerald-400'}>
-                      {formatMoney(monthlyBalanceSum, currency)}
-                    </span>
-                  </div>
+                <div className="p-2 rounded bg-neutral-900 border border-neutral-850">
+                  <span className="text-neutral-400 block text-[10px]">Monthly Dues:</span>
+                  <span className={monthlyBalanceSum > 0 ? 'text-amber-400 font-bold' : 'text-emerald-400'}>
+                    {formatMoney(monthlyBalanceSum, currency)}
+                  </span>
                 </div>
               </div>
-            </div>
-
-            {/* List of Pending Monthly Bills for Selected Customer */}
-            <div className="p-5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-3 shadow-xl">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
-                <span>Pending Monthly Bills ({unpaidMonthlyPayments.length})</span>
-                {unpaidMonthlyPayments.length === 0 && (
-                  <span className="text-[10px] text-emerald-400 lowercase font-normal">All months paid</span>
-                )}
-              </h3>
-
-              {customerMonthlyPayments.length === 0 ? (
-                <p className="text-xs text-neutral-500 italic p-3 text-center bg-neutral-950 rounded-lg">
-                  No monthly billing records created for this subscriber yet.
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                  {customerMonthlyPayments.map((pmt) => {
-                    const isSelected = selectedMonthlyPaymentId === pmt.id && paymentTargetType === 'MONTHLY';
-                    return (
-                      <div
-                        key={pmt.id}
-                        onClick={() => {
-                          setPaymentTargetType('MONTHLY');
-                          handleMonthlyPmtSelect(pmt.id);
-                        }}
-                        className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
-                          isSelected
-                            ? 'bg-emerald-500/15 border-emerald-500/40 shadow-sm'
-                            : 'bg-neutral-950 border-neutral-850 hover:bg-neutral-900'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <span className="font-bold text-white block">{pmt.month} Subscription</span>
-                            <span className="text-[11px] font-mono text-neutral-400">
-                              Fee: {formatMoney(pmt.monthlyFee, currency)} | Paid: {formatMoney(pmt.paidAmount, currency)}
-                            </span>
-                          </div>
-                          <div className="text-right font-mono">
-                            <span
-                              className={`px-2 py-0.5 text-[10px] font-bold rounded inline-block mb-1 ${
-                                pmt.status === 'PAID'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                  : pmt.status === 'PARTIAL'
-                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                  : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                              }`}
-                            >
-                              {pmt.status}
-                            </span>
-                            <span className={`block font-bold text-xs ${pmt.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                              Due: {formatMoney(pmt.balanceAmount, currency)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Right Column: Payment Collection Form (7 Cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            <form onSubmit={handleSubmitPayment} className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-6 shadow-xl">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-emerald-400" />
+          {/* Right Column: Payment Collection Form (Joined seamlessly) */}
+          <div className="lg:col-span-7 p-4 sm:p-5 lg:p-6">
+            <form onSubmit={handleSubmitPayment} className="space-y-3.5">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
                   <span>Collect Payment Entry</span>
                 </h2>
-                <span className="text-xs text-neutral-400">Subscriber: <strong className="text-white">{currentCustomer.name}</strong></span>
+                <span className="text-xs text-neutral-400 hidden sm:inline">
+                  Subscriber: <strong className="text-white">{currentCustomer.name}</strong>
+                </span>
               </div>
 
               {/* Target Payment Selection Radio */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider">
-                  Select Payment Item / Category *
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider">
+                  Payment Item / Category *
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={() => handleTargetTypeChange('MONTHLY')}
-                    className={`p-3.5 rounded-xl border text-left flex items-start justify-between transition-all cursor-pointer ${
+                    className={`p-2.5 sm:p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                       paymentTargetType === 'MONTHLY'
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-sm'
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-xs'
                         : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white'
                     }`}
                   >
-                    <div>
-                      <span className="font-bold block text-sm">Monthly Subscription</span>
-                      <span className="text-[11px] text-neutral-400">Monthly billing dues ({customerMonthlyPayments.length} cycles)</span>
+                    <div className="min-w-0 pr-1">
+                      <span className="font-bold block text-xs">Monthly Subscription</span>
+                      <span className="text-[10px] text-neutral-400 truncate block">
+                        {customerMonthlyPayments.length} billing cycle(s)
+                      </span>
                     </div>
-                    {paymentTargetType === 'MONTHLY' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
+                    {paymentTargetType === 'MONTHLY' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleTargetTypeChange('REGISTRATION')}
-                    className={`p-3.5 rounded-xl border text-left flex items-start justify-between transition-all cursor-pointer ${
+                    className={`p-2.5 sm:p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                       paymentTargetType === 'REGISTRATION'
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-sm'
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-white shadow-xs'
                         : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:text-white'
                     }`}
                   >
-                    <div>
-                      <span className="font-bold block text-sm">Box Setup & Registration</span>
-                      <span className="text-[11px] text-neutral-400">
+                    <div className="min-w-0 pr-1">
+                      <span className="font-bold block text-xs">Box Setup & Registration</span>
+                      <span className="text-[10px] text-neutral-400 truncate block">
                         Remaining: {formatMoney(regBalance, currency)}
                       </span>
                     </div>
-                    {paymentTargetType === 'REGISTRATION' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
+                    {paymentTargetType === 'REGISTRATION' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                   </button>
                 </div>
               </div>
 
-              {/* If MONTHLY target selected: Choose Month Dropdown */}
-              {paymentTargetType === 'MONTHLY' && (
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider">
-                    Select Billing Month *
-                  </label>
-                  {customerMonthlyPayments.length === 0 ? (
-                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>No monthly payment entries exist for this customer yet. You can create monthly bills in the Monthly Payment tab.</span>
-                    </div>
-                  ) : (
-                    <select
-                      value={selectedMonthlyPaymentId}
-                      onChange={(e) => handleMonthlyPmtSelect(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                    >
-                      {customerMonthlyPayments.map((pmt) => (
-                        <option key={pmt.id} value={pmt.id}>
-                          {pmt.month} - Fee: {formatMoney(pmt.monthlyFee, currency)} (Paid: {formatMoney(pmt.paidAmount, currency)} | Due: {formatMoney(pmt.balanceAmount, currency)}) [{pmt.status}]
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              )}
-
-              {/* Amount Entry & Quick Preset Buttons */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider">
-                    Payment Amount (LKR) *
-                  </label>
-                  {paymentTargetType === 'MONTHLY' && selectedMonthlyPmt && (
-                    <span className="text-xs text-neutral-400">
-                      Target Balance Due: <strong className="text-amber-400 font-mono">{formatMoney(selectedMonthlyPmt.balanceAmount, currency)}</strong>
-                    </span>
-                  )}
-                  {paymentTargetType === 'REGISTRATION' && (
-                    <span className="text-xs text-neutral-400">
-                      Reg Balance Due: <strong className="text-amber-400 font-mono">{formatMoney(regBalance, currency)}</strong>
-                    </span>
-                  )}
-                </div>
-
-                <div className="relative">
-                  <span className="absolute left-3.5 top-3 text-xs font-mono font-bold text-emerald-400">LKR</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    value={payAmount}
-                    onChange={(e) => setPayAmount(e.target.value)}
-                    placeholder="Enter amount collected..."
-                    className="w-full pl-14 pr-4 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-white font-mono text-sm font-bold focus:outline-none focus:border-emerald-500/50 shadow-inner"
-                  />
-                </div>
-
-                {/* Quick Presets Bar */}
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <span className="text-[11px] text-neutral-400 font-medium">Quick Fill:</span>
-                  {paymentTargetType === 'MONTHLY' && selectedMonthlyPmt && selectedMonthlyPmt.balanceAmount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setPresetAmount(selectedMonthlyPmt.balanceAmount)}
-                      className="px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 rounded-lg text-xs font-mono font-semibold transition-colors cursor-pointer"
-                    >
-                      Full Month Balance ({selectedMonthlyPmt.balanceAmount})
-                    </button>
-                  )}
-                  {paymentTargetType === 'REGISTRATION' && regBalance > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setPresetAmount(regBalance)}
-                      className="px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 rounded-lg text-xs font-mono font-semibold transition-colors cursor-pointer"
-                    >
-                      Full Reg Balance ({regBalance})
-                    </button>
-                  )}
-
-                  {/* Filter preset amounts to ONLY show values LESS THAN OR EQUAL TO the current target balance due */}
-                  {(() => {
-                    const currentDue = paymentTargetType === 'MONTHLY'
-                      ? (selectedMonthlyPmt ? selectedMonthlyPmt.balanceAmount : 0)
-                      : regBalance;
-                    const candidates = [100, 200, 300, 500, 1000, 1500, 2000, 5000];
-                    const validPresets = candidates.filter((amt) => amt < currentDue);
-
-                    return validPresets.map((amt) => (
-                      <button
-                        key={amt}
-                        type="button"
-                        onClick={() => setPresetAmount(amt)}
-                        className="px-2.5 py-1 bg-neutral-950 border border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg text-xs font-mono transition-colors cursor-pointer"
+              {/* Side-by-Side: Billing Month (or item) & Payment Amount Input */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {paymentTargetType === 'MONTHLY' ? (
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider">
+                      Select Billing Month *
+                    </label>
+                    {customerMonthlyPayments.length === 0 ? (
+                      <div className="p-2 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-[11px]">
+                        No monthly payment entries exist.
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedMonthlyPaymentId}
+                        onChange={(e) => handleMonthlyPmtSelect(e.target.value)}
+                        className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer h-[38px]"
                       >
-                        + Rs.{amt.toLocaleString()}
-                      </button>
-                    ));
-                  })()}
+                        {customerMonthlyPayments.map((pmt) => (
+                          <option key={pmt.id} value={pmt.id}>
+                            {pmt.month} - Fee: {formatMoney(pmt.monthlyFee, currency)} (Due: {formatMoney(pmt.balanceAmount, currency)}) [{pmt.status}]
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider">
+                      Registration Fee Target
+                    </label>
+                    <div className="px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-xs font-semibold text-neutral-300 flex items-center justify-between h-[38px]">
+                      <span>Box Setup & Reg</span>
+                      <span className="font-mono text-amber-400 font-bold">{formatMoney(regBalance, currency)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider">
+                      Payment Amount (LKR) *
+                    </label>
+                    {paymentTargetType === 'MONTHLY' && selectedMonthlyPmt && (
+                      <span className="text-[10px] text-neutral-400 font-mono">
+                        Due: <strong className="text-amber-400">{formatMoney(selectedMonthlyPmt.balanceAmount, currency)}</strong>
+                      </span>
+                    )}
+                    {paymentTargetType === 'REGISTRATION' && (
+                      <span className="text-[10px] text-neutral-400 font-mono">
+                        Due: <strong className="text-amber-400">{formatMoney(regBalance, currency)}</strong>
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs font-mono font-bold text-emerald-400">LKR</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      required
+                      value={payAmount}
+                      onChange={(e) => setPayAmount(e.target.value)}
+                      placeholder="Enter amount collected..."
+                      className="w-full pl-12 pr-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-white font-mono text-xs font-bold focus:outline-none focus:border-emerald-500/50 shadow-inner h-[38px]"
+                    />
+                  </div>
                 </div>
               </div>
 
+              {/* Quick Access Presets Panel (Mobile-First Clear View) */}
+              {(() => {
+                const currentDue = paymentTargetType === 'MONTHLY'
+                  ? (selectedMonthlyPmt ? selectedMonthlyPmt.balanceAmount : 0)
+                  : regBalance;
+                const candidates = [100, 200, 300, 500, 1000, 1500, 2000, 5000];
+                const validPresets = candidates.filter((amt) => amt < currentDue);
+                const isFullDueSelected = currentDue > 0 && parseFloat(payAmount) === currentDue;
+
+                return (
+                  <div className="p-2.5 sm:p-3 rounded-xl bg-neutral-950/70 border border-neutral-800 space-y-2 shadow-xs">
+                    {/* Header with Title and Clear Action */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20 shrink-0" />
+                        <span className="text-[11px] font-bold text-neutral-200 uppercase tracking-wider">
+                          Quick Access Presets
+                        </span>
+                      </div>
+                      {payAmount && (
+                        <button
+                          type="button"
+                          onClick={() => setPayAmount('')}
+                          className="text-[10px] text-neutral-400 hover:text-rose-400 font-medium transition-colors cursor-pointer"
+                          title="Clear entered amount"
+                        >
+                          Clear Amount
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Primary Hero Shortcut: Settle Full Balance */}
+                    {currentDue > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setPresetAmount(currentDue)}
+                        className={`w-full py-2 px-3 rounded-lg border text-left transition-all cursor-pointer flex items-center justify-between gap-2 shadow-xs ${
+                          isFullDueSelected
+                            ? 'bg-emerald-500/20 border-emerald-500 text-white ring-1 ring-emerald-500/40 shadow-sm'
+                            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
+                            isFullDueSelected
+                              ? 'bg-emerald-500 text-neutral-950 font-bold'
+                              : 'bg-emerald-500/20 text-emerald-400'
+                          }`}>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold block truncate text-white">
+                              {paymentTargetType === 'MONTHLY'
+                                ? `Full Month Due (${selectedMonthlyPmt?.month || ''})`
+                                : 'Full Reg Balance'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 font-mono">
+                          <span className="text-xs sm:text-sm font-bold text-emerald-400">
+                            {formatMoney(currentDue, currency)}
+                          </span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                            isFullDueSelected ? 'bg-emerald-500 text-neutral-950' : 'bg-emerald-500/20 text-emerald-300'
+                          }`}>
+                            {isFullDueSelected ? '✓ Selected' : 'One-Tap'}
+                          </span>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Common Cash Presets (Clear Touch View on Mobile) */}
+                    {validPresets.length > 0 && (
+                      <div className="space-y-1 pt-0.5">
+                        <span className="text-[10px] text-neutral-400 uppercase font-semibold tracking-wider block">
+                          Common Cash Presets
+                        </span>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1.5">
+                          {validPresets.map((amt) => {
+                            const isSelected = parseFloat(payAmount) === amt;
+                            return (
+                              <button
+                                key={amt}
+                                type="button"
+                                onClick={() => setPresetAmount(amt)}
+                                className={`py-1.5 px-1 rounded-lg border text-center transition-all cursor-pointer font-mono font-bold text-xs shadow-xs ${
+                                  isSelected
+                                    ? 'bg-emerald-400 text-neutral-950 border-emerald-400 ring-1 ring-emerald-400/40 font-bold shadow-sm'
+                                    : 'bg-neutral-900 border-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-850'
+                                }`}
+                              >
+                                Rs. {amt.toLocaleString()}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Payment Date & Payment Method Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider mb-1">
                     Payment Date *
                   </label>
                   <input
@@ -785,18 +797,18 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                     required
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-emerald-500/50"
+                    className="w-full px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-emerald-500/50 h-[36px]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[11px] font-semibold text-neutral-300 uppercase tracking-wider mb-1">
                     Payment Method *
                   </label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-emerald-500/50 cursor-pointer"
+                    className="w-full px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-xl text-white text-xs font-semibold focus:outline-none focus:border-emerald-500/50 cursor-pointer h-[36px]"
                   >
                     <option value="Cash">Cash Collection</option>
                     <option value="Bank Transfer">Bank Transfer / EzCash</option>
@@ -808,13 +820,13 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
               </div>
 
               {/* Submit Payment Action */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 px-4 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-neutral-950 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+                  className="w-full py-2.5 px-4 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-neutral-950 font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
                 >
-                  <Banknote className="w-5 h-5 text-neutral-950" />
+                  <Banknote className="w-4 h-4 text-neutral-950" />
                   <span>{isSubmitting ? 'Processing Payment...' : 'Collect Payment & Print Receipt'}</span>
                 </button>
               </div>
