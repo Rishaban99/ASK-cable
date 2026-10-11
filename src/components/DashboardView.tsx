@@ -717,21 +717,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           ========================================================================== */}
       {isSkippedModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-neutral-900 border border-neutral-700 rounded-xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
             {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/70">
+            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-900">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
                   <UserX className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
                     <span>Skipped Customers — {formatMonthLabel(selectedBillingMonth)}</span>
-                    <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
                       {totalSkippedCount} Total
                     </span>
                   </h3>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                     Accurate, database-driven reasons why these customer accounts are bypassed during bulk bill generation.
                   </p>
                 </div>
@@ -739,24 +739,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSkippedModalOpen(false)}
-                className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Filter Tabs & Search Bar */}
-            <div className="p-4 border-b border-neutral-800 bg-neutral-900/90 space-y-3">
+            <div className="p-4 border-b border-neutral-800 bg-neutral-900 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 {/* Reason Category Filter Tabs */}
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setSkippedFilterTab('ALL')}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-md border transition-colors ${
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
                       skippedFilterTab === 'ALL'
-                        ? 'bg-purple-500 text-white border-purple-400 font-semibold'
-                        : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-750'
+                        ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
+                        : 'bg-neutral-800 text-neutral-300 border-neutral-750 hover:bg-neutral-750'
                     }`}
                   >
                     All ({totalSkippedCount})
@@ -764,10 +764,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setSkippedFilterTab('NEW_REGISTRATION')}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-md border transition-colors ${
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
                       skippedFilterTab === 'NEW_REGISTRATION'
-                        ? 'bg-purple-500 text-white border-purple-400 font-semibold'
-                        : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-750'
+                        ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
+                        : 'bg-neutral-800 text-neutral-300 border-neutral-750 hover:bg-neutral-750'
                     }`}
                   >
                     New Registration ({skippedNewRegCount})
@@ -775,10 +775,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setSkippedFilterTab('INACTIVE_STATUS')}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-md border transition-colors ${
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
                       skippedFilterTab === 'INACTIVE_STATUS'
-                        ? 'bg-purple-500 text-white border-purple-400 font-semibold'
-                        : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-750'
+                        ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
+                        : 'bg-neutral-800 text-neutral-300 border-neutral-750 hover:bg-neutral-750'
                     }`}
                   >
                     Inactive / Disconnected ({skippedInactiveCount})
@@ -786,10 +786,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setSkippedFilterTab('ALREADY_BILLED')}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-md border transition-colors ${
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
                       skippedFilterTab === 'ALREADY_BILLED'
-                        ? 'bg-purple-500 text-white border-purple-400 font-semibold'
-                        : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-750'
+                        ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
+                        : 'bg-neutral-800 text-neutral-300 border-neutral-750 hover:bg-neutral-750'
                     }`}
                   >
                     Already Billed ({skippedAlreadyBilledCount})
@@ -804,13 +804,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     value={skippedSearchTerm}
                     onChange={(e) => setSkippedSearchTerm(e.target.value)}
                     placeholder="Search Box No, Name, Phone..."
-                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-neutral-700 bg-neutral-800 text-white placeholder-neutral-500 focus:outline-none focus:border-purple-400 font-mono"
+                    className="w-full pl-8 pr-8 py-1.5 text-xs rounded-lg border border-neutral-700 bg-neutral-800 text-white placeholder-neutral-400 focus:outline-none focus:border-purple-400 font-mono"
                   />
                   {skippedSearchTerm && (
                     <button
                       type="button"
                       onClick={() => setSkippedSearchTerm('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -819,10 +819,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               {/* Informational Rule Alert */}
-              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-neutral-950/60 border border-neutral-800 text-xs text-neutral-300">
-                <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-900 dark:text-purple-200">
+                <Info className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
                 <p>
-                  <strong className="text-white">Business Rule:</strong> Customers registering in month <span className="font-mono text-purple-300">{selectedBillingMonth}</span> are excluded from billing for their registration month and earlier months. Billing begins in the subsequent month.
+                  <strong className="text-purple-950 dark:text-white">Business Rule:</strong> Customers registering in month <span className="font-mono font-bold text-purple-700 dark:text-purple-300">{selectedBillingMonth}</span> are excluded from billing for their registration month and earlier months. Billing begins in the subsequent month.
                 </p>
               </div>
             </div>
@@ -830,7 +830,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* Modal Body / Customer Table */}
             <div className="flex-1 overflow-y-auto p-4 divide-y divide-neutral-800">
               {filteredSkippedList.length === 0 ? (
-                <div className="py-16 text-center text-xs text-neutral-500">
+                <div className="py-16 text-center text-xs text-neutral-400">
                   No skipped customers found matching current filters.
                 </div>
               ) : (
@@ -840,19 +840,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     return (
                       <div
                         key={customer.id}
-                        className="p-3.5 rounded-xl bg-neutral-950/50 border border-neutral-800 hover:border-neutral-700 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+                        className="p-3.5 rounded-xl bg-neutral-850 border border-neutral-800 hover:border-neutral-700 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
                       >
                         {/* Customer Identification */}
                         <div className="space-y-1 min-w-[220px]">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-white bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700">
+                            <span className="font-mono font-bold text-neutral-900 dark:text-white bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 rounded border border-neutral-300 dark:border-neutral-700">
                               Box #{customer.boxNo}
                             </span>
-                            <span className="font-semibold text-white truncate">
+                            <span className="font-bold text-neutral-900 dark:text-white text-sm truncate">
                               {customer.name}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] text-neutral-400 font-mono">
+                          <div className="flex items-center gap-2 text-[11px] text-neutral-600 dark:text-neutral-400 font-mono">
                             <span>Phone: {customer.phoneNo || 'N/A'}</span>
                             {customer.nicNo && <span>· NIC: {customer.nicNo}</span>}
                           </div>
@@ -869,7 +869,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           >
                             {customer.status || 'ACTIVE'}
                           </span>
-                          <span className="text-neutral-400">
+                          <span className="text-neutral-600 dark:text-neutral-400">
                             Reg: {customer.createdAt ? customer.createdAt.slice(0, 10) : (item.regMonth || 'N/A')}
                           </span>
                         </div>
@@ -877,15 +877,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         {/* Skipped Reason Callout */}
                         <div className="flex-1 min-w-[260px]">
                           <div
-                            className={`p-2 rounded-lg border text-[11px] leading-relaxed ${
+                            className={`p-2.5 rounded-lg border text-[11px] leading-relaxed ${
                               category === 'NEW_REGISTRATION'
-                                ? 'bg-purple-950/40 text-purple-200 border-purple-500/30'
+                                ? 'bg-purple-500/15 text-purple-900 dark:text-purple-200 border-purple-500/30'
                                 : category === 'INACTIVE_STATUS'
-                                ? 'bg-rose-950/40 text-rose-200 border-rose-500/30'
-                                : 'bg-blue-950/40 text-blue-200 border-blue-500/30'
+                                ? 'bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/30'
+                                : 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-500/30'
                             }`}
                           >
-                            <span className="font-bold uppercase tracking-wider block text-[10px] mb-0.5">
+                            <span
+                              className={`font-bold uppercase tracking-wider block text-[10px] mb-0.5 ${
+                                category === 'NEW_REGISTRATION'
+                                  ? 'text-purple-700 dark:text-purple-300'
+                                  : category === 'INACTIVE_STATUS'
+                                  ? 'text-rose-700 dark:text-rose-300'
+                                  : 'text-blue-700 dark:text-blue-300'
+                              }`}
+                            >
                               {category === 'NEW_REGISTRATION' && '⚡ New Registration (Starts Next Month)'}
                               {category === 'INACTIVE_STATUS' && '⛔ Inactive Account Status'}
                               {category === 'ALREADY_BILLED' && '✓ Bill Already Created (No Duplicates)'}
@@ -901,12 +909,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="p-3.5 border-t border-neutral-800 bg-neutral-950/80 flex items-center justify-between text-xs text-neutral-400">
+            <div className="p-3.5 border-t border-neutral-800 bg-neutral-900 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
               <span>Showing {filteredSkippedList.length} of {totalSkippedCount} skipped customers</span>
               <button
                 type="button"
                 onClick={() => setIsSkippedModalOpen(false)}
-                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-neutral-800 hover:bg-neutral-750 text-white transition-colors"
+                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-neutral-200 hover:bg-neutral-300 text-neutral-900 dark:bg-neutral-800 dark:hover:bg-neutral-750 dark:text-white border border-neutral-300 dark:border-neutral-700 transition-colors"
               >
                 Close
               </button>

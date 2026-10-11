@@ -108,6 +108,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showPaymentForms, setShowPaymentForms] = useState(true);
 
   // Selected customer object derived from state
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
@@ -502,7 +503,7 @@ Monthly bills or payment records are not created for new subscribers during thei
   const periodMonthOptions = availableMonths;
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
+    <div className="mx-auto max-w-[1700px] w-full px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
       {/* Header with PERIOD Month Quick Filters Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -515,14 +516,26 @@ Monthly bills or payment records are not created for new subscribers during thei
           </p>
         </div>
 
-        {/* PERIOD: Month Pills Filter Strip (Only Months with Real Data) */}
-        {periodMonthOptions.length > 0 && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none">
-            {/* PERIOD Label Badge */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-full text-xs font-bold text-indigo-400 font-mono shrink-0 shadow-sm">
-              <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-              <span>PERIOD:</span>
-            </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Form Visibility Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowPaymentForms(!showPaymentForms)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer bg-neutral-900 border-neutral-800 text-neutral-200 hover:text-white hover:border-neutral-700 shadow-xs shrink-0"
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{showPaymentForms ? 'Hide Forms' : '+ Record Payment / Bulk'}</span>
+            {showPaymentForms ? <ChevronUp className="w-3 h-3 text-neutral-400" /> : <ChevronDown className="w-3 h-3 text-neutral-400" />}
+          </button>
+
+          {/* PERIOD: Month Pills Filter Strip (Only Months with Real Data) */}
+          {periodMonthOptions.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none">
+              {/* PERIOD Label Badge */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-full text-xs font-bold text-indigo-400 font-mono shrink-0 shadow-sm">
+                <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                <span>PERIOD:</span>
+              </div>
 
             {/* Month Pills (Only Months with Data) */}
             {periodMonthOptions.map((mStr) => {
@@ -545,6 +558,7 @@ Monthly bills or payment records are not created for new subscribers during thei
             })}
           </div>
         )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -593,9 +607,10 @@ Monthly bills or payment records are not created for new subscribers during thei
       </div>
 
       {/* Main Grid: Form (Left) & Ledger Table (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className={`grid grid-cols-1 ${showPaymentForms ? 'xl:grid-cols-12' : ''} gap-5 sm:gap-6`}>
         {/* 1. Left Column: Individual Form & Admin Bulk Dues Generator */}
-        <div className="space-y-6">
+        {showPaymentForms && (
+          <div className="xl:col-span-4 space-y-6">
           {/* Individual Payment Form */}
           <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 shadow-xl">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
@@ -943,9 +958,10 @@ Monthly bills or payment records are not created for new subscribers during thei
             </div>
           )}
         </div>
+        )}
 
-        {/* 2. Monthly Payments Ledger Table (Right 2 Cols) */}
-        <div className="lg:col-span-2 p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl flex flex-col justify-between">
+        {/* 2. Monthly Payments Ledger Table */}
+        <div className={`${showPaymentForms ? 'xl:col-span-8' : 'w-full'} p-4 sm:p-5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl flex flex-col justify-between`}>
           <div className="space-y-4">
             {/* Table Header Controls */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
@@ -1126,47 +1142,47 @@ Monthly bills or payment records are not created for new subscribers during thei
             <div className="hidden md:block rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono">
+                  <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono text-[11px]">
                     <tr>
-                      <th className="px-4 py-3">Customer</th>
-                      <th className="px-4 py-3">Box No</th>
-                      <th className="px-4 py-3">Month</th>
-                      <th className="px-4 py-3 text-right">Fee</th>
-                      <th className="px-4 py-3 text-right">Paid</th>
-                      <th className="px-4 py-3 text-right">Balance</th>
-                      <th className="px-4 py-3 text-center">Status</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
+                      <th className="px-2.5 sm:px-3 py-2.5">Customer</th>
+                      <th className="px-2.5 sm:px-3 py-2.5">Box No</th>
+                      <th className="px-2.5 sm:px-3 py-2.5">Month</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Fee</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Paid</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Balance</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-center">Status</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-850">
                     {filteredPayments.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-10 text-center text-neutral-500">
+                        <td colSpan={8} className="px-3 py-10 text-center text-neutral-500">
                           No monthly payment records match the current filters.
                         </td>
                       </tr>
                     ) : (
                       filteredPayments.map((pmt) => (
                         <tr key={pmt.id} className="hover:bg-neutral-900/60 transition-colors">
-                          <td className="px-4 py-3 font-semibold text-white">
+                          <td className="px-2.5 sm:px-3 py-2.5 font-semibold text-white leading-snug">
                             {pmt.customerName}
                           </td>
-                          <td className="px-4 py-3 font-mono">
-                            <span className="inline-block px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[11px] font-semibold text-emerald-400">
+                          <td className="px-2.5 sm:px-3 py-2.5 font-mono whitespace-nowrap">
+                            <span className="inline-block px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[11px] font-semibold text-emerald-400">
                               {pmt.boxNo}
                             </span>
                           </td>
-                          <td className="px-4 py-3 font-mono text-neutral-300">
+                          <td className="px-2.5 sm:px-3 py-2.5 font-mono text-neutral-300 whitespace-nowrap">
                             {pmt.month}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono text-neutral-300">
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono text-neutral-300 whitespace-nowrap text-xs">
                             {formatMoney(pmt.monthlyFee, currency)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono font-medium text-emerald-400">
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono font-medium text-emerald-400 whitespace-nowrap text-xs">
                             {formatMoney(pmt.paidAmount, currency)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono font-bold">
-                            <span className={`px-2 py-0.5 rounded text-[11px] ${
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono font-bold whitespace-nowrap text-xs">
+                            <span className={`px-1.5 py-0.5 rounded text-[11px] inline-block ${
                               pmt.balanceAmount === 0
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
@@ -1174,8 +1190,8 @@ Monthly bills or payment records are not created for new subscribers during thei
                               {formatMoney(pmt.balanceAmount, currency)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] font-mono font-bold rounded ${
+                          <td className="px-2.5 sm:px-3 py-2.5 text-center whitespace-nowrap">
+                            <span className={`inline-block px-1.5 py-0.5 text-[10px] font-mono font-bold rounded ${
                               pmt.status === 'PAID'
                                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                                 : pmt.status === 'PARTIAL'
@@ -1185,39 +1201,37 @@ Monthly bills or payment records are not created for new subscribers during thei
                               {pmt.status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1">
                               {pmt.balanceAmount > 0 && (
                                 <button
                                   onClick={() => handleOpenPayBalance(pmt)}
-                                  className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
+                                  className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
                                   title="Pay Balance"
                                 >
                                   <CreditCard className="w-3 h-3" />
-                                  <span>Pay Balance</span>
+                                  <span>Pay</span>
                                 </button>
                               )}
                               {onViewHistory && pmt.customerId && (
                                 <button
                                   onClick={() => onViewHistory(pmt.customerId)}
-                                  className="flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 rounded text-[11px] font-medium transition-colors cursor-pointer shrink-0"
+                                  className="p-1.5 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 rounded transition-colors cursor-pointer shrink-0"
                                   title="View Customer Payment History"
                                 >
                                   <History className="w-3.5 h-3.5" />
-                                  <span>History</span>
                                 </button>
                               )}
                               <button
                                 onClick={() => handlePrintMonthlyBill(pmt)}
-                                className="flex items-center gap-1 px-2 py-1 bg-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-700 rounded text-[11px] font-medium transition-colors cursor-pointer shrink-0"
+                                className="p-1.5 bg-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-700 rounded transition-colors cursor-pointer shrink-0"
                                 title="Print Bill / Receipt"
                               >
                                 <Printer className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>Bill</span>
                               </button>
                               <button
                                 onClick={() => handleOpenEdit(pmt)}
-                                className="p-1.5 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-900 rounded transition-colors"
+                                className="p-1.5 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-900 rounded transition-colors cursor-pointer shrink-0"
                                 title="Edit Record"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -1225,7 +1239,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                               {currentUser?.role !== 'STAFF' && (
                                 <button
                                   onClick={() => handleDelete(pmt.id, pmt.customerName, pmt.month)}
-                                  className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-neutral-900 rounded transition-colors"
+                                  className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-neutral-900 rounded transition-colors cursor-pointer shrink-0"
                                   title="Delete Record (Admin Only)"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />

@@ -36,7 +36,10 @@ summary,
 .bg-neutral-950\/95,
 .bg-neutral-950\/90,
 .bg-neutral-950\/80,
-.bg-neutral-950\/60 {
+.bg-neutral-950\/70,
+.bg-neutral-950\/60,
+.bg-neutral-950\/50,
+.bg-neutral-950\/40 {
   background-color: #09090b !important; /* Rich deep black/zinc inner container */
   border-color: #3f3f46 !important;
 }
@@ -138,8 +141,11 @@ td {
 .theme-light .bg-neutral-950\/95,
 .theme-light .bg-neutral-950\/90,
 .theme-light .bg-neutral-950\/80,
-.theme-light .bg-neutral-950\/60 {
-  background-color: #f1f5f9 !important; /* Slate-100: Distinct contrast inside white cards */
+.theme-light .bg-neutral-950\/70,
+.theme-light .bg-neutral-950\/60,
+.theme-light .bg-neutral-950\/50,
+.theme-light .bg-neutral-950\/40 {
+  background-color: #f8fafc !important; /* Slate-50: Distinct contrast inside white cards */
   border-color: #cbd5e1 !important;
 }
 

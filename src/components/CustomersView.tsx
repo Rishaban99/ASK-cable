@@ -21,7 +21,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Printer,
-  History
+  History,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface CustomersViewProps {
@@ -44,6 +46,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAiFixing, setIsAiFixing] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(true);
 
   // Registration Form States
   const [name, setName] = useState('');
@@ -302,7 +305,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   });
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
+    <div className="mx-auto max-w-[1700px] w-full px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
@@ -314,21 +317,43 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
             Register new cable subscribers, track total/paid amounts, balance dues, and box numbers stored in MongoDB.
           </p>
         </div>
+
+        {/* Form Visibility Toggle */}
+        <button
+          type="button"
+          onClick={() => setShowRegistrationForm(!showRegistrationForm)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer bg-neutral-900 border-neutral-800 text-neutral-200 hover:text-white hover:border-neutral-700 shadow-xs self-start sm:self-auto shrink-0"
+        >
+          <UserPlus className="w-3.5 h-3.5 text-emerald-400" />
+          <span>{showRegistrationForm ? 'Hide Form' : '+ Register New Customer'}</span>
+          {showRegistrationForm ? <ChevronUp className="w-3 h-3 text-neutral-400" /> : <ChevronDown className="w-3 h-3 text-neutral-400" />}
+        </button>
       </div>
 
       {/* Main Grid: Registration Form (Left) & Customer Table (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className={`grid grid-cols-1 ${showRegistrationForm ? 'xl:grid-cols-12' : ''} gap-5 sm:gap-6`}>
         {/* 1. Customer Registration Form Card */}
-        <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 h-fit shadow-xl">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-            <h2 className="text-base font-semibold text-white flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-emerald-400" />
-              <span>Customer Registration</span>
-            </h2>
-            <span className="text-[11px] font-mono text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-              DB Connected
-            </span>
-          </div>
+        {showRegistrationForm && (
+          <div className="xl:col-span-4 p-5 sm:p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 h-fit shadow-xl">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-emerald-400" />
+                <span>Customer Registration</span>
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                  DB Connected
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowRegistrationForm(false)}
+                  className="p-1 text-neutral-400 hover:text-white rounded hover:bg-neutral-800 transition-colors"
+                  title="Collapse Registration Form"
+                >
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
 
           {errorMsg && (
             <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-md flex items-center gap-2">
@@ -511,9 +536,10 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
             </button>
           </form>
         </div>
+        )}
 
-        {/* 2. Registered Customer Table Card (Right 2 Cols) */}
-        <div className="lg:col-span-2 p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl flex flex-col justify-between">
+        {/* 2. Registered Customer Table Card */}
+        <div className={`${showRegistrationForm ? 'xl:col-span-8' : 'w-full'} p-4 sm:p-5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl flex flex-col justify-between`}>
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-800 pb-3">
               <div>
@@ -683,45 +709,45 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
             <div className="hidden md:block rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono">
+                  <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono text-[11px]">
                     <tr>
-                      <th className="px-4 py-3">Customer</th>
-                      <th className="px-4 py-3">NIC & Phone</th>
-                      <th className="px-4 py-3">Box No</th>
-                      <th className="px-4 py-3 text-center">Status</th>
-                      <th className="px-4 py-3 text-right">Total</th>
-                      <th className="px-4 py-3 text-right">Paid</th>
-                      <th className="px-4 py-3 text-right">Balance</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
+                      <th className="px-2.5 sm:px-3 py-2.5">Customer</th>
+                      <th className="px-2.5 sm:px-3 py-2.5">NIC & Phone</th>
+                      <th className="px-2.5 sm:px-3 py-2.5">Box No</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-center">Status</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Total</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Paid</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Balance</th>
+                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-850">
                     {filteredCustomers.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-10 text-center text-neutral-500">
+                        <td colSpan={8} className="px-3 py-10 text-center text-neutral-500">
                           No customer records found matching the criteria.
                         </td>
                       </tr>
                     ) : (
                       filteredCustomers.map((cust) => (
                         <tr key={cust.id} className="hover:bg-neutral-900/60 transition-colors">
-                          <td className="px-4 py-3">
-                            <p className="font-semibold text-white">{cust.name}</p>
-                            <p className="text-[11px] text-neutral-400 truncate max-w-[150px]">
+                          <td className="px-2.5 sm:px-3 py-2.5">
+                            <p className="font-semibold text-white leading-snug">{cust.name}</p>
+                            <p className="text-[11px] text-neutral-400 truncate max-w-[120px] 2xl:max-w-[200px]" title={cust.address || 'No Address'}>
                               {cust.address || 'No Address'}
                             </p>
                           </td>
-                          <td className="px-4 py-3 font-mono">
-                            <p className="text-neutral-200">{cust.nicNo}</p>
+                          <td className="px-2.5 sm:px-3 py-2.5 font-mono whitespace-nowrap">
+                            <p className="text-neutral-200 text-xs">{cust.nicNo}</p>
                             <p className="text-neutral-400 text-[11px]">{cust.phoneNo}</p>
                           </td>
-                          <td className="px-4 py-3 font-mono">
-                            <span className="inline-block px-2 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[11px] font-semibold text-emerald-400">
+                          <td className="px-2.5 sm:px-3 py-2.5 font-mono whitespace-nowrap">
+                            <span className="inline-block px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[11px] font-semibold text-emerald-400">
                               {cust.boxNo}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-center font-mono">
-                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${
+                          <td className="px-2.5 sm:px-3 py-2.5 text-center font-mono whitespace-nowrap">
+                            <span className={`inline-block px-1.5 py-0.5 text-[10px] font-bold rounded ${
                               (cust.status || 'ACTIVE') === 'ACTIVE'
                                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                                 : (cust.status || 'ACTIVE') === 'INACTIVE'
@@ -731,14 +757,14 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               {cust.status || 'ACTIVE'}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-right font-mono text-neutral-300">
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono text-neutral-300 whitespace-nowrap text-xs">
                             {formatMoney(cust.totalAmount, currency)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono font-medium text-emerald-400">
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono font-medium text-emerald-400 whitespace-nowrap text-xs">
                             {formatMoney(cust.paidAmount, currency)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono font-bold">
-                            <span className={`px-2 py-0.5 rounded text-[11px] ${
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono font-bold whitespace-nowrap text-xs">
+                            <span className={`px-1.5 py-0.5 rounded text-[11px] inline-block ${
                               cust.balanceAmount === 0
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
@@ -746,39 +772,37 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               {formatMoney(cust.balanceAmount, currency)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1">
                               {cust.balanceAmount > 0 && (
                                 <button
                                   onClick={() => handleOpenPayBalance(cust)}
-                                  className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
+                                  className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
                                   title="Pay Balance"
                                 >
                                   <CreditCard className="w-3 h-3" />
-                                  <span>Pay Balance</span>
+                                  <span>Pay</span>
                                 </button>
                               )}
                               {onViewHistory && (
                                 <button
                                   onClick={() => onViewHistory(cust.id)}
-                                  className="flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 rounded text-[11px] font-medium transition-colors cursor-pointer shrink-0"
+                                  className="p-1.5 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 rounded transition-colors cursor-pointer shrink-0"
                                   title="View Customer Payment History"
                                 >
                                   <History className="w-3.5 h-3.5" />
-                                  <span>History</span>
                                 </button>
                               )}
                               <button
                                 onClick={() => handlePrintCustomerBill(cust)}
-                                className="flex items-center gap-1 px-2 py-1 bg-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-700 rounded text-[11px] font-medium transition-colors cursor-pointer shrink-0"
+                                className="p-1.5 bg-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-700 rounded transition-colors cursor-pointer shrink-0"
                                 title="Print Customer Receipt / Bill"
                               >
                                 <Printer className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>Bill</span>
                               </button>
                               <button
                                 onClick={() => handleOpenEdit(cust)}
-                                className="p-1.5 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-900 rounded transition-colors"
+                                className="p-1.5 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-900 rounded transition-colors cursor-pointer shrink-0"
                                 title="Edit Customer"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -786,7 +810,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               {currentUser?.role !== 'STAFF' && (
                                 <button
                                   onClick={() => handleDelete(cust.id, cust.name)}
-                                  className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-neutral-900 rounded transition-colors"
+                                  className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-neutral-900 rounded transition-colors cursor-pointer shrink-0"
                                   title="Delete Customer (Admin Only)"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
