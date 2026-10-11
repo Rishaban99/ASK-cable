@@ -38,6 +38,49 @@ interface MonthlyPaymentViewProps {
   onViewHistory?: (customerId: string) => void;
 }
 
+const getRegistrationMonth = (createdAt?: string | Date | null, customerId?: string): string => {
+  if (createdAt) {
+    if (typeof createdAt === 'string') {
+      const trimmed = createdAt.trim();
+      if (trimmed.length >= 7 && /^\d{4}-\d{2}/.test(trimmed)) return trimmed.slice(0, 7);
+    }
+    const d = new Date(createdAt);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 7);
+  }
+  if (customerId && /^[0-9a-fA-F]{24}$/.test(customerId)) {
+    try {
+      const timestamp = parseInt(customerId.substring(0, 8), 16) * 1000;
+      const d = new Date(timestamp);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 7);
+    } catch {}
+  }
+  return '';
+};
+
+const getNextBillingMonth = (yearMonth: string): string => {
+  if (!yearMonth) return '';
+  const [yStr, mStr] = yearMonth.split('-');
+  let year = parseInt(yStr, 10);
+  let month = parseInt(mStr, 10);
+  if (isNaN(year) || isNaN(month)) return '';
+  month += 1;
+  if (month > 12) {
+    month = 1;
+    year += 1;
+  }
+  return `${year}-${String(month).padStart(2, '0')}`;
+};
+
+const formatYearMonthDisplay = (ym: string): string => {
+  if (!ym) return '';
+  const [yearStr, monthStr] = ym.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  if (isNaN(year) || isNaN(month)) return ym;
+  const d = new Date(year, month - 1, 1);
+  return d.toLocaleString('default', { month: 'short', year: 'numeric' });
+};
+
 export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   monthlyPayments,
   customers,
@@ -68,6 +111,31 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
   // Selected customer object derived from state
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
+  const selectedCustomerRegMonth = selectedCustomer?.createdAt ? getRegistrationMonth(selectedCustomer.createdAt) : '';
+  const minEligibleMonth = selectedCustomerRegMonth ? getNextBillingMonth(selectedCustomerRegMonth) : '';
+  const isSelectedMonthIneligible = Boolean(selectedCustomerRegMonth && month && month <= selectedCustomerRegMonth);
+
+  // Automatically adjust month if selected customer registered in or after selected month
+  useEffect(() => {
+    if (selectedCustomerRegMonth && minEligibleMonth && month <= selectedCustomerRegMonth) {
+      setMonth(minEligibleMonth);
+    }
+  }, [selectedCustomerId, selectedCustomerRegMonth, minEligibleMonth]);
+
+  const handleCustomerSelect = (custId: string) => {
+    setSelectedCustomerId(custId);
+    setErrorMsg('');
+    const cust = customers.find((c) => c.id === custId);
+    if (cust?.createdAt) {
+      const regM = getRegistrationMonth(cust.createdAt);
+      if (regM) {
+        const nextEligible = getNextBillingMonth(regM);
+        if (month <= regM && nextEligible) {
+          setMonth(nextEligible);
+        }
+      }
+    }
+  };
 
   // Calculated balance for the form
   const parsedFee = parseFloat(monthlyFee) || 0;
@@ -80,6 +148,11 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   const [editMonthlyFee, setEditMonthlyFee] = useState('');
   const [editPaidAmount, setEditPaidAmount] = useState('');
   const [editPaymentDate, setEditPaymentDate] = useState('');
+
+  const editCustomer = customers.find((c) => c.id === editingPayment?.customerId);
+  const editRegMonth = editCustomer?.createdAt ? getRegistrationMonth(editCustomer.createdAt) : '';
+  const editMinEligibleMonth = editRegMonth ? getNextBillingMonth(editRegMonth) : '';
+  const isEditMonthIneligible = Boolean(editRegMonth && editMonth && editMonth <= editRegMonth);
 
   const parsedEditFee = parseFloat(editMonthlyFee) || 0;
   const parsedEditPaid = parseFloat(editPaidAmount) || 0;
@@ -128,11 +201,33 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
     totalActiveCustomers: number;
     createdCount: number;
     skippedCount: number;
+    skippedNewRegistrationCount?: number;
+    skippedDuplicateCount?: number;
     totalBilledAmount: number;
     skippedCustomerNames: string[];
     createdCustomerNames: string[];
   } | null>(null);
   const [showSkippedDetails, setShowSkippedDetails] = useState(false);
+
+  // Pre-generation live counts for Bulk Generation
+  const activeSubscribersList = customers.filter((c) => !c.status || c.status === 'ACTIVE');
+  const bulkExcludedNewSubscribers = activeSubscribersList.filter((c) => {
+    const regM = getRegistrationMonth(c.createdAt, c.id);
+    return Boolean(regM && bulkMonth <= regM);
+  });
+  const bulkAlreadyBilledSubscribers = activeSubscribersList.filter((c) => {
+    const regM = getRegistrationMonth(c.createdAt, c.id);
+    if (regM && bulkMonth <= regM) return false;
+    return monthlyPayments.some(
+      (p) =>
+        p.month === bulkMonth &&
+        (p.customerId === c.id || (p.boxNo && p.boxNo.toLowerCase() === c.boxNo.toLowerCase()))
+    );
+  });
+  const bulkEstimatedEligibleCount = Math.max(
+    0,
+    activeSubscribersList.length - bulkExcludedNewSubscribers.length - bulkAlreadyBilledSubscribers.length
+  );
 
   // Confirm Modal State
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
@@ -159,8 +254,14 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
     setConfirmModalConfig({
       isOpen: true,
-      title: `Generate Bulk Dues (${bulkMonth})`,
-      message: `Generate monthly dues for ALL ACTIVE subscribers for ${bulkMonth} at ${formatMoney(feeNum, currency)} each? Existing subscriber records for this month will be skipped automatically.`,
+      title: `Bulk Create Monthly Bills (${bulkMonth})`,
+      message: `Generate monthly dues for eligible active subscribers for ${formatYearMonthDisplay(bulkMonth)} (${bulkMonth}) at ${formatMoney(feeNum, currency)} each?
+
+• Estimated to create: ${bulkEstimatedEligibleCount} bill(s)
+• Excluded (Registered in ${bulkMonth} or later): ${bulkExcludedNewSubscribers.length} new subscriber(s)
+• Already billed for ${bulkMonth}: ${bulkAlreadyBilledSubscribers.length} subscriber(s)
+
+Monthly bills or payment records are not created for new subscribers during their registration month or any months before their registration month.`,
       confirmText: 'Generate Monthly Dues',
       variant: 'emerald',
       onConfirm: async () => {
@@ -197,6 +298,12 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
       setErrorMsg('Please select a payment month.');
       return;
     }
+    if (isSelectedMonthIneligible) {
+      const msg = `Cannot record monthly payment for ${month}. Customer registered in ${selectedCustomerRegMonth}. Monthly bills and payment records cannot be created for the registration month or prior months. First eligible billing month is ${minEligibleMonth}.`;
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
     if (parsedFee <= 0) {
       setErrorMsg('Monthly fee must be greater than 0.');
       return;
@@ -215,6 +322,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
       // Reset form fields
       setSelectedCustomerId('');
       setPaidAmount('');
+      setMonth(currentMonthStr);
       setErrorMsg('');
 
       // Trigger Success Screen Modal
@@ -259,6 +367,12 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPayment) return;
+
+    if (isEditMonthIneligible) {
+      const msg = `Cannot set month to ${editMonth}. Customer registered in ${editRegMonth}. Billing begins from ${editMinEligibleMonth}.`;
+      toast.error(msg);
+      return;
+    }
 
     try {
       await api.updateMonthlyPayment(editingPayment.id, {
@@ -508,37 +622,100 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                 <select
                   required
                   value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
+                  onChange={(e) => handleCustomerSelect(e.target.value)}
                   className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-emerald-500/50"
                 >
                   <option value="">-- Choose Registered Customer --</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} (Box: {c.boxNo})
-                    </option>
-                  ))}
+                  {customers.map((c) => {
+                    const cRegMonth = getRegistrationMonth(c.createdAt);
+                    const isRegisteredThisMonth = cRegMonth === currentMonthStr;
+                    return (
+                      <option key={c.id} value={c.id}>
+                        {c.name} (Box: {c.boxNo})
+                        {isRegisteredThisMonth
+                          ? ` • [New - Registered This Month: ${cRegMonth}]`
+                          : cRegMonth
+                          ? ` • [Joined: ${cRegMonth}]`
+                          : ''}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
-              {/* Box No Display */}
+              {/* Box No and Registration Info Display */}
               {selectedCustomer && (
-                <div className="p-2.5 rounded-md bg-neutral-950 border border-neutral-850 flex items-center justify-between text-neutral-300">
-                  <span className="text-neutral-400">Assigned Box No:</span>
-                  <span className="font-mono font-bold text-emerald-400">{selectedCustomer.boxNo}</span>
+                <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-850 space-y-2">
+                  <div className="flex items-center justify-between text-neutral-300 text-xs">
+                    <span className="text-neutral-400">Assigned Box No:</span>
+                    <span className="font-mono font-bold text-emerald-400">{selectedCustomer.boxNo}</span>
+                  </div>
+                  {selectedCustomerRegMonth && (
+                    <div className="flex items-center justify-between text-[11px] border-t border-neutral-850 pt-1.5 text-neutral-400">
+                      <span>Registration Month:</span>
+                      <span className="font-mono font-medium text-neutral-200 flex items-center gap-1.5">
+                        {formatYearMonthDisplay(selectedCustomerRegMonth)} ({selectedCustomerRegMonth})
+                        {selectedCustomerRegMonth === currentMonthStr && (
+                          <span className="text-[10px] text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded font-sans font-bold">
+                            Current Month
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {minEligibleMonth && (
+                    <div className="flex items-center justify-between text-[11px] text-neutral-400">
+                      <span>Eligible Monthly Bills From:</span>
+                      <span className="font-mono font-bold text-emerald-400">
+                        {formatYearMonthDisplay(minEligibleMonth)} ({minEligibleMonth})
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Payment Month */}
               <div>
-                <label className="block text-neutral-400 font-medium mb-1">Payment Month *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-neutral-400 font-medium">Payment Month *</label>
+                  {minEligibleMonth && (
+                    <span className="text-[10px] text-emerald-400 font-mono">
+                      Earliest: {minEligibleMonth}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="month"
                   required
+                  min={minEligibleMonth || undefined}
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
+                  className={`w-full px-3 py-2 bg-neutral-950 border rounded-md text-white font-mono focus:outline-none ${
+                    isSelectedMonthIneligible
+                      ? 'border-amber-500/60 focus:border-amber-500 ring-1 ring-amber-500/30'
+                      : 'border-neutral-800 focus:border-emerald-500/50'
+                  }`}
                 />
               </div>
+
+              {/* Ineligible Month Warning Banner */}
+              {isSelectedMonthIneligible && (
+                <div className="p-3 rounded-lg bg-amber-950/40 border border-amber-500/40 flex items-start gap-2.5 text-amber-200">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1 text-xs">
+                    <p className="font-semibold text-amber-300">
+                      Ineligible Month: {formatYearMonthDisplay(month)} ({month})
+                    </p>
+                    <p className="text-[11px] text-neutral-300 leading-normal">
+                      {selectedCustomer?.name} registered in <strong className="text-white font-medium">{formatYearMonthDisplay(selectedCustomerRegMonth)} ({selectedCustomerRegMonth})</strong>.
+                      Monthly bills or payment records cannot be created for the registration month or any months prior.
+                    </p>
+                    <p className="text-[11px] text-emerald-400 font-mono font-semibold">
+                      First eligible billing month is {formatYearMonthDisplay(minEligibleMonth)} ({minEligibleMonth}).
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Financial Dues */}
               <div className="grid grid-cols-2 gap-3">
@@ -594,11 +771,21 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full py-2.5 px-4 text-xs font-semibold text-neutral-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                disabled={isSubmitting || isSelectedMonthIneligible}
+                className={`w-full py-2.5 px-4 text-xs font-semibold rounded-md transition-colors shadow-lg flex items-center justify-center gap-2 ${
+                  isSelectedMonthIneligible
+                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed border border-neutral-700'
+                    : 'text-neutral-950 bg-emerald-400 hover:bg-emerald-300 cursor-pointer'
+                }`}
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>{isSubmitting ? 'Recording...' : 'Record Monthly Payment'}</span>
+                <span>
+                  {isSubmitting
+                    ? 'Recording...'
+                    : isSelectedMonthIneligible
+                    ? 'Ineligible Billing Month (Select Next Month)'
+                    : 'Record Monthly Payment'}
+                </span>
               </button>
             </form>
           </div>
@@ -619,7 +806,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
               </div>
 
               <p className="text-xs text-neutral-400 leading-normal">
-                Auto-create monthly dues for all active subscribers for the selected month. <strong className="text-emerald-400 font-semibold">Duplicate prevention</strong> skips existing subscriber bills.
+                Auto-create monthly dues for active subscribers for the selected month. <strong className="text-emerald-400 font-semibold">Subscribers registered in {bulkMonth} or later are skipped</strong> (monthly billing begins after registration month), and existing bills are skipped.
               </p>
 
               <form onSubmit={handleBulkCreateMonthlyPayments} className="space-y-4 text-xs">
@@ -649,6 +836,36 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                   </div>
                 </div>
 
+                {/* Pre-Generation Live Status Box */}
+                <div className="p-3 bg-neutral-950 border border-neutral-850 rounded-lg space-y-2 text-xs">
+                  <div className="flex items-center justify-between text-neutral-400 font-sans">
+                    <span className="font-semibold text-neutral-300">Target Billing Period:</span>
+                    <span className="font-mono text-indigo-400 font-bold">{formatYearMonthDisplay(bulkMonth)} ({bulkMonth})</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center text-[11px] pt-1.5 border-t border-neutral-850">
+                    <div className="p-1.5 rounded bg-neutral-900 border border-neutral-800">
+                      <span className="text-[10px] text-neutral-500 font-sans block uppercase">Active</span>
+                      <span className="font-bold text-white font-mono">{activeSubscribersList.length}</span>
+                    </div>
+                    <div className="p-1.5 rounded bg-neutral-900 border border-neutral-800">
+                      <span className="text-[10px] text-emerald-400 font-sans block uppercase">Eligible</span>
+                      <span className="font-bold text-emerald-400 font-mono">{bulkEstimatedEligibleCount}</span>
+                    </div>
+                    <div className="p-1.5 rounded bg-neutral-900 border border-neutral-800">
+                      <span className="text-[10px] text-amber-400 font-sans block uppercase">Excluded (New)</span>
+                      <span className="font-bold text-amber-400 font-mono">{bulkExcludedNewSubscribers.length}</span>
+                    </div>
+                  </div>
+                  {bulkExcludedNewSubscribers.length > 0 && (
+                    <div className="pt-1 text-[11px] text-amber-300 font-sans flex items-start gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <span>
+                        <strong>{bulkExcludedNewSubscribers.length} new subscriber(s)</strong> registered in {bulkMonth} or later will not receive bills for {bulkMonth} (monthly billing starts after registration month).
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
                   disabled={isBulkSubmitting}
@@ -670,19 +887,23 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                     <span className="text-[11px] text-neutral-400 font-mono">Period: {bulkResultCard.month}</span>
                   </div>
 
-                  {/* 3-Column Status Stat Card */}
-                  <div className="grid grid-cols-3 gap-2 p-2 bg-neutral-900 border border-neutral-850 rounded-lg text-center text-[11px]">
+                  {/* 4-Column Status Stat Card */}
+                  <div className="grid grid-cols-4 gap-1.5 p-2 bg-neutral-900 border border-neutral-850 rounded-lg text-center text-[11px]">
                     <div>
                       <span className="text-[10px] text-neutral-500 block font-sans uppercase">Active</span>
                       <span className="font-bold text-white">{bulkResultCard.totalActiveCustomers}</span>
                     </div>
-                    <div className="border-x border-neutral-850 px-1">
+                    <div className="border-x border-neutral-850 px-0.5">
                       <span className="text-[10px] text-neutral-500 block font-sans uppercase text-emerald-400">Created</span>
                       <span className="font-bold text-emerald-400">+{bulkResultCard.createdCount}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-neutral-500 block font-sans uppercase text-amber-400">Skipped</span>
-                      <span className="font-bold text-amber-400">{bulkResultCard.skippedCount}</span>
+                      <span className="text-[10px] text-neutral-500 block font-sans uppercase text-amber-400">New Excluded</span>
+                      <span className="font-bold text-amber-400">{bulkResultCard.skippedNewRegistrationCount ?? 0}</span>
+                    </div>
+                    <div className="border-l border-neutral-850 pl-0.5">
+                      <span className="text-[10px] text-neutral-500 block font-sans uppercase text-neutral-400">Duplicate</span>
+                      <span className="font-bold text-neutral-300">{bulkResultCard.skippedDuplicateCount ?? 0}</span>
                     </div>
                   </div>
 
@@ -701,7 +922,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                         onClick={() => setShowSkippedDetails(!showSkippedDetails)}
                         className="w-full flex items-center justify-between text-[11px] text-amber-400 font-medium hover:underline cursor-pointer"
                       >
-                        <span>View Skipped Duplicates ({bulkResultCard.skippedCount})</span>
+                        <span>View Skipped Subscribers ({bulkResultCard.skippedCount})</span>
                         {showSkippedDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                       </button>
 
@@ -710,7 +931,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                           {bulkResultCard.skippedCustomerNames.map((name, idx) => (
                             <div key={idx} className="flex items-center gap-1 text-neutral-300">
                               <span className="text-amber-400">•</span>
-                              <span>{name} (Duplicate Skipped)</span>
+                              <span>{name}</span>
                             </div>
                           ))}
                         </div>
@@ -1055,15 +1276,39 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-neutral-400 font-medium mb-1">Month *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-neutral-400 font-medium">Month *</label>
+                  {editMinEligibleMonth && (
+                    <span className="text-[10px] text-emerald-400 font-mono">
+                      Earliest: {editMinEligibleMonth}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="month"
                   required
+                  min={editMinEligibleMonth || undefined}
                   value={editMonth}
                   onChange={(e) => setEditMonth(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
+                  className={`w-full px-3 py-2 bg-neutral-950 border rounded-md text-white font-mono ${
+                    isEditMonthIneligible ? 'border-amber-500/60 ring-1 ring-amber-500/30' : 'border-neutral-800'
+                  }`}
                 />
               </div>
+
+              {isEditMonthIneligible && (
+                <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40 flex items-start gap-2 text-amber-200 text-xs">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5 text-[11px]">
+                    <p className="font-semibold text-amber-300">
+                      Cannot set month to {editMonth}
+                    </p>
+                    <p className="text-neutral-300">
+                      Subscriber registered in {editRegMonth}. Billing begins from {editMinEligibleMonth}.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1120,7 +1365,12 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-emerald-400 font-semibold text-neutral-950 hover:bg-emerald-300"
+                  disabled={isEditMonthIneligible}
+                  className={`px-4 py-1.5 rounded font-semibold ${
+                    isEditMonthIneligible
+                      ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                      : 'bg-emerald-400 text-neutral-950 hover:bg-emerald-300'
+                  }`}
                 >
                   Save Changes
                 </button>

@@ -255,6 +255,8 @@ class ApiClient {
     totalActiveCustomers: number;
     createdCount: number;
     skippedCount: number;
+    skippedNewRegistrationCount?: number;
+    skippedDuplicateCount?: number;
     totalBilledAmount: number;
     skippedCustomerNames: string[];
     createdCustomerNames: string[];

@@ -188,6 +188,9 @@ export default function App() {
             onOpenRecordModal={() => setIsRecordModalOpen(true)}
             onNavigateToTab={(tab) => setCurrentTab(tab as any)}
             isLoading={isLoading}
+            customers={customers}
+            monthlyPayments={monthlyPayments}
+            incomes={incomes}
           />
         )}
 

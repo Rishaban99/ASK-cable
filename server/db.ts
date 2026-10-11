@@ -571,6 +571,34 @@ export class RelationalDatabaseStore {
     }).filter(Boolean) as MonthlyPayment[];
   }
 
+  private getCustomerRegistrationMonth(createdAt: Date | string | undefined | null, customerId?: string): string {
+    if (createdAt) {
+      if (typeof createdAt === 'string') {
+        const trimmed = createdAt.trim();
+        if (trimmed.length >= 7 && /^\d{4}-\d{2}/.test(trimmed)) {
+          return trimmed.slice(0, 7);
+        }
+      }
+      const d = new Date(createdAt);
+      if (!isNaN(d.getTime())) {
+        return d.toISOString().slice(0, 7);
+      }
+    }
+
+    // Fallback: If createdAt is missing/null, extract creation timestamp from MongoDB ObjectId
+    if (customerId && /^[0-9a-fA-F]{24}$/.test(customerId)) {
+      try {
+        const timestamp = parseInt(customerId.substring(0, 8), 16) * 1000;
+        const d = new Date(timestamp);
+        if (!isNaN(d.getTime())) {
+          return d.toISOString().slice(0, 7);
+        }
+      } catch {}
+    }
+
+    return '';
+  }
+
   public async createMonthlyPayment(dto: {
     customerId: string;
     month: string;
@@ -578,8 +606,17 @@ export class RelationalDatabaseStore {
     paidAmount: number;
     paymentDate?: string;
   }): Promise<MonthlyPayment> {
-    const cust = await prisma.customer.findUnique({ where: { id: dto.customerId } });
+    const custClient = this.customerDb || prisma.customer;
+    const cust = await custClient.findUnique({ where: { id: dto.customerId } });
     if (!cust) throw new Error(`Customer not found for ID "${dto.customerId}"`);
+
+    // Prevent creating bills or payment records for registration month or prior months
+    const regMonth = this.getCustomerRegistrationMonth(cust.createdAt, cust.id);
+    if (regMonth && dto.month <= regMonth) {
+      throw new Error(
+        `Cannot create monthly bill or payment record for registration month (${regMonth}) or prior months (${dto.month}). Monthly billing begins after the registration month.`
+      );
+    }
 
     const fee = Math.abs(dto.monthlyFee || 0);
     const paid = Math.abs(dto.paidAmount || 0);
@@ -644,6 +681,8 @@ export class RelationalDatabaseStore {
     totalActiveCustomers: number;
     createdCount: number;
     skippedCount: number;
+    skippedNewRegistrationCount?: number;
+    skippedDuplicateCount?: number;
     totalBilledAmount: number;
     skippedCustomerNames: string[];
     createdCustomerNames: string[];
@@ -670,6 +709,8 @@ export class RelationalDatabaseStore {
 
     let createdCount = 0;
     let skippedCount = 0;
+    let skippedNewRegistrationCount = 0;
+    let skippedDuplicateCount = 0;
     let totalBilledAmount = 0;
     const skippedCustomerNames: string[] = [];
     const createdCustomerNames: string[] = [];
@@ -678,13 +719,25 @@ export class RelationalDatabaseStore {
     const defaultFee = dto.defaultFee && dto.defaultFee > 0 ? dto.defaultFee : 1300;
 
     for (const cust of activeCustomers) {
+      // 1. Skip customers who registered in target month or later (monthly billing begins after registration month)
+      const regMonth = this.getCustomerRegistrationMonth(cust.createdAt, cust.id);
+      if (regMonth && dto.month <= regMonth) {
+        skippedCount++;
+        skippedNewRegistrationCount++;
+        skippedCustomerNames.push(
+          `${cust.name} (Box: ${cust.boxNo}) [Registered in ${regMonth} - billing begins after registration month]`
+        );
+        continue;
+      }
+
       const isDuplicate =
         existingCustomerIds.has(cust.id) ||
         (cust.boxNo && existingBoxNos.has(cust.boxNo.toLowerCase()));
 
       if (isDuplicate) {
         skippedCount++;
-        skippedCustomerNames.push(`${cust.name} (Box: ${cust.boxNo})`);
+        skippedDuplicateCount++;
+        skippedCustomerNames.push(`${cust.name} (Box: ${cust.boxNo}) [Already billed for ${dto.month}]`);
         continue;
       }
 
@@ -710,6 +763,8 @@ export class RelationalDatabaseStore {
       totalActiveCustomers: activeCustomers.length,
       createdCount,
       skippedCount,
+      skippedNewRegistrationCount,
+      skippedDuplicateCount,
       totalBilledAmount,
       skippedCustomerNames,
       createdCustomerNames,
@@ -719,15 +774,31 @@ export class RelationalDatabaseStore {
   public async updateMonthlyPayment(
     id: string,
     dto: Partial<{
+      month: string;
       monthlyFee: number;
       paidAmount: number;
       paymentDate: string;
     }>
   ): Promise<MonthlyPayment> {
-    const oldRec = await prisma.monthlyPayment.findUnique({ where: { id } });
+    const pmtClient = this.monthlyPaymentDb || prisma.monthlyPayment;
+    const oldRec = await pmtClient.findUnique({ where: { id } });
     if (!oldRec) throw new Error(`Monthly payment record "${id}" not found`);
 
+    if (dto.month !== undefined && dto.month !== oldRec.month) {
+      const custClient = this.customerDb || prisma.customer;
+      const cust = await custClient.findUnique({ where: { id: oldRec.customerId } });
+      if (cust) {
+        const regMonth = this.getCustomerRegistrationMonth(cust.createdAt, cust.id);
+        if (regMonth && dto.month <= regMonth) {
+          throw new Error(
+            `Cannot update monthly payment to registration month (${regMonth}) or prior months (${dto.month}). Monthly billing begins after the registration month.`
+          );
+        }
+      }
+    }
+
     const dataToUpdate: any = {};
+    if (dto.month !== undefined) dataToUpdate.month = dto.month;
     if (dto.monthlyFee !== undefined) dataToUpdate.monthlyFee = Math.abs(dto.monthlyFee);
     if (dto.paidAmount !== undefined) {
       dataToUpdate.paidAmount = Math.abs(dto.paidAmount);
@@ -737,7 +808,7 @@ export class RelationalDatabaseStore {
       dataToUpdate.paymentDate = dto.paymentDate;
     }
 
-    const rec = await prisma.monthlyPayment.update({
+    const rec = await pmtClient.update({
       where: { id },
       data: dataToUpdate,
     });

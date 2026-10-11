@@ -18,7 +18,8 @@ import {
   Tag,
   Search,
   Download,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { Spinner } from './Spinner.js';
 
