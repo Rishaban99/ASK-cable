@@ -564,64 +564,84 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
             {/* 1. Customer Details Profile Card */}
             <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 shadow-xl">
               <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-white">{currentCustomer.name}</h2>
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
+                      {currentCustomer.name}
+                    </h2>
                     <span
-                      className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-extrabold rounded-full ${
                         (currentCustomer.status || 'ACTIVE') === 'ACTIVE'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
                           : (currentCustomer.status || 'ACTIVE') === 'INACTIVE'
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                          : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
                       }`}
                     >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          (currentCustomer.status || 'ACTIVE') === 'ACTIVE'
+                            ? 'bg-emerald-500 animate-pulse'
+                            : (currentCustomer.status || 'ACTIVE') === 'INACTIVE'
+                            ? 'bg-amber-500'
+                            : 'bg-rose-500'
+                        }`}
+                      />
                       {currentCustomer.status || 'ACTIVE'}
                     </span>
                   </div>
+
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-neutral-950 border border-neutral-800 rounded text-xs font-mono font-bold text-emerald-400">
-                      <Box className="w-3 h-3" />
-                      <span>{currentCustomer.boxNo}</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-500/35 rounded-xl text-xs font-mono font-extrabold text-emerald-800 dark:text-emerald-300 shadow-xs">
+                      <Box className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Box: {currentCustomer.boxNo}</span>
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Info Details List */}
-              <div className="space-y-3 text-xs">
-                <div className="flex items-center justify-between py-1 border-b border-neutral-850">
-                  <span className="text-neutral-400 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-neutral-500" />
+              {/* Colorful Contact Details Badges */}
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                {/* NIC No Badge (Sky Blue) */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20">
+                  <span className="flex items-center gap-1.5 font-bold text-sky-800 dark:text-sky-300">
+                    <ShieldCheck className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                     <span>NIC No:</span>
                   </span>
-                  <span className="font-mono text-white font-medium">{currentCustomer.nicNo}</span>
+                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white">
+                    {currentCustomer.nicNo || 'N/A'}
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between py-1 border-b border-neutral-850">
-                  <span className="text-neutral-400 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-neutral-500" />
+                {/* Phone No Badge (Emerald) */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <span className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
+                    <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span>Phone No:</span>
                   </span>
-                  <span className="font-mono text-white font-medium">{currentCustomer.phoneNo}</span>
+                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white">
+                    {currentCustomer.phoneNo || 'N/A'}
+                  </span>
                 </div>
 
-                <div className="flex items-start justify-between py-1 border-b border-neutral-850">
-                  <span className="text-neutral-400 flex items-center gap-1.5 shrink-0">
-                    <MapPin className="w-3.5 h-3.5 text-neutral-500" />
+                {/* Address Badge (Purple) */}
+                <div className="flex items-start justify-between p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 gap-2">
+                  <span className="flex items-center gap-1.5 font-bold text-purple-800 dark:text-purple-300 shrink-0">
+                    <MapPin className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                     <span>Address:</span>
                   </span>
-                  <span className="text-right text-neutral-200 max-w-[200px] truncate">
+                  <span className="font-medium text-neutral-900 dark:text-white text-right break-words max-w-[200px] sm:max-w-none">
                     {currentCustomer.address || 'N/A'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-neutral-400 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+                {/* Registered Date Badge (Amber) */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <span className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
+                    <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                     <span>Registered Date:</span>
                   </span>
-                  <span className="font-mono text-neutral-300">
+                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white">
                     {currentCustomer.createdAt ? currentCustomer.createdAt.split('T')[0] : 'N/A'}
                   </span>
                 </div>
