@@ -26,7 +26,8 @@ import {
   Zap,
   ChevronDown,
   ChevronUp,
-  CopyCheck
+  CopyCheck,
+  Lock
 } from 'lucide-react';
 
 interface MonthlyPaymentViewProps {
@@ -905,13 +906,20 @@ Monthly bills or payment records are not created for new subscribers during thei
 
               {/* Payment Date */}
               <div>
-                <label className="block text-neutral-400 font-medium mb-1">Payment Date</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-neutral-400 font-medium">Payment Date</label>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 rounded shadow-xs">
+                    <Lock className="w-2.5 h-2.5 text-emerald-400" />
+                    <span>Locked (Today)</span>
+                  </span>
+                </div>
                 <input
                   type="date"
-                  required
+                  readOnly
+                  disabled
                   value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-neutral-400 font-mono cursor-not-allowed select-none opacity-85"
+                  title="Payment date cannot be edited (automatically recorded with current date)"
                 />
               </div>
 

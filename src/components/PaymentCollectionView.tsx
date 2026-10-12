@@ -23,7 +23,8 @@ import {
   ShieldCheck,
   Phone,
   MapPin,
-  History
+  History,
+  Lock
 } from 'lucide-react';
 
 interface PaymentCollectionViewProps {
@@ -932,16 +933,23 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
               {/* Payment Date & Payment Method Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-1">
-                    <Calendar className="w-3.5 h-3.5 text-neutral-500" />
-                    <span>Payment Date *</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
+                      <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>Payment Date</span>
+                    </label>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 rounded shadow-xs">
+                      <Lock className="w-2.5 h-2.5 text-emerald-500" />
+                      <span>Locked (Today)</span>
+                    </span>
+                  </div>
                   <input
                     type="date"
-                    required
+                    readOnly
+                    disabled
                     value={paymentDate}
-                    onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 dark:border-neutral-800 rounded-xl text-neutral-900 dark:text-white font-mono text-xs focus:outline-none focus:border-emerald-500 h-[40px]"
+                    className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 rounded-xl text-neutral-600 dark:text-neutral-400 font-mono text-xs cursor-not-allowed select-none opacity-85 h-[40px]"
+                    title="Payment date cannot be edited (automatically recorded with current date)"
                   />
                 </div>
 

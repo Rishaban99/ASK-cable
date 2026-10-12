@@ -200,6 +200,14 @@ td {
   border-color: #94a3b8 !important;
 }
 
+.theme-light input:disabled,
+.theme-light input[readonly] {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  border-color: #cbd5e1 !important;
+  cursor: not-allowed !important;
+}
+
 .theme-light input::placeholder,
 .theme-light textarea::placeholder {
   color: #64748b !important;
