@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Printer,
   History,
+  ShieldCheck,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -588,53 +589,88 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                 </div>
               ) : (
                 filteredCustomers.map((cust) => (
-                  <div key={cust.id} className="p-4 space-y-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all">
+                  <div key={cust.id} className="p-4 space-y-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all hover:border-emerald-500/40">
                     {/* Header: Name + Status Badge + Box No Pill */}
                     <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-3">
-                      <div className="space-y-1">
+                      <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex items-center flex-wrap gap-2">
-                          <h3 className="font-bold text-white text-base leading-tight">{cust.name}</h3>
-                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded font-mono ${
+                          <h3 className="font-black text-xl sm:text-2xl text-white tracking-tight leading-tight">
+                            {cust.name}
+                          </h3>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-extrabold rounded-full ${
                             (cust.status || 'ACTIVE') === 'ACTIVE'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs'
                               : (cust.status || 'ACTIVE') === 'INACTIVE'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
+                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-xs'
                           }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              (cust.status || 'ACTIVE') === 'ACTIVE' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                            }`} />
                             {cust.status || 'ACTIVE'}
                           </span>
                         </div>
+
+                        {/* Colorful Address Badge */}
                         {cust.address && (
-                          <p className="text-xs text-neutral-400 leading-normal">{cust.address}</p>
+                          <div className="flex items-start gap-1.5 text-xs text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2.5 py-1.5 rounded-xl shadow-xs">
+                            <MapPin className="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5" />
+                            <span className="font-semibold leading-tight">{cust.address}</span>
+                          </div>
                         )}
-                        <p className="text-[11px] font-mono text-neutral-400 flex items-center flex-wrap gap-x-2">
-                          <span>NIC: {cust.nicNo || 'N/A'}</span>
-                          <span>•</span>
-                          <span>Tel: {cust.phoneNo || 'N/A'}</span>
-                        </p>
+
+                        {/* Colorful NIC & Phone Badges */}
+                        <div className="flex items-center flex-wrap gap-2 text-xs font-mono pt-0.5">
+                          {cust.nicNo && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-300 font-bold shadow-xs">
+                              <ShieldCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                              <span>NIC: {cust.nicNo}</span>
+                            </span>
+                          )}
+                          {cust.phoneNo && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold shadow-xs">
+                              <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <span>Tel: {cust.phoneNo}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
 
+                      {/* Box Number Pill */}
                       <div className="shrink-0">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-bold text-emerald-400 shadow-xs">
-                          <Box className="w-3 h-3 text-neutral-500" />
-                          <span>{cust.boxNo || '-'}</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-500/40 rounded-xl text-xs font-mono font-black text-emerald-300 shadow-xs">
+                          <Box className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Box: {cust.boxNo || '-'}</span>
                         </span>
                       </div>
                     </div>
 
-                    {/* Financial Metrics 3-Column Card */}
-                    <div className="grid grid-cols-3 gap-2 p-3 bg-neutral-950 rounded-xl border border-neutral-800 text-center font-mono text-xs">
-                      <div className="space-y-0.5">
-                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Total</span>
-                        <span className="text-neutral-200 font-semibold block">{formatMoney(cust.totalAmount, currency)}</span>
+                    {/* Financial Metrics 3-Column Color Cards */}
+                    <div className="grid grid-cols-3 gap-2 font-mono">
+                      {/* TOTAL TILE */}
+                      <div className="p-2.5 bg-sky-500/10 border border-sky-500/25 rounded-xl text-center space-y-0.5 shadow-xs">
+                        <span className="text-[10px] text-sky-400 font-sans block uppercase font-extrabold tracking-wide">Total</span>
+                        <span className="text-white font-black text-xs sm:text-sm block">{formatMoney(cust.totalAmount, currency)}</span>
                       </div>
-                      <div className="space-y-0.5 border-x border-neutral-850 px-1">
-                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Paid</span>
-                        <span className="text-emerald-400 font-semibold block">{formatMoney(cust.paidAmount, currency)}</span>
+
+                      {/* PAID TILE */}
+                      <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl text-center space-y-0.5 shadow-xs">
+                        <span className="text-[10px] text-emerald-400 font-sans block uppercase font-extrabold tracking-wide">Paid</span>
+                        <span className="text-emerald-400 font-black text-xs sm:text-sm block">{formatMoney(cust.paidAmount, currency)}</span>
                       </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Balance</span>
-                        <span className={`font-bold block ${cust.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+
+                      {/* BALANCE TILE */}
+                      <div className={`p-2.5 rounded-xl text-center space-y-0.5 shadow-xs ${
+                        cust.balanceAmount === 0
+                          ? 'bg-emerald-500/10 border border-emerald-500/25'
+                          : 'bg-amber-500/15 border border-amber-500/35'
+                      }`}>
+                        <span className={`text-[10px] font-sans block uppercase font-extrabold tracking-wide ${
+                          cust.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'
+                        }`}>Balance</span>
+                        <span className={`font-black text-xs sm:text-sm block ${
+                          cust.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'
+                        }`}>
                           {formatMoney(cust.balanceAmount, currency)}
                         </span>
                       </div>
@@ -647,13 +683,13 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                         {cust.balanceAmount > 0 ? (
                           <button
                             onClick={() => handleOpenPayBalance(cust)}
-                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                            className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95 btn-gradient-submit"
                           >
-                            <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+                            <CreditCard className="w-3.5 h-3.5 text-white" />
                             <span>Pay Balance</span>
                           </button>
                         ) : (
-                          <div className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-medium font-mono">
+                          <div className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold font-mono">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Fully Paid</span>
                           </div>
@@ -662,7 +698,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                         {onViewHistory && (
                           <button
                             onClick={() => onViewHistory(cust.id)}
-                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                            className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/25 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
                           >
                             <History className="w-3.5 h-3.5 text-indigo-400" />
                             <span>History</span>
@@ -671,10 +707,10 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       </div>
 
                       {/* Bottom Row Secondary Actions */}
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/60">
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/80">
                         <button
                           onClick={() => handlePrintCustomerBill(cust)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-neutral-950 border border-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-800 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 text-neutral-200 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
                         >
                           <Printer className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Print Bill</span>
@@ -683,7 +719,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                         <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             onClick={() => handleOpenEdit(cust)}
-                            className="p-2 text-neutral-300 hover:text-emerald-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                            className="p-2 text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/25 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
                             title="Edit Customer"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -691,7 +727,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                           {currentUser?.role === 'ADMIN' && (
                             <button
                               onClick={() => handleDelete(cust.id, cust.name)}
-                              className="p-2 text-neutral-300 hover:text-rose-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                              className="p-2 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
                               title="Delete Customer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -732,42 +768,46 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       filteredCustomers.map((cust) => (
                         <tr key={cust.id} className="hover:bg-neutral-900/60 transition-colors">
                           <td className="px-2.5 sm:px-3 py-2.5">
-                            <p className="font-semibold text-white leading-snug">{cust.name}</p>
-                            <p className="text-[11px] text-neutral-400 truncate max-w-[120px] 2xl:max-w-[200px]" title={cust.address || 'No Address'}>
+                            <p className="font-black text-sm text-white leading-snug">{cust.name}</p>
+                            <p className="text-[11px] text-purple-300 truncate max-w-[140px] 2xl:max-w-[200px]" title={cust.address || 'No Address'}>
                               {cust.address || 'No Address'}
                             </p>
                           </td>
                           <td className="px-2.5 sm:px-3 py-2.5 font-mono whitespace-nowrap">
-                            <p className="text-neutral-200 text-xs">{cust.nicNo}</p>
-                            <p className="text-neutral-400 text-[11px]">{cust.phoneNo}</p>
+                            <p className="text-sky-300 font-bold text-xs">{cust.nicNo || '-'}</p>
+                            <p className="text-emerald-300 font-bold text-[11px]">{cust.phoneNo || '-'}</p>
                           </td>
                           <td className="px-2.5 sm:px-3 py-2.5 font-mono whitespace-nowrap">
-                            <span className="inline-block px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded text-[11px] font-semibold text-emerald-400">
-                              {cust.boxNo}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-500/40 rounded-lg text-xs font-bold text-emerald-300 shadow-xs">
+                              <Box className="w-3 h-3 text-emerald-400" />
+                              <span>{cust.boxNo || '-'}</span>
                             </span>
                           </td>
                           <td className="px-2.5 sm:px-3 py-2.5 text-center font-mono whitespace-nowrap">
-                            <span className={`inline-block px-1.5 py-0.5 text-[10px] font-bold rounded ${
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-extrabold rounded-full ${
                               (cust.status || 'ACTIVE') === 'ACTIVE'
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs'
                                 : (cust.status || 'ACTIVE') === 'INACTIVE'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
+                                : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-xs'
                             }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                (cust.status || 'ACTIVE') === 'ACTIVE' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                              }`} />
                               {cust.status || 'ACTIVE'}
                             </span>
                           </td>
-                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono text-neutral-300 whitespace-nowrap text-xs">
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono text-sky-200 font-bold whitespace-nowrap text-xs">
                             {formatMoney(cust.totalAmount, currency)}
                           </td>
-                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono font-medium text-emerald-400 whitespace-nowrap text-xs">
+                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono font-bold text-emerald-400 whitespace-nowrap text-xs">
                             {formatMoney(cust.paidAmount, currency)}
                           </td>
                           <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono font-bold whitespace-nowrap text-xs">
-                            <span className={`px-1.5 py-0.5 rounded text-[11px] inline-block ${
+                            <span className={`px-2 py-0.5 rounded-lg text-xs font-black inline-block ${
                               cust.balanceAmount === 0
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-amber-500/15 text-amber-400 border border-amber-500/40'
                             }`}>
                               {formatMoney(cust.balanceAmount, currency)}
                             </span>

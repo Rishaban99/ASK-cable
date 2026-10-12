@@ -625,11 +625,31 @@ export class RelationalDatabaseStore {
       );
     }
 
+    // Prevent creating duplicate monthly payment records for the same customer/box and month
+    const pmtClient = this.monthlyPaymentDb || prisma.monthlyPayment;
+    const existingPmt = await pmtClient.findFirst({
+      where: {
+        month: dto.month,
+        OR: [
+          { customerId: cust.id },
+          ...(cust.boxNo && cust.boxNo.trim() && cust.boxNo.trim() !== '-'
+            ? [{ boxNo: cust.boxNo.trim() }]
+            : []),
+        ],
+      },
+    });
+
+    if (existingPmt) {
+      throw new Error(
+        `Monthly bill/payment record for "${cust.name}" (Box ${cust.boxNo || 'N/A'}) already exists for ${dto.month}. Cannot create duplicate records for the same month.`
+      );
+    }
+
     const fee = Math.abs(dto.monthlyFee || 0);
     const paid = Math.abs(dto.paidAmount || 0);
     const todayStr = dto.paymentDate || new Date().toISOString().split('T')[0];
 
-    const rec = await prisma.monthlyPayment.create({
+    const rec = await pmtClient.create({
       data: {
         customerId: cust.id,
         customerName: cust.name,
@@ -801,6 +821,26 @@ export class RelationalDatabaseStore {
             `Cannot update monthly payment to registration month (${regMonth}) or prior months (${dto.month}). Monthly billing begins after the registration month.`
           );
         }
+      }
+
+      // Check if duplicate monthly payment record already exists for the target month
+      const existingPmt = await pmtClient.findFirst({
+        where: {
+          month: dto.month,
+          id: { not: id },
+          OR: [
+            { customerId: oldRec.customerId },
+            ...(oldRec.boxNo && oldRec.boxNo.trim() && oldRec.boxNo.trim() !== '-'
+              ? [{ boxNo: oldRec.boxNo.trim() }]
+              : []),
+          ],
+        },
+      });
+
+      if (existingPmt) {
+        throw new Error(
+          `Monthly payment record for "${oldRec.customerName}" (Box ${oldRec.boxNo || 'N/A'}) already exists for ${dto.month}. Cannot update to a duplicate month.`
+        );
       }
     }
 
