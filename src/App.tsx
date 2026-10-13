@@ -9,7 +9,9 @@ import {
   SupportedCurrency,
   User,
   StaffPrivileges,
-  DEFAULT_STAFF_PRIVILEGES
+  DEFAULT_STAFF_PRIVILEGES,
+  SystemProfile,
+  DEFAULT_SYSTEM_PROFILE
 } from './types/finance.js';
 import { api } from './api/client.js';
 import { Sidebar, NavTab } from './components/Sidebar.js';
@@ -87,6 +89,16 @@ export default function App() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [monthlyPayments, setMonthlyPayments] = useState<MonthlyPayment[]>([]);
 
+  // System Profile State (Company Name, Contacts, 80mm Receipt Header)
+  const [systemProfile, setSystemProfile] = useState<SystemProfile>(() => {
+    try {
+      const saved = localStorage.getItem('ask_cable_system_profile');
+      return saved ? { ...DEFAULT_SYSTEM_PROFILE, ...JSON.parse(saved) } : DEFAULT_SYSTEM_PROFILE;
+    } catch {
+      return DEFAULT_SYSTEM_PROFILE;
+    }
+  });
+
   // UI States
   const [isLoading, setIsLoading] = useState(true);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
@@ -128,7 +140,7 @@ export default function App() {
   const loadData = useCallback(async () => {
     if (!currentUser) return;
     try {
-      const [analyticsData, incs, exps, cats, custs, pmts, dbPrivs] = await Promise.all([
+      const [analyticsData, incs, exps, cats, custs, pmts, dbPrivs, dbProfile] = await Promise.all([
         api.getAnalytics(),
         api.getIncomes(),
         api.getExpenses(),
@@ -136,6 +148,7 @@ export default function App() {
         api.getCustomers(),
         api.getMonthlyPayments(),
         api.getStaffPrivileges().catch(() => null),
+        api.getSystemProfile().catch(() => null),
       ]);
 
       setAnalytics(analyticsData);
@@ -146,6 +159,14 @@ export default function App() {
       setMonthlyPayments(pmts);
       if (dbPrivs) {
         setStaffPrivileges(dbPrivs);
+      }
+      if (dbProfile) {
+        setSystemProfile(dbProfile);
+        try {
+          localStorage.setItem('ask_cable_system_profile', JSON.stringify(dbProfile));
+        } catch {
+          // ignore
+        }
       }
     } catch (e) {
       console.error('Failed to load application data:', e);
@@ -277,6 +298,7 @@ export default function App() {
           <SettingsView
             currentUser={currentUser}
             onPrivilegesUpdated={reloadPrivileges}
+            onProfileUpdated={(updated) => setSystemProfile(updated)}
           />
         )}
       </main>

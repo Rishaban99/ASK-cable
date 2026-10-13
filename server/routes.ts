@@ -590,6 +590,29 @@ router.post('/settings/staff-privileges', async (req, res) => {
   }
 });
 
+router.get('/settings/system-profile', async (_req, res) => {
+  try {
+    const profile = await db.getSystemProfile();
+    res.json({ profile });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch system profile' });
+  }
+});
+
+router.post('/settings/system-profile', async (req, res) => {
+  try {
+    const { profile } = req.body;
+    if (!profile || typeof profile !== 'object') {
+      return res.status(400).json({ error: 'Profile object is required' });
+    }
+
+    const updated = await db.setSystemProfile(profile);
+    res.json({ profile: updated, message: 'System profile saved to database' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to save system profile' });
+  }
+});
+
 router.get('/settings/:key', async (req, res) => {
   try {
     const value = await db.getSetting(req.params.key);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES } from '../types/finance.js';
+import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES, SystemProfile, DEFAULT_SYSTEM_PROFILE } from '../types/finance.js';
 import { api } from '../api/client.js';
 import { useToast } from './Toast.js';
 import { ConfirmModal } from './ConfirmModal.js';
@@ -22,12 +22,19 @@ import {
   History,
   Save,
   RotateCcw,
-  Banknote
+  Banknote,
+  Building2,
+  Phone,
+  Mail,
+  MapPin,
+  Tv,
+  Sparkles
 } from 'lucide-react';
 
 interface SettingsViewProps {
   currentUser: User;
   onPrivilegesUpdated?: () => void;
+  onProfileUpdated?: (profile: SystemProfile) => void;
 }
 
 const PAGE_DEFINITIONS: {
@@ -80,7 +87,11 @@ const PAGE_DEFINITIONS: {
   },
 ];
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivilegesUpdated }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({
+  currentUser,
+  onPrivilegesUpdated,
+  onProfileUpdated,
+}) => {
   const toast = useToast();
   // Privileges State
   const [privileges, setPrivileges] = useState<StaffPrivileges>(() => {
@@ -93,6 +104,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
   });
 
   const [privilegeSaveStatus, setPrivilegeSaveStatus] = useState<string | null>(null);
+
+  // System Profile State (Company Name, Contacts, 80mm Receipt Header stored in DB)
+  const [profile, setProfile] = useState<SystemProfile>(() => {
+    try {
+      const saved = localStorage.getItem('ask_cable_system_profile');
+      return saved ? { ...DEFAULT_SYSTEM_PROFILE, ...JSON.parse(saved) } : DEFAULT_SYSTEM_PROFILE;
+    } catch {
+      return DEFAULT_SYSTEM_PROFILE;
+    }
+  });
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileStatus, setProfileStatus] = useState<string | null>(null);
 
   // User Management State
   const [users, setUsers] = useState<User[]>([]);
@@ -111,7 +135,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
   // Active Tab in Settings Page
   const [activeTab, setActiveTab] = useState<'privileges' | 'users' | 'system'>('privileges');
 
-  // Load Users & Privileges from DB
+  // Load Users & Privileges & System Profile from DB
   const fetchUsers = async () => {
     setIsLoadingUsers(true);
     try {
@@ -140,10 +164,80 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
     }
   };
 
+  const fetchProfile = async () => {
+    setIsLoadingProfile(true);
+    try {
+      const dbProfile = await api.getSystemProfile();
+      if (dbProfile) {
+        setProfile(dbProfile);
+        try {
+          localStorage.setItem('ask_cable_system_profile', JSON.stringify(dbProfile));
+        } catch {
+          // ignore
+        }
+      }
+    } catch (e: any) {
+      console.warn('DB system profile fetch fallback:', e);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchPrivileges();
+    fetchProfile();
   }, []);
+
+  // Save System Profile to DB
+  const handleSaveProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsSavingProfile(true);
+    setProfileStatus(null);
+    try {
+      const updated = await api.setSystemProfile(profile);
+      setProfile(updated);
+      try {
+        localStorage.setItem('ask_cable_system_profile', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      const msg = 'System Profile saved to database successfully!';
+      toast.success(msg);
+      setProfileStatus(msg);
+      setTimeout(() => setProfileStatus(null), 3500);
+      if (onProfileUpdated) onProfileUpdated(updated);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to save system profile to database.';
+      toast.error(msg);
+      setProfileStatus(msg);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  // Reset System Profile to Factory Defaults
+  const handleResetProfile = () => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Reset System Profile to Defaults',
+      message: 'Are you sure you want to reset Company Profile & Receipt headers to default settings in the database?',
+      confirmText: 'Reset to Defaults',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        setProfile(DEFAULT_SYSTEM_PROFILE);
+        try {
+          await api.setSystemProfile(DEFAULT_SYSTEM_PROFILE);
+          localStorage.setItem('ask_cable_system_profile', JSON.stringify(DEFAULT_SYSTEM_PROFILE));
+          toast.success('System profile reset to defaults.');
+          if (onProfileUpdated) onProfileUpdated(DEFAULT_SYSTEM_PROFILE);
+        } catch (e: any) {
+          toast.error('Failed to reset profile in DB.');
+        }
+      },
+    });
+  };
 
   // Save Privileges to DB
   const savePrivilegesToDb = async (updated: StaffPrivileges, successMsg: string) => {
@@ -312,10 +406,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1 bg-neutral-900 p-1 rounded-lg border border-neutral-800 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-1 bg-neutral-900 p-1 rounded-lg border border-neutral-800 self-start sm:self-auto">
           <button
             onClick={() => setActiveTab('privileges')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
               activeTab === 'privileges'
                 ? 'bg-emerald-500 text-neutral-950 shadow-sm'
                 : 'text-neutral-400 hover:text-white'
@@ -326,7 +420,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
               activeTab === 'users'
                 ? 'bg-emerald-500 text-neutral-950 shadow-sm'
                 : 'text-neutral-400 hover:text-white'
@@ -335,10 +429,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
             <Users className="w-3.5 h-3.5" />
             <span>User Accounts</span>
           </button>
+          <button
+            onClick={() => setActiveTab('system')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === 'system'
+                ? 'bg-emerald-500 text-neutral-950 shadow-sm'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Tv className="w-3.5 h-3.5" />
+            <span>System Profile</span>
+          </button>
         </div>
       </div>
 
       {/* Notifications */}
+      {profileStatus && (
+        <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+          <span>{profileStatus}</span>
+        </div>
+      )}
       {privilegeSaveStatus && (
         <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium animate-fade-in">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -632,6 +743,314 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onPrivi
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 3: SYSTEM PROFILE (Stored Permanently in Database)
+          ========================================================================= */}
+      {activeTab === 'system' && (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="p-4 sm:p-5 bg-neutral-900 border border-neutral-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  Company System Profile & 80mm Receipt Header
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Configure your network brand name, contacts, and default receipt details stored permanently in the database.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{isLoadingProfile ? 'Loading from DB...' : 'SQLite DB Synchronized'}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Form & Live Preview Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column: Form Fields */}
+            <form onSubmit={handleSaveProfile} className="lg:col-span-7 space-y-5">
+              {/* Card 1: Brand Identity */}
+              <div className="p-4 sm:p-5 bg-neutral-900 border border-neutral-800 rounded-xl space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-neutral-800">
+                  <Tv className="w-4 h-4 text-emerald-400" />
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Company & Brand Identity
+                  </h4>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                      Company / Business Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={profile.companyName}
+                      onChange={(e) => setProfile({ ...profile, companyName: e.target.value })}
+                      placeholder="e.g. ASK CABLE TV NETWORK"
+                      className="w-full bg-neutral-950 border border-neutral-750 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+                    />
+                    <p className="text-[10px] text-neutral-500 mt-1 font-mono">
+                      Prints on top of all 80mm POS slips and statement reports.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                      Tagline / Business Subtitle *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={profile.tagline}
+                      onChange={(e) => setProfile({ ...profile, tagline: e.target.value })}
+                      placeholder="e.g. Cable TV Subscriptions & Services"
+                      className="w-full bg-neutral-950 border border-neutral-750 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Contact Information */}
+              <div className="p-4 sm:p-5 bg-neutral-900 border border-neutral-800 rounded-xl space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-neutral-800">
+                  <Phone className="w-4 h-4 text-cyan-400" />
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Support Contacts & Address
+                  </h4>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                        Support Phone Number *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={profile.phone}
+                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        placeholder="e.g. +94 77 123 4567"
+                        className="w-full bg-neutral-950 border border-neutral-750 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                        Support Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={profile.email}
+                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                        placeholder="e.g. support@askcable.lk"
+                        className="w-full bg-neutral-950 border border-neutral-750 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                      Business / Operating Address
+                    </label>
+                    <input
+                      type="text"
+                      value={profile.address || ''}
+                      onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                      placeholder="e.g. Main Street, Nanu Oya"
+                      className="w-full bg-neutral-950 border border-neutral-750 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: 80mm Receipt Customization */}
+              <div className="p-4 sm:p-5 bg-neutral-900 border border-neutral-800 rounded-xl space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-neutral-800">
+                  <Receipt className="w-4 h-4 text-amber-400" />
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    80mm Receipt Slip Customization
+                  </h4>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                      Receipt Footer Note / Greeting
+                    </label>
+                    <input
+                      type="text"
+                      value={profile.receiptFooter || ''}
+                      onChange={(e) => setProfile({ ...profile, receiptFooter: e.target.value })}
+                      placeholder="e.g. Thank you for subscribing to ASK Cable!"
+                      className="w-full bg-neutral-950 border border-neutral-750 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                      Validation Notice / Disclaimer
+                    </label>
+                    <input
+                      type="text"
+                      value={profile.receiptNotice || ''}
+                      onChange={(e) => setProfile({ ...profile, receiptNotice: e.target.value })}
+                      placeholder="e.g. Computer Generated 80mm Receipt • System Validated"
+                      className="w-full bg-neutral-950 border border-neutral-750 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Action Buttons */}
+              <div className="flex items-center justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleResetProfile}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-750 text-neutral-300 hover:text-white text-xs font-medium transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Defaults</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-neutral-950 text-xs font-bold shadow-md hover:shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingProfile ? 'Saving to Database...' : 'Save System Profile to DB'}</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Right Column: Live 80mm Thermal Receipt Preview */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="p-4 sm:p-5 bg-neutral-900 border border-neutral-800 rounded-xl space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Live 80mm Slip Preview
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-500">Continuous Roll</span>
+                </div>
+
+                <p className="text-[11px] text-neutral-400">
+                  Real-time appearance of your receipt header and footer as printed by 80mm thermal printers:
+                </p>
+
+                {/* Simulated 80mm Paper Slip */}
+                <div className="w-full max-w-[280px] bg-white text-black p-4 rounded-sm shadow-2xl border border-neutral-300 font-mono text-[10.5px] leading-tight mx-auto select-none">
+                  {/* Dynamic Header */}
+                  <div className="text-center pb-1.5">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                      <Tv className="w-4 h-4 text-black shrink-0" />
+                      <h1 className="text-sm font-black tracking-tight uppercase text-black">
+                        {profile.companyName || 'ASK CABLE TV NETWORK'}
+                      </h1>
+                    </div>
+                    <p className="text-[9.5px] font-semibold text-neutral-800">
+                      {profile.tagline || 'Cable TV Subscriptions & Services'}
+                    </p>
+                    <p className="text-[8.5px] text-neutral-700">
+                      Tel: {profile.phone || '+94 77 123 4567'} | {profile.email || 'support@askcable.lk'}
+                    </p>
+                    {profile.address && (
+                      <p className="text-[8px] text-neutral-600 truncate mt-0.5">
+                        {profile.address}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Dashed line */}
+                  <div className="border-t border-dashed border-neutral-400 my-1.5" />
+
+                  {/* Sample content */}
+                  <div className="text-center my-0.5">
+                    <span className="inline-block px-2 py-0.5 text-[9px] font-black uppercase bg-black text-white rounded-xs">
+                      *** SAMPLE 80MM RECEIPT ***
+                    </span>
+                  </div>
+
+                  <div className="space-y-0.5 pt-1 text-[9.5px] text-neutral-700">
+                    <div className="flex justify-between">
+                      <span>Bill #:</span>
+                      <span className="font-bold text-black">BILL-DEMO-01</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Customer:</span>
+                      <span className="font-bold text-black">Eramaiyya manoj</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Box No:</span>
+                      <span className="font-bold text-black px-1 rounded bg-neutral-100 border border-neutral-300 text-[10px]">
+                        BOX #2
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Dashed line */}
+                  <div className="border-t border-dashed border-neutral-400 my-1.5" />
+
+                  {/* Sample total */}
+                  <div className="space-y-0.5 text-[10px]">
+                    <div className="flex justify-between font-bold text-neutral-800">
+                      <span>TOTAL BILLED:</span>
+                      <span>Rs. 1,300.00</span>
+                    </div>
+                    <div className="border-t-2 border-b-2 border-black py-0.5 my-1 flex justify-between items-center text-black font-black">
+                      <span className="uppercase text-[10.5px]">BALANCE DUE:</span>
+                      <span className="text-xs">Rs. 0.00</span>
+                    </div>
+                  </div>
+
+                  <div className="my-1.5 text-center">
+                    <div className="border-2 border-dashed border-black py-0.5 px-1 font-bold text-[9.5px] bg-neutral-100 text-black">
+                      *** PAID IN FULL ***
+                    </div>
+                  </div>
+
+                  {/* Dashed line */}
+                  <div className="border-t border-dashed border-neutral-400 my-1.5" />
+
+                  {/* Dynamic Footer */}
+                  <div className="text-center text-[8px] text-neutral-700 space-y-0.5 pt-1">
+                    <p className="font-bold text-black">
+                      {profile.receiptFooter || 'Thank you for subscribing to ASK Cable!'}
+                    </p>
+                    <p>Please retain this slip for your records.</p>
+                    <p className="text-[7.5px] text-neutral-500">
+                      {profile.receiptNotice || 'Computer Generated 80mm Receipt • System Validated'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-[11px] text-neutral-300 space-y-1">
+                  <p className="font-semibold text-emerald-400 flex items-center gap-1.5">
+                    <span>✓</span> Instant Receipt Sync
+                  </p>
+                  <p className="text-neutral-400 text-[10.5px] leading-relaxed">
+                    Saving your profile immediately updates all receipts printed across Customers, Monthly Billing, and Quick Payment Collection.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

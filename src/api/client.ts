@@ -10,7 +10,9 @@ import {
   TableMeta,
   TableQueryResponse,
   SqlQueryResult,
-  StaffPrivileges
+  StaffPrivileges,
+  SystemProfile,
+  DEFAULT_SYSTEM_PROFILE
 } from '../types/finance.js';
 
 export const CURRENCY_CONF = {
@@ -403,6 +405,24 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ key, value }),
     });
+  }
+
+  // System Profile (Company Name, Tagline, Phone, Email, Receipts)
+  async getSystemProfile(): Promise<SystemProfile> {
+    try {
+      const val = await this.getSetting('system_profile');
+      if (val) {
+        return { ...DEFAULT_SYSTEM_PROFILE, ...JSON.parse(val) };
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_SYSTEM_PROFILE;
+  }
+
+  async setSystemProfile(profile: SystemProfile): Promise<SystemProfile> {
+    await this.setSetting('system_profile', JSON.stringify(profile));
+    return profile;
   }
 }
 

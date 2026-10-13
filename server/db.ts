@@ -1422,6 +1422,40 @@ export class RelationalDatabaseStore {
   public async setStaffPrivileges(privileges: Record<string, boolean>): Promise<void> {
     await this.setSetting('staff_privileges', JSON.stringify(privileges));
   }
+
+  public async getSystemProfile(): Promise<any> {
+    const defaultProfile = {
+      companyName: 'ASK CABLE TV NETWORK',
+      tagline: 'Cable TV Subscriptions & Services',
+      phone: '+94 77 123 4567',
+      email: 'support@askcable.lk',
+      address: 'Main Street, Nanu Oya',
+      receiptFooter: 'Thank you for subscribing to ASK Cable!',
+      receiptNotice: 'Computer Generated 80mm Receipt • System Validated',
+    };
+    const val = await this.getSetting('system_profile');
+    if (val) {
+      try {
+        return {
+          ...defaultProfile,
+          ...JSON.parse(val),
+        };
+      } catch {
+        // ignore
+      }
+    }
+    return defaultProfile;
+  }
+
+  public async setSystemProfile(profile: any): Promise<any> {
+    const current = await this.getSystemProfile();
+    const updated = {
+      ...current,
+      ...profile,
+    };
+    await this.setSetting('system_profile', JSON.stringify(updated));
+    return updated;
+  }
 }
 
 export const db = new RelationalDatabaseStore();

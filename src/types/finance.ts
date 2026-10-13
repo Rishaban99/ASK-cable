@@ -28,6 +28,26 @@ export const DEFAULT_STAFF_PRIVILEGES: StaffPrivileges = {
   'payment-collection': true,
 };
 
+export interface SystemProfile {
+  companyName: string;
+  tagline: string;
+  phone: string;
+  email: string;
+  address?: string;
+  receiptFooter?: string;
+  receiptNotice?: string;
+}
+
+export const DEFAULT_SYSTEM_PROFILE: SystemProfile = {
+  companyName: 'ASK CABLE TV NETWORK',
+  tagline: 'Cable TV Subscriptions & Services',
+  phone: '+94 77 123 4567',
+  email: 'support@askcable.lk',
+  address: 'Main Street, Nanu Oya',
+  receiptFooter: 'Thank you for subscribing to ASK Cable!',
+  receiptNotice: 'Computer Generated 80mm Receipt • System Validated',
+};
+
 export interface Category {
   id: string;
   name: string;
