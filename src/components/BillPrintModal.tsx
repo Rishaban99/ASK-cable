@@ -103,14 +103,21 @@ const ThermalReceiptSlip: React.FC<{
           <span>Bill #:</span>
           <span className="font-extrabold text-black font-mono">{billData.billNo}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span>Date:</span>
-          <span className="font-semibold text-black">{billData.date}</span>
-        </div>
-        {billData.paymentDate && (
+        {billData.paymentDate && billData.paymentDate !== billData.date ? (
+          <>
+            <div className="flex justify-between items-center">
+              <span>Bill Date:</span>
+              <span className="font-semibold text-black">{billData.date}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Payment Date:</span>
+              <span className="font-semibold text-black">{billData.paymentDate}</span>
+            </div>
+          </>
+        ) : (
           <div className="flex justify-between items-center">
-            <span>Payment Date:</span>
-            <span className="font-semibold text-black">{billData.paymentDate}</span>
+            <span>Date:</span>
+            <span className="font-semibold text-black">{billData.paymentDate || billData.date}</span>
           </div>
         )}
       </div>
