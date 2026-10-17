@@ -134,6 +134,25 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         paidAmount: newPaidAmount,
       });
 
+      // Dispatch automated SMS receipt if customer has phone number
+      if (payBalanceCustomer.phoneNo && payBalanceCustomer.phoneNo.trim() !== '' && addPay > 0) {
+        const remainingBal = Math.max(0, payBalanceCustomer.totalAmount - newPaidAmount);
+        api.sendPaymentSms({
+          customerName: payBalanceCustomer.name,
+          phoneNo: payBalanceCustomer.phoneNo,
+          boxNo: payBalanceCustomer.boxNo,
+          paidAmount: addPay,
+          balanceAmount: remainingBal,
+          paymentDate: todayStr,
+        }).then((smsRes) => {
+          if (smsRes.success) {
+            toast.success(`SMS receipt sent to ${payBalanceCustomer.phoneNo}`);
+          }
+        }).catch((err) => {
+          console.warn('Automated SMS receipt dispatch failed:', err);
+        });
+      }
+
       setPayBalanceCustomer(null);
       toast.success(`Payment of ${formatMoney(addPay, currency)} recorded for "${payBalanceCustomer.name}"`);
       onRefreshData();
@@ -200,6 +219,25 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       });
       setIsSuccessModalOpen(true);
       toast.success(`Customer "${createdCust.name}" registered successfully!`);
+
+      // Dispatch automated Customer Registration Welcome SMS
+      if (createdCust.phoneNo && createdCust.phoneNo.trim() !== '') {
+        api.sendRegistrationSms({
+          customerName: createdCust.name,
+          phoneNo: createdCust.phoneNo,
+          boxNo: createdCust.boxNo,
+          totalAmount: createdCust.totalAmount,
+          paidAmount: createdCust.paidAmount,
+          balanceAmount: createdCust.balanceAmount,
+          registrationDate: todayStr,
+        }).then((smsRes) => {
+          if (smsRes.success) {
+            toast.success(`Registration SMS sent to ${createdCust.phoneNo}`);
+          }
+        }).catch((err) => {
+          console.warn('Automated registration SMS dispatch failed:', err);
+        });
+      }
 
       onRefreshData();
     } catch (err: any) {

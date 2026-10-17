@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { GoogleGenAI } from '@google/genai';
 import { db } from './db.js';
+import { sendNotifyLkSms, compilePaymentSmsTemplate, compileRegistrationSmsTemplate, formatSriLankanPhone } from './sms.js';
 
 export const router = Router();
 
@@ -610,6 +611,194 @@ router.post('/settings/system-profile', async (req, res) => {
     res.json({ profile: updated, message: 'System profile saved to database' });
   } catch (error: any) {
     res.status(400).json({ error: error.message || 'Failed to save system profile' });
+  }
+});
+
+// ==========================================
+// SMS GATEWAY & NOTIFICATIONS API
+// ==========================================
+router.get('/settings/sms', async (_req, res) => {
+  try {
+    const smsSettings = await db.getSmsSettings();
+    res.json({ smsSettings });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch SMS settings' });
+  }
+});
+
+router.post('/settings/sms', async (req, res) => {
+  try {
+    const { smsSettings } = req.body;
+    if (!smsSettings || typeof smsSettings !== 'object') {
+      return res.status(400).json({ error: 'SMS settings object is required' });
+    }
+
+    const updated = await db.setSmsSettings(smsSettings);
+    res.json({ smsSettings: updated, message: 'SMS settings saved to database' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to save SMS settings' });
+  }
+});
+
+router.post('/sms/test', async (req, res) => {
+  try {
+    const { phone, message, userId, apiKey, senderId } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: 'Recipient phone number is required' });
+    }
+
+    // Load settings from DB if not provided in body
+    const savedSettings = await db.getSmsSettings();
+    const effectiveUserId = (userId || savedSettings.userId || '').trim();
+    const effectiveApiKey = (apiKey || savedSettings.apiKey || '').trim();
+    const effectiveSenderId = (senderId || savedSettings.senderId || 'NotifyDEMO').trim();
+
+    if (!effectiveUserId || !effectiveApiKey) {
+      return res.status(400).json({
+        error: 'Notify.lk User ID and API Key are required. Please configure and save them first.',
+      });
+    }
+
+    const testMsg = message || 'Test message from ASK Cable TV billing system via Notify.lk.';
+    const result = await sendNotifyLkSms({
+      to: phone,
+      message: testMsg,
+      userId: effectiveUserId,
+      apiKey: effectiveApiKey,
+      senderId: effectiveSenderId,
+    });
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json({ error: result.message, ...result });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to send test SMS' });
+  }
+});
+
+router.post('/sms/send-payment', async (req, res) => {
+  try {
+    const { customerName, phoneNo, boxNo, paidAmount, balanceAmount, month, paymentDate, billNo } = req.body;
+
+    if (!phoneNo || !customerName) {
+      return res.status(400).json({ error: 'Customer name and phone number are required' });
+    }
+
+    const smsSettings = await db.getSmsSettings();
+    if (!smsSettings.enabled) {
+      return res.json({
+        success: false,
+        skipped: true,
+        message: 'SMS notifications are currently disabled in Settings.',
+      });
+    }
+
+    if (!smsSettings.userId || !smsSettings.apiKey) {
+      return res.status(400).json({
+        success: false,
+        error: 'Notify.lk User ID and API Key are not configured in Settings > SMS Gateway.',
+      });
+    }
+
+    const profile = await db.getSystemProfile();
+    const companyName = profile?.companyName || 'ASK CABLE TV NETWORK';
+
+    const compiledText = compilePaymentSmsTemplate(smsSettings.paymentSmsTemplate, {
+      customerName,
+      boxNo: String(boxNo || ''),
+      paidAmount: Number(paidAmount || 0),
+      balanceAmount: Number(balanceAmount || 0),
+      month: month || '',
+      date: paymentDate || new Date().toISOString().split('T')[0],
+      companyName,
+    });
+
+    const result = await sendNotifyLkSms({
+      to: phoneNo,
+      message: compiledText,
+      userId: smsSettings.userId,
+      apiKey: smsSettings.apiKey,
+      senderId: smsSettings.senderId || 'NotifyDEMO',
+    });
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `Payment SMS dispatched to ${phoneNo}`,
+        compiledText,
+        data: result.data,
+      });
+    } else {
+      res.status(400).json({ error: result.message, ...result });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to dispatch payment SMS' });
+  }
+});
+
+router.post('/sms/send-registration', async (req, res) => {
+  try {
+    const { customerName, phoneNo, boxNo, totalAmount, paidAmount, balanceAmount, registrationDate } = req.body;
+
+    if (!phoneNo || !customerName) {
+      return res.status(400).json({ error: 'Customer name and phone number are required' });
+    }
+
+    const smsSettings = await db.getSmsSettings();
+    if (!smsSettings.enabled) {
+      return res.json({
+        success: false,
+        skipped: true,
+        message: 'SMS notifications are currently disabled in Settings.',
+      });
+    }
+
+    if (!smsSettings.userId || !smsSettings.apiKey) {
+      return res.status(400).json({
+        success: false,
+        error: 'Notify.lk User ID and API Key are not configured in Settings > SMS Gateway.',
+      });
+    }
+
+    const profile = await db.getSystemProfile();
+    const companyName = profile?.companyName || 'ASK CABLE TV NETWORK';
+    const companyPhone = profile?.phone || '';
+
+    const template = smsSettings.registrationSmsTemplate || 'Welcome {customerName}! Your ASK Cable TV registration for Box #{boxNo} is successful on {date}. Total Fee: Rs. {totalAmount}, Paid: Rs. {paidAmount}, Balance: Rs. {balanceAmount}. Helpline: {companyPhone}. Thank you, {companyName}.';
+
+    const compiledText = compileRegistrationSmsTemplate(template, {
+      customerName,
+      boxNo: String(boxNo || ''),
+      totalAmount: Number(totalAmount || 0),
+      paidAmount: Number(paidAmount || 0),
+      balanceAmount: Number(balanceAmount || 0),
+      date: registrationDate || new Date().toISOString().split('T')[0],
+      companyName,
+      companyPhone,
+    });
+
+    const result = await sendNotifyLkSms({
+      to: phoneNo,
+      message: compiledText,
+      userId: smsSettings.userId,
+      apiKey: smsSettings.apiKey,
+      senderId: smsSettings.senderId || 'NotifyDEMO',
+    });
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `Registration Welcome SMS dispatched to ${phoneNo}`,
+        compiledText,
+        data: result.data,
+      });
+    } else {
+      res.status(400).json({ error: result.message, ...result });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to dispatch registration SMS' });
   }
 });
 

@@ -48,6 +48,53 @@ export const DEFAULT_SYSTEM_PROFILE: SystemProfile = {
   receiptNotice: 'Computer Generated 80mm Receipt • System Validated',
 };
 
+export interface SmsSettings {
+  enabled: boolean;
+  provider: 'NOTIFY_LK' | 'CUSTOM';
+  userId: string;
+  apiKey: string;
+  senderId: string;
+  paymentSmsTemplate: string;
+  registrationSmsTemplate: string;
+}
+
+export const DEFAULT_SMS_SETTINGS: SmsSettings = {
+  enabled: false,
+  provider: 'NOTIFY_LK',
+  userId: '',
+  apiKey: '',
+  senderId: 'NotifyDEMO',
+  paymentSmsTemplate: 'Dear {customerName}, payment of Rs. {paidAmount} for Box #{boxNo} ({month}) received on {date}. Remaining Balance: Rs. {balanceAmount}. Thank you, {companyName}.',
+  registrationSmsTemplate: 'Welcome {customerName}! Your ASK Cable TV registration for Box #{boxNo} is successful on {date}. Total Fee: Rs. {totalAmount}, Paid: Rs. {paidAmount}, Balance: Rs. {balanceAmount}. Helpline: {companyPhone}. Thank you, {companyName}.',
+};
+
+export interface SendPaymentSmsPayload {
+  customerName: string;
+  phoneNo: string;
+  boxNo: string;
+  paidAmount: number;
+  balanceAmount: number;
+  month?: string;
+  paymentDate?: string;
+  billNo?: string;
+}
+
+export interface SendRegistrationSmsPayload {
+  customerName: string;
+  phoneNo: string;
+  boxNo: string;
+  totalAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  registrationDate?: string;
+}
+
+export interface SmsSendResult {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
 export interface Category {
   id: string;
   name: string;

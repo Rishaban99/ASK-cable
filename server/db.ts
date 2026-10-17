@@ -1456,6 +1456,39 @@ export class RelationalDatabaseStore {
     await this.setSetting('system_profile', JSON.stringify(updated));
     return updated;
   }
+
+  public async getSmsSettings(): Promise<any> {
+    const defaultSettings = {
+      enabled: false,
+      provider: 'NOTIFY_LK',
+      userId: '',
+      apiKey: '',
+      senderId: 'NotifyDEMO',
+      paymentSmsTemplate: 'Dear {customerName}, payment of Rs. {paidAmount} for Box #{boxNo} received on {date}. Remaining Balance: Rs. {balanceAmount}. Thank you, {companyName}.',
+    };
+    const val = await this.getSetting('sms_settings');
+    if (val) {
+      try {
+        return {
+          ...defaultSettings,
+          ...JSON.parse(val),
+        };
+      } catch {
+        // ignore
+      }
+    }
+    return defaultSettings;
+  }
+
+  public async setSmsSettings(settings: any): Promise<any> {
+    const current = await this.getSmsSettings();
+    const updated = {
+      ...current,
+      ...settings,
+    };
+    await this.setSetting('sms_settings', JSON.stringify(updated));
+    return updated;
+  }
 }
 
 export const db = new RelationalDatabaseStore();

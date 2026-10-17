@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES, SystemProfile, DEFAULT_SYSTEM_PROFILE } from '../types/finance.js';
+import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES, SystemProfile, DEFAULT_SYSTEM_PROFILE, SmsSettings, DEFAULT_SMS_SETTINGS } from '../types/finance.js';
 import { api } from '../api/client.js';
 import { useToast } from './Toast.js';
 import { ConfirmModal } from './ConfirmModal.js';
@@ -28,7 +28,18 @@ import {
   Mail,
   MapPin,
   Tv,
-  Sparkles
+  Sparkles,
+  MessageSquare,
+  Send,
+  Key,
+  Hash,
+  Eye,
+  EyeOff,
+  Smartphone,
+  HelpCircle,
+  Info,
+  ExternalLink,
+  Check
 } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -133,9 +144,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
   // Active Tab in Settings Page
-  const [activeTab, setActiveTab] = useState<'privileges' | 'users' | 'system'>('privileges');
+  const [activeTab, setActiveTab] = useState<'privileges' | 'users' | 'system' | 'sms'>('privileges');
 
-  // Load Users & Privileges & System Profile from DB
+  // SMS Gateway State (Notify.lk Integration)
+  const [smsSettings, setSmsSettings] = useState<SmsSettings>(() => {
+    try {
+      const saved = localStorage.getItem('ask_cable_sms_settings');
+      return saved ? { ...DEFAULT_SMS_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SMS_SETTINGS;
+    } catch {
+      return DEFAULT_SMS_SETTINGS;
+    }
+  });
+  const [isLoadingSms, setIsLoadingSms] = useState(false);
+  const [isSavingSms, setIsSavingSms] = useState(false);
+  const [smsStatus, setSmsStatus] = useState<string | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [templateTab, setTemplateTab] = useState<'payment' | 'registration'>('payment');
+
+  // Live Test SMS Console State
+  const [testPhone, setTestPhone] = useState('');
+  const [testMessage, setTestMessage] = useState('Payment receipt test from ASK Cable TV Network.');
+  const [isSendingTestSms, setIsSendingTestSms] = useState(false);
+  const [testSmsResult, setTestSmsResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
+
+  // Load Users & Privileges & System Profile & SMS Settings from DB
   const fetchUsers = async () => {
     setIsLoadingUsers(true);
     try {
@@ -183,11 +215,116 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
+  const fetchSmsSettings = async () => {
+    setIsLoadingSms(true);
+    try {
+      const dbSms = await api.getSmsSettings();
+      if (dbSms) {
+        const merged: SmsSettings = {
+          ...DEFAULT_SMS_SETTINGS,
+          ...dbSms,
+          registrationSmsTemplate: dbSms.registrationSmsTemplate || DEFAULT_SMS_SETTINGS.registrationSmsTemplate,
+        };
+        setSmsSettings(merged);
+        try {
+          localStorage.setItem('ask_cable_sms_settings', JSON.stringify(merged));
+        } catch {
+          // ignore
+        }
+      }
+    } catch (e: any) {
+      console.warn('DB SMS settings fetch fallback:', e);
+    } finally {
+      setIsLoadingSms(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchPrivileges();
     fetchProfile();
+    fetchSmsSettings();
   }, []);
+
+  // Save SMS Settings to DB
+  const handleSaveSmsSettings = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsSavingSms(true);
+    setSmsStatus(null);
+    try {
+      const updated = await api.setSmsSettings(smsSettings);
+      setSmsSettings(updated);
+      try {
+        localStorage.setItem('ask_cable_sms_settings', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      const msg = 'Notify.lk SMS settings saved to database successfully!';
+      toast.success(msg);
+      setSmsStatus(msg);
+      setTimeout(() => setSmsStatus(null), 3500);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to save SMS settings to database.';
+      toast.error(msg);
+      setSmsStatus(msg);
+    } finally {
+      setIsSavingSms(false);
+    }
+  };
+
+  // Reset SMS Template to Default
+  const handleResetSmsTemplate = () => {
+    if (templateTab === 'payment') {
+      setSmsSettings((prev) => ({
+        ...prev,
+        paymentSmsTemplate: DEFAULT_SMS_SETTINGS.paymentSmsTemplate,
+      }));
+      toast.success('Payment SMS template reset to default.');
+    } else {
+      setSmsSettings((prev) => ({
+        ...prev,
+        registrationSmsTemplate: DEFAULT_SMS_SETTINGS.registrationSmsTemplate,
+      }));
+      toast.success('Registration Welcome SMS template reset to default.');
+    }
+  };
+
+  // Send Live Test SMS via Notify.lk
+  const handleSendTestSms = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testPhone.trim()) {
+      toast.error('Please enter a phone number to test SMS delivery.');
+      return;
+    }
+    if (!smsSettings.userId || !smsSettings.apiKey) {
+      toast.error('Please enter and save your Notify.lk User ID and API Key first.');
+      return;
+    }
+
+    setIsSendingTestSms(true);
+    setTestSmsResult(null);
+    try {
+      const result = await api.sendTestSms({
+        phone: testPhone.trim(),
+        message: testMessage.trim(),
+        userId: smsSettings.userId,
+        apiKey: smsSettings.apiKey,
+        senderId: smsSettings.senderId || 'NotifyDEMO',
+      });
+      setTestSmsResult(result);
+      if (result.success) {
+        toast.success(result.message || 'Test SMS sent successfully!');
+      } else {
+        toast.error(result.message || 'Failed to send test SMS.');
+      }
+    } catch (err: any) {
+      const errMsg = err?.message || 'Failed to send test SMS. Check credentials or network.';
+      setTestSmsResult({ success: false, message: errMsg });
+      toast.error(errMsg);
+    } finally {
+      setIsSendingTestSms(false);
+    }
+  };
 
   // Save System Profile to DB
   const handleSaveProfile = async (e?: React.FormEvent) => {
@@ -440,10 +577,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <Tv className="w-3.5 h-3.5" />
             <span>System Profile</span>
           </button>
+          <button
+            onClick={() => setActiveTab('sms')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === 'sms'
+                ? 'bg-emerald-500 text-neutral-950 shadow-sm'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>SMS Gateway (Notify.lk)</span>
+          </button>
         </div>
       </div>
 
       {/* Notifications */}
+      {smsStatus && (
+        <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+          <span>{smsStatus}</span>
+        </div>
+      )}
       {profileStatus && (
         <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium animate-fade-in">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
@@ -1054,7 +1208,518 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
       )}
-      {/* Confirmation Dialog Modal Card */}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: SMS GATEWAY (NOTIFY.LK)                                             */}
+      {/* ========================================================================= */}
+      {activeTab === 'sms' && (
+        <div className="space-y-6">
+          {/* Gateway Master Card & Toggle */}
+          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className={`p-3 rounded-xl border ${
+                  smsSettings.enabled
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                    : 'bg-neutral-800 border-neutral-700 text-neutral-400'
+                }`}>
+                  <MessageSquare className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                      Notify.lk SMS Gateway
+                    </h2>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                      smsSettings.enabled
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                        : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${smsSettings.enabled ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-500'}`} />
+                      {smsSettings.enabled ? 'Automatic Dispatch Active' : 'Automatic Dispatch Disabled'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-mono">
+                      Sri Lanka Telco Gateway
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+                    When enabled, whenever a payment is collected in <span className="text-emerald-400 font-semibold">Payment Collection</span> or <span className="text-emerald-400 font-semibold">Monthly Payment</span>, an instant SMS receipt will be automatically delivered to the customer&apos;s mobile number.
+                  </p>
+                </div>
+              </div>
+
+              {/* Master Toggle */}
+              <div className="flex items-center gap-3 self-end sm:self-center bg-neutral-950 p-2 rounded-xl border border-neutral-800">
+                <span className="text-xs font-semibold text-neutral-300">
+                  {smsSettings.enabled ? 'Enabled' : 'Disabled'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSmsSettings(prev => ({ ...prev, enabled: !prev.enabled }))}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    smsSettings.enabled ? 'bg-emerald-500' : 'bg-neutral-700'
+                  }`}
+                  role="switch"
+                  aria-checked={smsSettings.enabled}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      smsSettings.enabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Grid: Settings & Test Console */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left 7 Columns: Credentials and Template */}
+            <div className="lg:col-span-7 space-y-6">
+              {/* Credentials Card */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-lg space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Key className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-bold text-white">API Credentials</h3>
+                  </div>
+                  <a
+                    href="https://app.notify.lk"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 underline font-medium"
+                  >
+                    <span>Open Notify.lk Dashboard</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* User ID */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                      <Hash className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Notify.lk User ID</span>
+                      <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 21800"
+                      value={smsSettings.userId}
+                      onChange={(e) => setSmsSettings(prev => ({ ...prev, userId: e.target.value.trim() }))}
+                      className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-medium text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50"
+                    />
+                    <p className="text-[10.5px] text-neutral-500">
+                      Numeric User ID found in your Notify.lk profile.
+                    </p>
+                  </div>
+
+                  {/* Sender ID */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-neutral-400" />
+                        <span>Sender ID / Name</span>
+                      </label>
+                      {smsSettings.senderId !== 'NotifyDEMO' && (
+                        <button
+                          type="button"
+                          onClick={() => setSmsSettings(prev => ({ ...prev, senderId: 'NotifyDEMO' }))}
+                          className="text-[10px] text-emerald-400 hover:text-emerald-300 underline font-medium cursor-pointer"
+                        >
+                          Use &quot;NotifyDEMO&quot;
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="NotifyDEMO"
+                      value={smsSettings.senderId}
+                      onChange={(e) => setSmsSettings(prev => ({ ...prev, senderId: e.target.value.trim() }))}
+                      className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-medium text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50"
+                    />
+                    <p className="text-[10.5px] text-neutral-400 leading-tight">
+                      Use <button type="button" onClick={() => setSmsSettings(prev => ({ ...prev, senderId: 'NotifyDEMO' }))} className="font-mono text-emerald-400 font-bold hover:underline cursor-pointer">NotifyDEMO</button> for free trial testing. Custom names (e.g. ASKCABLE) require TRCSL registration in Notify.lk dashboard.
+                    </p>
+                  </div>
+
+                  {/* API Key */}
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label className="text-xs font-semibold text-neutral-300 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Key className="w-3.5 h-3.5 text-neutral-400" />
+                        <span>Notify.lk API Key / Token</span>
+                        <span className="text-rose-400">*</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(prev => !prev)}
+                        className="text-[11px] text-neutral-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                      >
+                        {showApiKey ? (
+                          <>
+                            <EyeOff className="w-3 h-3" />
+                            <span>Hide API Key</span>
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3 h-3" />
+                            <span>Show API Key</span>
+                          </>
+                        )}
+                      </button>
+                    </label>
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      placeholder="Paste your 32-character Notify.lk API Key here..."
+                      value={smsSettings.apiKey}
+                      onChange={(e) => setSmsSettings(prev => ({ ...prev, apiKey: e.target.value.trim() }))}
+                      className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-medium text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50"
+                    />
+                    <p className="text-[10.5px] text-neutral-500">
+                      Keep this private. Stored securely in your local database.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message Template Card */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-lg space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-neutral-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Receipt className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-bold text-white">Automated SMS Templates</h3>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {/* Template Switcher Tabs */}
+                    <div className="flex items-center bg-neutral-950 p-0.5 rounded-lg border border-neutral-800 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => setTemplateTab('payment')}
+                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                          templateTab === 'payment'
+                            ? 'bg-emerald-500 text-neutral-950 shadow-xs'
+                            : 'text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        Payment Receipt
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTemplateTab('registration')}
+                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                          templateTab === 'registration'
+                            ? 'bg-emerald-500 text-neutral-950 shadow-xs'
+                            : 'text-neutral-400 hover:text-white'
+                        }`}
+                      >
+                        Registration Welcome
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleResetSmsTemplate}
+                      className="text-[11px] text-neutral-400 hover:text-neutral-200 flex items-center gap-1 cursor-pointer"
+                      title="Reset selected template to factory default"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset</span>
+                    </button>
+                  </div>
+                </div>
+
+                {templateTab === 'payment' ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-neutral-300">
+                        Monthly Payment SMS Template (Sent upon payment collection)
+                      </label>
+                      <span className="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                        Counter & Monthly Ledger
+                      </span>
+                    </div>
+                    <textarea
+                      rows={4}
+                      value={smsSettings.paymentSmsTemplate}
+                      onChange={(e) => setSmsSettings(prev => ({ ...prev, paymentSmsTemplate: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs leading-relaxed text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50 resize-y"
+                      placeholder="Enter payment SMS template..."
+                    />
+
+                    {/* Dynamic Variable Chips for Payment */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[11px] font-semibold text-neutral-400">
+                        Click any tag below to insert into template:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { token: '{customerName}', desc: 'Customer Name' },
+                          { token: '{boxNo}', desc: 'Box Number' },
+                          { token: '{paidAmount}', desc: 'Amount Paid (Rs.)' },
+                          { token: '{balanceAmount}', desc: 'Remaining Balance' },
+                          { token: '{month}', desc: 'Billing Month Name (e.g. October 2026)' },
+                          { token: '{date}', desc: 'Payment Date' },
+                          { token: '{companyName}', desc: 'Company Name' },
+                        ].map((chip) => (
+                          <button
+                            key={chip.token}
+                            type="button"
+                            onClick={() => {
+                              setSmsSettings(prev => ({
+                                ...prev,
+                                paymentSmsTemplate: `${prev.paymentSmsTemplate} ${chip.token}`,
+                              }));
+                            }}
+                            className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded text-[11px] font-mono text-emerald-400 cursor-pointer transition-colors"
+                            title={`Insert ${chip.desc}`}
+                          >
+                            {chip.token}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-neutral-300">
+                        Customer Registration Welcome SMS (Sent on new subscriber sign-up)
+                      </label>
+                      <span className="text-[10px] text-blue-400 font-mono bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+                        Customer Registration Form
+                      </span>
+                    </div>
+                    <textarea
+                      rows={4}
+                      value={smsSettings.registrationSmsTemplate || DEFAULT_SMS_SETTINGS.registrationSmsTemplate}
+                      onChange={(e) => setSmsSettings(prev => ({ ...prev, registrationSmsTemplate: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs leading-relaxed text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50 resize-y"
+                      placeholder="Enter customer registration welcome SMS template..."
+                    />
+
+                    {/* Dynamic Variable Chips for Registration */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[11px] font-semibold text-neutral-400">
+                        Click any tag below to insert into template:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { token: '{customerName}', desc: 'Customer Name' },
+                          { token: '{boxNo}', desc: 'Assigned Box Number' },
+                          { token: '{totalAmount}', desc: 'Total Registration Fee' },
+                          { token: '{paidAmount}', desc: 'Amount Paid at Registration' },
+                          { token: '{balanceAmount}', desc: 'Remaining Registration Balance' },
+                          { token: '{date}', desc: 'Registration Date' },
+                          { token: '{companyName}', desc: 'Company Name' },
+                          { token: '{companyPhone}', desc: 'Company Phone / Helpline' },
+                        ].map((chip) => (
+                          <button
+                            key={chip.token}
+                            type="button"
+                            onClick={() => {
+                              setSmsSettings(prev => ({
+                                ...prev,
+                                registrationSmsTemplate: `${prev.registrationSmsTemplate || DEFAULT_SMS_SETTINGS.registrationSmsTemplate} ${chip.token}`,
+                              }));
+                            }}
+                            className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded text-[11px] font-mono text-emerald-400 cursor-pointer transition-colors"
+                            title={`Insert ${chip.desc}`}
+                          >
+                            {chip.token}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Save Button Bar */}
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[11px] text-neutral-500">
+                  Settings are immediately persisted to the SQLite database.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSaveSmsSettings}
+                  disabled={isSavingSms}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold rounded-lg text-xs shadow-lg transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingSms ? 'Saving Settings...' : 'Save SMS Settings'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right 5 Columns: Live Mobile Screen Preview & Test Console */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Live Smartphone Screen Preview */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-lg space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-bold text-white">Customer Mobile Preview</h3>
+                  </div>
+                  <span className="text-[10px] text-neutral-400 font-mono">
+                    {templateTab === 'payment' ? 'Payment Slip' : 'Welcome SMS'}
+                  </span>
+                </div>
+
+                {/* Smartphone Mockup */}
+                <div className="bg-neutral-950 border-2 border-neutral-800 rounded-2xl p-4 shadow-2xl relative overflow-hidden">
+                  {/* Phone Header Bar */}
+                  <div className="flex items-center justify-between border-b border-neutral-800 pb-2 mb-3 text-[10px] text-neutral-400">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="font-semibold text-neutral-300">
+                        {smsSettings.senderId || 'NotifyDEMO'}
+                      </span>
+                    </div>
+                    <span>Today • Just Now</span>
+                  </div>
+
+                  {/* SMS Bubble */}
+                  <div className="p-3.5 bg-neutral-800/90 rounded-2xl rounded-tl-sm text-neutral-200 text-xs leading-relaxed border border-neutral-700/60 shadow-md">
+                    <p className="whitespace-pre-wrap font-sans text-[11.5px]">
+                      {templateTab === 'payment'
+                        ? (smsSettings.paymentSmsTemplate || DEFAULT_SMS_SETTINGS.paymentSmsTemplate)
+                            .replace(/{customerName}/g, 'Kamal Perera')
+                            .replace(/{boxNo}/g, 'BOX-102')
+                            .replace(/{paidAmount}/g, '1,300.00')
+                            .replace(/{balanceAmount}/g, '0.00')
+                            .replace(/{month}/g, new Date().toLocaleString('default', { month: 'long', year: 'numeric' }))
+                            .replace(/{date}/g, new Date().toISOString().split('T')[0])
+                            .replace(/{companyName}/g, profile.companyName || 'ASK CABLE TV NETWORK')
+                        : (smsSettings.registrationSmsTemplate || DEFAULT_SMS_SETTINGS.registrationSmsTemplate)
+                            .replace(/{customerName}/g, 'Kamal Perera')
+                            .replace(/{boxNo}/g, 'BOX-102')
+                            .replace(/{totalAmount}/g, '9,500.00')
+                            .replace(/{paidAmount}/g, '5,000.00')
+                            .replace(/{balanceAmount}/g, '4,500.00')
+                            .replace(/{date}/g, new Date().toISOString().split('T')[0])
+                            .replace(/{companyName}/g, profile.companyName || 'ASK CABLE TV NETWORK')
+                            .replace(/{companyPhone}/g, profile.phone || '0769866870')}
+                    </p>
+                  </div>
+
+                  {/* Metric Chips */}
+                  <div className="mt-3 pt-2.5 border-t border-neutral-800/80 flex items-center justify-between text-[10.5px] text-neutral-400">
+                    <span>
+                      Length:{' '}
+                      <strong className="text-white">
+                        {((templateTab === 'payment' ? smsSettings.paymentSmsTemplate : smsSettings.registrationSmsTemplate) || '').length} chars
+                      </strong>
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
+                      <span>✓</span> Standard GSM-7 Format
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Test SMS Delivery Console */}
+              <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-lg space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Send className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-bold text-white">Send Live Test SMS</h3>
+                  </div>
+                  <span className="text-[10.5px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    Verify Gateway
+                  </span>
+                </div>
+
+                <form onSubmit={handleSendTestSms} className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Test Mobile Number (Sri Lanka)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 0771234567 or 94771234567"
+                      value={testPhone}
+                      onChange={(e) => setTestPhone(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-medium text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-neutral-300">
+                      Test Message
+                    </label>
+                    <input
+                      type="text"
+                      value={testMessage}
+                      onChange={(e) => setTestMessage(e.target.value)}
+                      className="w-full px-3.5 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-medium text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500/50"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSendingTestSms || !testPhone.trim()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow-md transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isSendingTestSms ? 'Transmitting to Notify.lk...' : 'Send Live Test SMS Now'}</span>
+                  </button>
+
+                  {/* Test Result Message Box */}
+                  {testSmsResult && (
+                    <div className={`p-3.5 rounded-lg border text-xs leading-relaxed animate-fade-in ${
+                      testSmsResult.success
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                    }`}>
+                      <div className="flex items-start gap-2.5">
+                        {testSmsResult.success ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                        )}
+                        <div className="space-y-1.5 flex-1">
+                          <p className="font-bold text-xs">
+                            {testSmsResult.success ? 'SMS Delivered Successfully!' : 'Delivery Failed'}
+                          </p>
+                          <p className="text-[11.5px] leading-relaxed opacity-95">{testSmsResult.message}</p>
+                          {testSmsResult.message?.toLowerCase().includes('notifydemo') && smsSettings.senderId !== 'NotifyDEMO' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSmsSettings(prev => ({ ...prev, senderId: 'NotifyDEMO' }));
+                                api.setSmsSettings({ ...smsSettings, senderId: 'NotifyDEMO' }).then(() => {
+                                  toast.success('Sender ID updated to NotifyDEMO and saved to database!');
+                                });
+                              }}
+                              className="mt-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold rounded text-xs transition-colors cursor-pointer"
+                            >
+                              Set Sender ID to &quot;NotifyDEMO&quot; &amp; Save
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </form>
+
+                {/* Helpful Hints Card */}
+                <div className="pt-2 border-t border-neutral-800 text-[11px] text-neutral-400 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-neutral-300 font-semibold">
+                    <Info className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Notify.lk Free Trial Details</span>
+                  </div>
+                  <p className="text-[10.5px] leading-relaxed">
+                    New Notify.lk accounts receive 10 free SMS credits for live testing. Your sender ID will show as <strong className="text-white">NotifyDEMO</strong> until a branded sender ID is registered with TRCSL.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <ConfirmModal
         isOpen={confirmModalConfig.isOpen}
         onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}

@@ -388,6 +388,26 @@ Monthly bills or payment records are not created for new subscribers during thei
       setIsSuccessModalOpen(true);
       toast.success(`Payment recorded for ${createdPmt.customerName} (${createdPmt.month})`);
 
+      // Dispatch automated SMS receipt if subscriber has phone number and payment was made
+      const targetPhone = selectedCustomer?.phoneNo;
+      if (targetPhone && targetPhone.trim() !== '' && parsedPaid > 0) {
+        api.sendPaymentSms({
+          customerName: createdPmt.customerName,
+          phoneNo: targetPhone,
+          boxNo: createdPmt.boxNo,
+          paidAmount: createdPmt.paidAmount,
+          balanceAmount: createdPmt.balanceAmount,
+          month: createdPmt.month,
+          paymentDate: createdPmt.paymentDate || todayStr,
+        }).then((smsRes) => {
+          if (smsRes.success) {
+            toast.success(`SMS receipt sent to ${targetPhone}`);
+          }
+        }).catch((err) => {
+          console.warn('Automated SMS receipt dispatch failed:', err);
+        });
+      }
+
       onRefreshData();
     } catch (err: any) {
       const msg = err.message || 'Failed to record monthly payment';
@@ -466,6 +486,29 @@ Monthly bills or payment records are not created for new subscribers during thei
       });
 
       toast.success(`Payment of ${formatMoney(addPay, currency)} added for ${payBalancePayment.customerName}`);
+
+      // Dispatch automated SMS receipt
+      const cust = customers.find((c) => c.id === payBalancePayment.customerId || (c.boxNo && c.boxNo === payBalancePayment.boxNo));
+      const targetPhone = cust?.phoneNo;
+      if (targetPhone && targetPhone.trim() !== '' && addPay > 0) {
+        const remainingBal = Math.max(0, payBalancePayment.monthlyFee - newTotalPaid);
+        api.sendPaymentSms({
+          customerName: payBalancePayment.customerName,
+          phoneNo: targetPhone,
+          boxNo: payBalancePayment.boxNo,
+          paidAmount: addPay,
+          balanceAmount: remainingBal,
+          month: payBalancePayment.month,
+          paymentDate: todayStr,
+        }).then((smsRes) => {
+          if (smsRes.success) {
+            toast.success(`SMS receipt sent to ${targetPhone}`);
+          }
+        }).catch((err) => {
+          console.warn('Automated SMS receipt dispatch failed:', err);
+        });
+      }
+
       setPayBalancePayment(null);
       onRefreshData();
     } catch (err: any) {

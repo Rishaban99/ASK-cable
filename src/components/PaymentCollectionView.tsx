@@ -433,6 +433,26 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
         toast.success(`Registration Fee payment of ${formatMoney(addPay, currency)} collected for ${currentCustomer.name}`);
       }
 
+      // Automatically dispatch SMS receipt to customer's mobile number via Notify.lk
+      if (currentCustomer.phoneNo && currentCustomer.phoneNo.trim() !== '') {
+        api.sendPaymentSms({
+          customerName: currentCustomer.name,
+          phoneNo: currentCustomer.phoneNo,
+          boxNo: createdBillData.boxNo || currentCustomer.boxNo,
+          paidAmount: addPay,
+          balanceAmount: createdBillData.balanceAmount,
+          month: createdBillData.month,
+          paymentDate: createdBillData.paymentDate,
+          billNo: createdBillData.billNo,
+        }).then((smsRes) => {
+          if (smsRes.success) {
+            toast.success(`SMS receipt sent to ${currentCustomer.phoneNo}`);
+          }
+        }).catch((err) => {
+          console.warn('Automated SMS receipt dispatch failed:', err);
+        });
+      }
+
       // Automatically open print modal for receipt
       setActiveBillData(createdBillData);
       setIsBillModalOpen(true);

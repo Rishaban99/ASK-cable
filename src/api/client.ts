@@ -12,7 +12,12 @@ import {
   SqlQueryResult,
   StaffPrivileges,
   SystemProfile,
-  DEFAULT_SYSTEM_PROFILE
+  DEFAULT_SYSTEM_PROFILE,
+  SmsSettings,
+  DEFAULT_SMS_SETTINGS,
+  SendPaymentSmsPayload,
+  SendRegistrationSmsPayload,
+  SmsSendResult
 } from '../types/finance.js';
 
 export const CURRENCY_CONF = {
@@ -55,6 +60,7 @@ class ApiClient {
       try {
         const errJson = await response.json();
         if (errJson.error) errorMsg = errJson.error;
+        else if (errJson.message) errorMsg = errJson.message;
       } catch (e) {
         // ignore
       }
@@ -423,6 +429,98 @@ class ApiClient {
   async setSystemProfile(profile: SystemProfile): Promise<SystemProfile> {
     await this.setSetting('system_profile', JSON.stringify(profile));
     return profile;
+  }
+
+  // ==========================================
+  // SMS GATEWAY & NOTIFICATIONS API
+  // ==========================================
+  async getSmsSettings(): Promise<SmsSettings> {
+    try {
+      const res = await this.request<{ smsSettings: SmsSettings }>('/settings/sms');
+      if (res && res.smsSettings) return res.smsSettings;
+    } catch {
+      // Fallback to universal setting key
+    }
+
+    try {
+      const val = await this.getSetting('sms_settings');
+      if (val) {
+        return { ...DEFAULT_SMS_SETTINGS, ...JSON.parse(val) };
+      }
+    } catch {
+      // ignore
+    }
+
+    return DEFAULT_SMS_SETTINGS;
+  }
+
+  async setSmsSettings(smsSettings: SmsSettings): Promise<SmsSettings> {
+    // Save to universal /settings key in DB for resilience
+    try {
+      await this.setSetting('sms_settings', JSON.stringify(smsSettings));
+    } catch (e) {
+      console.warn('Fallback setSetting for sms_settings:', e);
+    }
+
+    try {
+      const res = await this.request<{ smsSettings: SmsSettings }>('/settings/sms', {
+        method: 'POST',
+        body: JSON.stringify({ smsSettings }),
+      });
+      if (res && res.smsSettings) return res.smsSettings;
+    } catch {
+      // ignore if dedicated route is not available
+    }
+
+    return smsSettings;
+  }
+
+  async sendTestSms(params: {
+    phone: string;
+    message?: string;
+    userId?: string;
+    apiKey?: string;
+    senderId?: string;
+  }): Promise<SmsSendResult> {
+    try {
+      return await this.request<SmsSendResult>('/sms/test', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || 'Failed to send test SMS',
+      };
+    }
+  }
+
+  async sendPaymentSms(payload: SendPaymentSmsPayload): Promise<SmsSendResult> {
+    try {
+      return await this.request<SmsSendResult>('/sms/send-payment', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || 'Failed to send payment SMS',
+      };
+    }
+  }
+
+  async sendRegistrationSms(payload: SendRegistrationSmsPayload): Promise<SmsSendResult> {
+    try {
+      return await this.request<SmsSendResult>('/sms/send-registration', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || 'Failed to send registration SMS',
+      };
+    }
   }
 }
 
