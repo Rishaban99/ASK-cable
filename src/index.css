@@ -1,16 +1,42 @@
 @import "tailwindcss";
 
 /* -------------------------------------------------------------------
- * GLOBAL CURSOR POINTER & INTERACTIVE CONTROL ENHANCEMENTS
- * Guarantees every button and interactive control displays cursor: pointer
+ * PREVENT MOBILE ZOOMING & UNWANTED VIEWPORT SCALING
+ * Prevents double-tap zooming, pinch zooming, and iOS input focus zoom
  * ------------------------------------------------------------------- */
+html,
+body {
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Prevent double-tap zoom on all interactive elements */
 button,
 a,
 select,
 summary,
 [role="button"],
-.cursor-pointer {
+.cursor-pointer,
+input,
+textarea,
+label {
   cursor: pointer !important;
+  touch-action: manipulation;
+}
+
+/* Prevent iOS Safari from auto-zooming into inputs when focused/tapped */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* -------------------------------------------------------------------

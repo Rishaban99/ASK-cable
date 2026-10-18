@@ -212,6 +212,8 @@ export default function App() {
             customers={customers}
             monthlyPayments={monthlyPayments}
             incomes={incomes}
+            expenses={expenses}
+            categories={categories}
           />
         )}
 

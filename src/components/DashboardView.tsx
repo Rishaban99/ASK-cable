@@ -5,6 +5,8 @@ import {
   Customer,
   MonthlyPayment,
   IncomeRecord,
+  ExpenseRecord,
+  Category,
 } from '../types/finance.js';
 import { formatMoney, formatCompactMoney } from '../api/client.js';
 import {
@@ -39,6 +41,8 @@ interface DashboardViewProps {
   customers?: Customer[];
   monthlyPayments?: MonthlyPayment[];
   incomes?: IncomeRecord[];
+  expenses?: ExpenseRecord[];
+  categories?: Category[];
 }
 
 const getRegistrationMonth = (createdAt?: string | Date | null, customerId?: string): string => {
@@ -135,6 +139,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   customers = [],
   monthlyPayments = [],
   incomes = [],
+  expenses = [],
+  categories = [],
 }) => {
   const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);
   const [hoveredFlowIdx, setHoveredFlowIdx] = useState<number | null>(null);
@@ -329,7 +335,105 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     netWorthHistory = [],
   } = data;
 
-  const isNetSavingsPositive = monthlyCashFlow.netSavings >= 0;
+  /* ==========================================================================
+     MONTHLY CASH FLOW & EXPENSES DYNAMICALLY LINKED TO SELECTED BILLING MONTH
+     ========================================================================== */
+  // 1. Incomes for selected billing month
+  const selectedMonthLedgerIncomes = useMemo(() => {
+    return incomes.filter((inc) => {
+      if (inc.date && inc.date.startsWith(selectedBillingMonth)) return true;
+      if (inc.tags && inc.tags.includes(selectedBillingMonth)) return true;
+      return false;
+    });
+  }, [incomes, selectedBillingMonth]);
+
+  // Check if monthly cable receipts are already recorded in ledger incomes
+  const hasCableIncomesInLedger = useMemo(() => {
+    return selectedMonthLedgerIncomes.some(
+      (inc) => inc.tags && (inc.tags.includes('monthly-fee') || inc.tags.includes(selectedBillingMonth))
+    );
+  }, [selectedMonthLedgerIncomes, selectedBillingMonth]);
+
+  // Cable fee receipts from monthlyPayments for this selected month (if not already recorded in income ledger)
+  const directCablePaymentsIncome = !hasCableIncomesInLedger ? paymentsReceivedAmount : 0;
+  const directCablePaymentsCount = !hasCableIncomesInLedger ? paymentsReceivedCount : 0;
+
+  const activeMonthIncome = useMemo(() => {
+    const ledgerSum = selectedMonthLedgerIncomes.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const total = ledgerSum + directCablePaymentsIncome;
+    if (total === 0 && isCurrentMonthSelected && monthlyCashFlow.totalIncome > 0) {
+      return monthlyCashFlow.totalIncome;
+    }
+    return total;
+  }, [selectedMonthLedgerIncomes, directCablePaymentsIncome, isCurrentMonthSelected, monthlyCashFlow.totalIncome]);
+
+  const activeMonthIncomeCount = useMemo(() => {
+    const count = selectedMonthLedgerIncomes.length + directCablePaymentsCount;
+    if (count === 0 && isCurrentMonthSelected && monthlyCashFlow.incomeTransactionsCount > 0) {
+      return monthlyCashFlow.incomeTransactionsCount;
+    }
+    return count;
+  }, [selectedMonthLedgerIncomes, directCablePaymentsCount, isCurrentMonthSelected, monthlyCashFlow.incomeTransactionsCount]);
+
+  // 2. Expenses for selected billing month
+  const selectedMonthExpenses = useMemo(() => {
+    return expenses.filter((exp) => {
+      return exp.date && exp.date.startsWith(selectedBillingMonth);
+    });
+  }, [expenses, selectedBillingMonth]);
+
+  const activeMonthExpense = useMemo(() => {
+    const sum = selectedMonthExpenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    if (sum === 0 && isCurrentMonthSelected && monthlyCashFlow.totalExpense > 0) {
+      return monthlyCashFlow.totalExpense;
+    }
+    return sum;
+  }, [selectedMonthExpenses, isCurrentMonthSelected, monthlyCashFlow.totalExpense]);
+
+  const activeMonthExpenseCount = useMemo(() => {
+    const count = selectedMonthExpenses.length;
+    if (count === 0 && isCurrentMonthSelected && monthlyCashFlow.expenseTransactionsCount > 0) {
+      return monthlyCashFlow.expenseTransactionsCount;
+    }
+    return count;
+  }, [selectedMonthExpenses, isCurrentMonthSelected, monthlyCashFlow.expenseTransactionsCount]);
+
+  // 3. Net Savings & Rate for selected billing month
+  const activeMonthNetSavings = activeMonthIncome - activeMonthExpense;
+  const activeMonthSavingsRatePct = activeMonthIncome > 0
+    ? Number(((activeMonthNetSavings / activeMonthIncome) * 100).toFixed(1))
+    : 0;
+  const isActiveNetSavingsPositive = activeMonthNetSavings >= 0;
+
+  // 4. Top Expense Categories for selected billing month
+  const activeMonthTopExpenseCategories = useMemo(() => {
+    if (selectedMonthExpenses.length === 0) {
+      return isCurrentMonthSelected ? topExpenseCategories : [];
+    }
+
+    const catMap = new Map(categories.map((c) => [c.id, c]));
+    const catSpend: Record<string, number> = {};
+
+    selectedMonthExpenses.forEach((exp) => {
+      catSpend[exp.categoryId] = (catSpend[exp.categoryId] || 0) + exp.amount;
+    });
+
+    return Object.entries(catSpend)
+      .map(([catId, amount]) => {
+        const cat = catMap.get(catId);
+        return {
+          categoryName: cat ? cat.name : 'Other',
+          color: cat ? cat.color : '#64748B',
+          amount,
+          percentage: activeMonthExpense > 0
+            ? Number(((amount / activeMonthExpense) * 100).toFixed(1))
+            : 0,
+        };
+      })
+      .sort((a, b) => b.amount - a.amount);
+  }, [categories, selectedMonthExpenses, activeMonthExpense, isCurrentMonthSelected, topExpenseCategories]);
+
+  const isNetSavingsPositive = isActiveNetSavingsPositive;
 
   // Max value for cashflow chart
   const maxFlow = Math.max(
@@ -377,12 +481,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const isTrajectoryPositive = currentNetWorth >= 0;
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
+    <div className="mx-auto max-w-7xl px-2.5 sm:px-6 py-3 sm:py-6 space-y-3 sm:space-y-5">
       {/* Editorial Page Lead */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">ASK Cable Financial Dashboard</h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 sm:mt-1">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white">ASK Cable Financial Dashboard</h1>
+          <p className="hidden sm:block text-xs text-neutral-400 mt-0.5">
             Real-time subscriber billing operations, customer eligibility, and multi-stream cashflow monitoring in Sri Lankan Rupees (LKR)
           </p>
         </div>
@@ -406,201 +510,191 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ==========================================================================
           SECTION 1: DASHBOARD STATUS CARDS & BILLING MONTH SELECTOR
           ========================================================================== */}
-      <div className="space-y-4">
+      <div className="space-y-2 sm:space-y-3">
         {/* Month Selector Bar & Operational Status Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-neutral-900/90 border border-neutral-800 p-4 rounded-xl shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-neutral-900/90 border border-neutral-800 py-2 px-3 sm:py-2.5 sm:px-4 rounded-lg sm:rounded-xl shadow-sm">
           <div>
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-emerald-400" />
-              <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+              <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide">
                 Billing & Customer Status — {formatMonthLabel(selectedBillingMonth)}
               </h2>
             </div>
-            <p className="text-xs text-neutral-400 mt-0.5">
-              Accurate, database-driven metrics for customer eligibility, billing generation, collections, and exceptions
+            <p className="hidden sm:block text-[11px] text-neutral-400 mt-0.5">
+              Accurate database-driven metrics for customer eligibility, billing generation, and collections
             </p>
           </div>
 
           {/* Month Selector Controls */}
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 self-start sm:self-auto flex-wrap">
             <button
               type="button"
               onClick={handlePrevMonth}
               title="Previous Billing Month"
-              className="p-1.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-750 text-neutral-200 transition-colors"
+              className="p-1 sm:p-1.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-750 text-neutral-200 transition-colors"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             <input
               type="month"
               value={selectedBillingMonth}
               onChange={(e) => e.target.value && setSelectedBillingMonth(e.target.value)}
-              className="px-2.5 py-1.5 text-xs font-mono font-medium rounded-lg border border-neutral-700 bg-neutral-800 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+              className="px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-mono font-medium rounded-lg border border-neutral-700 bg-neutral-800 text-white focus:outline-none focus:border-emerald-500 transition-colors"
             />
 
             <button
               type="button"
               onClick={handleNextMonth}
               title="Next Billing Month"
-              className="p-1.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-750 text-neutral-200 transition-colors"
+              className="p-1 sm:p-1.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-750 text-neutral-200 transition-colors"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             {!isCurrentMonthSelected && (
               <button
                 type="button"
                 onClick={() => setSelectedBillingMonth(currentMonthStr)}
-                className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                className="px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-semibold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
               >
-                Current Month
+                Current
               </button>
             )}
           </div>
         </div>
 
-        {/* All 7 Status Cards in a single horizontal row on desktop (lg:grid-cols-7) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-2.5">
+        {/* All 7 Status Cards: 2-col compact on mobile, 7-col on desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1.5 sm:gap-2">
           {/* Card 1: Total Active Customers */}
-          <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-br from-cyan-950/30 via-neutral-900 to-neutral-900 border border-cyan-500/30 shadow-md hover:border-cyan-500/50 transition-all flex flex-col justify-between">
+          <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-950/20 via-neutral-900 to-neutral-900 border border-cyan-500/30 shadow-sm hover:border-cyan-500/50 transition-all flex flex-col justify-between">
             <div>
-              <div className="flex items-start justify-between gap-1.5 min-h-[32px]">
-                <span className="text-[10px] xl:text-[11px] font-bold uppercase tracking-wider text-cyan-300 leading-tight">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-cyan-300 truncate">
                   Active Customers
                 </span>
-                <div className="p-1 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 shrink-0">
-                  <Users className="w-3.5 h-3.5" />
-                </div>
+                <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-400 shrink-0 opacity-80" />
               </div>
-              <div className="mt-2 text-2xl xl:text-3xl font-black tracking-tight text-white font-mono tabular-nums leading-none">
-                {activeCustomersCount}
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <span className="text-base sm:text-xl xl:text-2xl font-black tracking-tight text-white font-mono tabular-nums leading-none">
+                  {activeCustomersCount}
+                </span>
+                <span className="text-[9px] sm:text-[10px] text-neutral-400 font-mono truncate">
+                  {totalCustomersCount} total
+                </span>
               </div>
-              <p className="mt-1 text-[11px] text-neutral-400 leading-tight">
-                Active subscribers
-              </p>
             </div>
-            <div className="mt-2.5 pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-neutral-400 font-mono">
-                {totalCustomersCount} total
-              </span>
+            <div className="mt-1 pt-1 border-t border-neutral-800/60 flex items-center justify-between text-[8px] sm:text-[9px]">
+              <span className="text-neutral-400 truncate">Subscribers</span>
               <button
                 onClick={() => onNavigateToTab('customers')}
                 className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-0.5 transition-colors shrink-0"
               >
                 <span>Manage</span>
-                <ArrowRight className="w-2.5 h-2.5" />
+                <ArrowRight className="w-2 h-2" />
               </button>
             </div>
           </div>
 
           {/* Card 2: Eligible for This Month */}
-          <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-br from-emerald-950/30 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-md hover:border-emerald-500/50 transition-all flex flex-col justify-between">
+          <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-950/20 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-sm hover:border-emerald-500/50 transition-all flex flex-col justify-between">
             <div>
-              <div className="flex items-start justify-between gap-1.5 min-h-[32px]">
-                <span className="text-[10px] xl:text-[11px] font-bold uppercase tracking-wider text-emerald-300 leading-tight">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-300 truncate">
                   Eligible This Month
                 </span>
-                <div className="p-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
-                  <UserCheck className="w-3.5 h-3.5" />
-                </div>
+                <UserCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0 opacity-80" />
               </div>
-              <div className="mt-2 text-2xl xl:text-3xl font-black tracking-tight text-emerald-400 font-mono tabular-nums leading-none">
-                {eligibleCustomersCount}
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <span className="text-base sm:text-xl xl:text-2xl font-black tracking-tight text-emerald-400 font-mono tabular-nums leading-none">
+                  {eligibleCustomersCount}
+                </span>
+                <span className="text-[9px] sm:text-[10px] text-emerald-400/90 font-mono truncate">
+                  {activeCustomersCount > 0 ? Math.round((eligibleCustomersCount / activeCustomersCount) * 100) : 0}% active
+                </span>
               </div>
-              <p className="mt-1 text-[11px] text-neutral-400 leading-tight" title={`Eligible for ${formatMonthLabel(selectedBillingMonth)} bills`}>
-                Ready for {formatMonthLabel(selectedBillingMonth).split(' ')[0]}
-              </p>
             </div>
-            <div className="mt-2.5 pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-emerald-400/90 font-mono">
-                {activeCustomersCount > 0 ? Math.round((eligibleCustomersCount / activeCustomersCount) * 100) : 0}% active
-              </span>
-              <span className="text-neutral-400 font-mono text-[9px] uppercase px-1 py-0.5 rounded bg-neutral-800 shrink-0" title="Customers registered in or after selected month excluded">
+            <div className="mt-1 pt-1 border-t border-neutral-800/60 flex items-center justify-between text-[8px] sm:text-[9px]">
+              <span className="text-neutral-400 truncate">Ready for {formatMonthLabel(selectedBillingMonth).split(' ')[0]}</span>
+              <span className="text-neutral-400 font-mono text-[8px] uppercase px-1 py-0.2 rounded bg-neutral-800 shrink-0" title="Customers registered in or after selected month excluded">
                 Rule
               </span>
             </div>
           </div>
 
           {/* Card 3: Bills Generated */}
-          <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-br from-blue-950/30 via-neutral-900 to-neutral-900 border border-blue-500/30 shadow-md hover:border-blue-500/50 transition-all flex flex-col justify-between">
+          <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-950/20 via-neutral-900 to-neutral-900 border border-blue-500/30 shadow-sm hover:border-blue-500/50 transition-all flex flex-col justify-between">
             <div>
-              <div className="flex items-start justify-between gap-1.5 min-h-[32px]">
-                <span className="text-[10px] xl:text-[11px] font-bold uppercase tracking-wider text-blue-300 leading-tight">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-blue-300 truncate">
                   Bills Generated
                 </span>
-                <div className="p-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 shrink-0">
-                  <Receipt className="w-3.5 h-3.5" />
-                </div>
+                <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-400 shrink-0 opacity-80" />
               </div>
-              <div className="mt-2 text-2xl xl:text-3xl font-black tracking-tight text-white font-mono tabular-nums leading-none">
-                {billsGeneratedCount}
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <span className="text-base sm:text-xl xl:text-2xl font-black tracking-tight text-white font-mono tabular-nums leading-none">
+                  {billsGeneratedCount}
+                </span>
+                <span className="text-[9px] sm:text-[10px] text-blue-300 font-mono truncate" title={`Total Billed: ${formatMoney(totalBilledAmount, currency)}`}>
+                  {formatMoney(totalBilledAmount, currency)}
+                </span>
               </div>
-              <p className="mt-1 text-[11px] text-blue-300 font-mono leading-tight" title={`Total Billed: ${formatMoney(totalBilledAmount, currency)}`}>
-                Billed: {formatMoney(totalBilledAmount, currency)}
-              </p>
             </div>
-            <div className="mt-2.5 pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-neutral-400 font-mono">
-                {generationPct}% done
-              </span>
+            <div className="mt-1 pt-1 border-t border-neutral-800/60 flex items-center justify-between text-[8px] sm:text-[9px]">
+              <span className="text-neutral-400 font-mono">{generationPct}% done</span>
               <button
                 onClick={() => onNavigateToTab('monthly-payment')}
                 className="text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-0.5 transition-colors shrink-0"
               >
                 <span>Bills</span>
-                <ArrowRight className="w-2.5 h-2.5" />
+                <ArrowRight className="w-2 h-2" />
               </button>
             </div>
           </div>
 
           {/* Card 4: Bills Pending */}
-          <div className={`p-3 sm:p-3.5 rounded-xl bg-gradient-to-br ${
+          <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-gradient-to-br ${
             billsPendingCount > 0
-              ? 'from-amber-950/30 via-neutral-900 to-neutral-900 border-amber-500/40 hover:border-amber-500/60'
-              : 'from-emerald-950/20 via-neutral-900 to-neutral-900 border-emerald-500/30 hover:border-emerald-500/50'
-          } border shadow-md transition-all flex flex-col justify-between`}>
+              ? 'from-amber-950/20 via-neutral-900 to-neutral-900 border-amber-500/40 hover:border-amber-500/60'
+              : 'from-emerald-950/15 via-neutral-900 to-neutral-900 border-emerald-500/30 hover:border-emerald-500/50'
+          } border shadow-sm transition-all flex flex-col justify-between`}>
             <div>
-              <div className="flex items-start justify-between gap-1.5 min-h-[32px]">
-                <span className={`text-[10px] xl:text-[11px] font-bold uppercase tracking-wider leading-tight ${
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider truncate ${
                   billsPendingCount > 0 ? 'text-amber-300' : 'text-emerald-300'
                 }`}>
                   Bills Pending
                 </span>
-                <div className={`p-1 rounded-md border shrink-0 ${
-                  billsPendingCount > 0
-                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                    : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                <Clock className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 opacity-80 ${
+                  billsPendingCount > 0 ? 'text-amber-400' : 'text-emerald-400'
+                }`} />
+              </div>
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <span className={`text-base sm:text-xl xl:text-2xl font-black tracking-tight font-mono tabular-nums leading-none ${
+                  billsPendingCount > 0 ? 'text-amber-400' : 'text-emerald-400'
                 }`}>
-                  <Clock className="w-3.5 h-3.5" />
-                </div>
+                  {billsPendingCount}
+                </span>
+                <span className="text-[9px] sm:text-[10px] text-neutral-400 truncate">
+                  {billsPendingCount === 0 ? 'All created' : 'Awaiting'}
+                </span>
               </div>
-              <div className={`mt-2 text-2xl xl:text-3xl font-black tracking-tight font-mono tabular-nums leading-none ${
-                billsPendingCount > 0 ? 'text-amber-400' : 'text-emerald-400'
-              }`}>
-                {billsPendingCount}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 leading-tight">
-                {billsPendingCount === 0 ? 'All bills created' : 'Awaiting creation'}
-              </p>
             </div>
-            <div className="mt-2.5 pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
+            <div className="mt-1 pt-1 border-t border-neutral-800/60 flex items-center justify-between text-[8px] sm:text-[9px]">
               {billsPendingCount > 0 ? (
                 <>
-                  <span className="text-amber-400 font-mono font-medium">
-                    Pending
-                  </span>
+                  <span className="text-amber-400 font-mono font-medium">Pending</span>
                   <button
                     onClick={() => onNavigateToTab('monthly-payment')}
                     className="text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-0.5 transition-colors shrink-0"
                   >
                     <span>Generate</span>
-                    <ArrowRight className="w-2.5 h-2.5" />
+                    <ArrowRight className="w-2 h-2" />
                   </button>
                 </>
               ) : (
-                <span className="text-emerald-400 font-mono flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
+                <span className="text-emerald-400 font-mono flex items-center gap-0.5">
+                  <CheckCircle2 className="w-2.5 h-2.5" />
                   Complete
                 </span>
               )}
@@ -608,104 +702,110 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Card 5: Payments Received */}
-          <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-br from-emerald-950/40 via-neutral-900 to-neutral-900 border border-emerald-500/40 shadow-md hover:border-emerald-500/60 transition-all flex flex-col justify-between">
+          <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-950/20 via-neutral-900 to-neutral-900 border border-emerald-500/40 shadow-sm hover:border-emerald-500/60 transition-all flex flex-col justify-between">
             <div>
-              <div className="flex items-start justify-between gap-1.5 min-h-[32px]">
-                <span className="text-[10px] xl:text-[11px] font-bold uppercase tracking-wider text-emerald-300 leading-tight">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-300 truncate">
                   Payments Received
                 </span>
-                <div className="p-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                </div>
+                <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0 opacity-80" />
               </div>
-              <div
-                className="mt-2 text-lg xl:text-xl font-black tracking-tight text-emerald-400 font-mono tabular-nums leading-none truncate"
-                title={`+${formatMoney(paymentsReceivedAmount, currency)}`}
-              >
-                +{formatMoney(paymentsReceivedAmount, currency)}
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <span
+                  className="text-xs sm:text-base xl:text-lg font-black tracking-tight text-emerald-400 font-mono tabular-nums leading-none truncate"
+                  title={`+${formatMoney(paymentsReceivedAmount, currency)}`}
+                >
+                  +{formatMoney(paymentsReceivedAmount, currency)}
+                </span>
+                <span className="text-[8px] sm:text-[9px] text-neutral-400 font-mono shrink-0">
+                  {paymentsReceivedCount} paid
+                </span>
               </div>
-              <p className="mt-1 text-[11px] text-neutral-300 font-mono leading-tight">
-                {paymentsReceivedCount} paid records
-              </p>
             </div>
-            <div className="mt-2.5 pt-2 border-t border-neutral-800/80 space-y-1">
-              <div className="flex items-center justify-between text-[10px] font-mono">
-                <span className="text-neutral-400">Rate:</span>
-                <span className="text-emerald-400 font-semibold">{collectionPct}%</span>
-              </div>
-              <div className="h-1 w-full bg-neutral-800 rounded-full overflow-hidden">
-                <div
-                  style={{ width: `${collectionPct}%` }}
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                />
+            <div className="mt-1 pt-1 border-t border-neutral-800/60 flex items-center justify-between text-[8px] sm:text-[9px] font-mono">
+              <span className="text-neutral-400">Rate: {collectionPct}%</span>
+              <div className="w-12 sm:w-16 h-1 bg-neutral-800 rounded-full overflow-hidden shrink-0">
+                <div style={{ width: `${collectionPct}%` }} className="h-full bg-emerald-500 rounded-full" />
               </div>
             </div>
           </div>
 
           {/* Card 6: Payments Pending */}
-          <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-br from-rose-950/30 via-neutral-900 to-neutral-900 border border-rose-500/40 shadow-md hover:border-rose-500/60 transition-all flex flex-col justify-between">
+          <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-gradient-to-br from-rose-950/20 via-neutral-900 to-neutral-900 border border-rose-500/40 shadow-sm hover:border-rose-500/60 transition-all flex flex-col justify-between">
             <div>
-              <div className="flex items-start justify-between gap-1.5 min-h-[32px]">
-                <span className="text-[10px] xl:text-[11px] font-bold uppercase tracking-wider text-rose-300 leading-tight">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-rose-300 truncate">
                   Payments Pending
                 </span>
-                <div className="p-1 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 shrink-0">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                </div>
+                <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400 shrink-0 opacity-80" />
               </div>
-              <div
-                className="mt-2 text-lg xl:text-xl font-black tracking-tight text-rose-400 font-mono tabular-nums leading-none truncate"
-                title={formatMoney(paymentsPendingAmount, currency)}
-              >
-                {formatMoney(paymentsPendingAmount, currency)}
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <span
+                  className="text-xs sm:text-base xl:text-lg font-black tracking-tight text-rose-400 font-mono tabular-nums leading-none truncate"
+                  title={formatMoney(paymentsPendingAmount, currency)}
+                >
+                  {formatMoney(paymentsPendingAmount, currency)}
+                </span>
+                <span className="text-[8px] sm:text-[9px] text-neutral-400 font-mono shrink-0">
+                  {paymentsPendingCount} bills
+                </span>
               </div>
-              <p className="mt-1 text-[11px] text-neutral-300 font-mono leading-tight">
-                {paymentsPendingCount} balance bills
-              </p>
             </div>
-            <div className="mt-2.5 pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-neutral-400 font-mono">
-                {unpaidBillsCount} unpaid
-              </span>
+            <div className="mt-1 pt-1 border-t border-neutral-800/60 flex items-center justify-between text-[8px] sm:text-[9px]">
+              <span className="text-neutral-400 font-mono">{unpaidBillsCount} unpaid</span>
               <button
                 onClick={() => onNavigateToTab('payment-collection')}
                 className="text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-0.5 transition-colors shrink-0"
               >
                 <span>Collect</span>
-                <ArrowRight className="w-2.5 h-2.5" />
+                <ArrowRight className="w-2 h-2" />
               </button>
             </div>
           </div>
 
-          {/* Card 7: Skipped Customers */}
-          <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-br from-purple-950/30 via-neutral-900 to-neutral-900 border border-purple-500/40 shadow-md hover:border-purple-500/60 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-start justify-between gap-1.5 min-h-[32px]">
-                <span className="text-[10px] xl:text-[11px] font-bold uppercase tracking-wider text-purple-300 leading-tight">
+          {/* Card 7: Skipped Customers (spans 2-col on mobile for balanced grid) */}
+          <div className="col-span-2 md:col-span-1 lg:col-span-1 py-1.5 px-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-gradient-to-br from-purple-950/20 via-neutral-900 to-neutral-900 border border-purple-500/40 shadow-sm hover:border-purple-500/60 transition-all flex items-center sm:flex-col justify-between gap-1">
+            {/* Mobile compact horizontal layout */}
+            <div className="sm:hidden flex items-center gap-1.5 min-w-0">
+              <UserX className="w-3 h-3 text-purple-400 shrink-0" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-purple-300 truncate">
+                Skipped:
+              </span>
+              <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-[10px] font-mono font-black text-purple-300">
+                {totalSkippedCount}
+              </span>
+              <span className="text-[8px] text-neutral-400 truncate">
+                Bypassed
+              </span>
+            </div>
+
+            {/* Desktop standard card */}
+            <div className="hidden sm:block w-full">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300 truncate">
                   Skipped Customers
                 </span>
-                <div className="p-1 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
-                  <UserX className="w-3.5 h-3.5" />
-                </div>
+                <UserX className="w-3.5 h-3.5 text-purple-400 shrink-0 opacity-80" />
               </div>
-              <div className="mt-2 text-2xl xl:text-3xl font-black tracking-tight text-purple-300 font-mono tabular-nums leading-none">
-                {totalSkippedCount}
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <span className="text-xl xl:text-2xl font-black tracking-tight text-purple-300 font-mono tabular-nums leading-none">
+                  {totalSkippedCount}
+                </span>
+                <span className="text-[10px] text-neutral-400 truncate">
+                  Bypassed
+                </span>
               </div>
-              <p className="mt-1 text-[11px] text-neutral-400 leading-tight">
-                Bypassed in bulk
-              </p>
             </div>
-            <div className="mt-2.5 pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-purple-400 font-mono text-[10px] font-semibold">
-                {totalSkippedCount} Skipped
-              </span>
+
+            <div className="sm:w-full sm:mt-1 sm:pt-1 sm:border-t sm:border-neutral-800/60 flex items-center justify-between text-[8px] sm:text-[9px]">
+              <span className="hidden sm:inline text-purple-400 font-mono">{totalSkippedCount} Skipped</span>
               <button
                 type="button"
                 onClick={() => setIsSkippedModalOpen(true)}
                 className="text-purple-300 hover:text-purple-200 font-semibold flex items-center gap-0.5 bg-purple-500/20 hover:bg-purple-500/30 px-1.5 py-0.5 rounded border border-purple-500/30 transition-colors shrink-0"
               >
                 <span>Reasons</span>
-                <ArrowRight className="w-2.5 h-2.5" />
+                <ArrowRight className="w-2 h-2" />
               </button>
             </div>
           </div>
@@ -924,64 +1024,153 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* ==========================================================================
-          SECTION 2: FINANCIAL METRICS OVERVIEW
+          SECTION 2: FINANCIAL METRICS OVERVIEW (LINKED TO MONTH SELECTOR)
           ========================================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-        {/* Metric 2: Monthly Income Inflow */}
-        <div className="p-5 rounded-xl bg-gradient-to-br from-emerald-950/30 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-lg transition-all hover:border-emerald-500/50">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Monthly Income Inflow</span>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 text-3xl font-extrabold tracking-tight text-emerald-400 font-mono tabular-nums">
-            +{formatMoney(monthlyCashFlow.totalIncome, currency)}
-          </div>
-          <div className="mt-2.5 text-xs text-neutral-300 font-mono tabular-nums flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-            <span>{monthlyCashFlow.incomeTransactionsCount} revenue transactions</span>
-          </div>
-        </div>
-
-        {/* Metric 3: Monthly Expenses */}
-        <div className="p-5 rounded-xl bg-gradient-to-br from-rose-950/30 via-neutral-900 to-neutral-900 border border-rose-500/30 shadow-lg transition-all hover:border-rose-500/50">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-rose-300">Monthly Expenses</span>
-            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
-              <TrendingDown className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 text-3xl font-extrabold tracking-tight text-rose-400 font-mono tabular-nums">
-            -{formatMoney(monthlyCashFlow.totalExpense, currency)}
-          </div>
-          <div className="mt-2.5 text-xs text-neutral-300 font-mono tabular-nums flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
-            <span>{monthlyCashFlow.expenseTransactionsCount} expense deductions</span>
-          </div>
-        </div>
-
-        {/* Metric 4: Net Savings & Rate */}
-        <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-950/30 via-neutral-900 to-neutral-900 border border-indigo-500/30 shadow-lg transition-all hover:border-indigo-500/50">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300">Monthly Surplus / Deficit</span>
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-              <Receipt className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className={`text-3xl font-extrabold tracking-tight font-mono tabular-nums ${
-              isNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
-            }`}>
-              {isNetSavingsPositive ? '+' : ''}{formatMoney(monthlyCashFlow.netSavings, currency)}
+      <div className="space-y-1.5 sm:space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+            <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+              Financial Overview
+            </h3>
+            <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+              {formatMonthLabel(selectedBillingMonth)}
             </span>
           </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-xs text-neutral-300">
-            <span className="font-mono tabular-nums font-bold text-white bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded text-[11px]">
-              {monthlyCashFlow.savingsRatePct}%
+          {!isCurrentMonthSelected && (
+            <span className="text-[9px] sm:text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-amber-400">
+              Filtered
             </span>
-            <span>savings rate this month</span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2.5">
+          {/* Metric 2: Monthly Income Inflow */}
+          <div className="py-2 px-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-950/20 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-sm transition-all hover:border-emerald-500/50">
+            {/* Mobile compact row (< sm) */}
+            <div className="sm:hidden flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block truncate">
+                    Income Inflow
+                  </span>
+                  <span className="text-[9px] text-neutral-400 font-mono">
+                    {activeMonthIncomeCount} transactions
+                  </span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-xs sm:text-sm font-black text-emerald-400 font-mono tabular-nums">
+                  +{formatMoney(activeMonthIncome, currency)}
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop compact layout (sm+) */}
+            <div className="hidden sm:block">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-300 truncate">
+                  Monthly Income Inflow
+                </span>
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-400 shrink-0 opacity-80" />
+              </div>
+              <div className="mt-1 text-xl lg:text-2xl font-black tracking-tight text-emerald-400 font-mono tabular-nums leading-none">
+                +{formatMoney(activeMonthIncome, currency)}
+              </div>
+              <div className="mt-1.5 text-[10px] text-neutral-300 font-mono tabular-nums flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                <span>{activeMonthIncomeCount} revenue transactions</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Metric 3: Monthly Expenses */}
+          <div className="py-2 px-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-rose-950/20 via-neutral-900 to-neutral-900 border border-rose-500/30 shadow-sm transition-all hover:border-rose-500/50">
+            {/* Mobile compact row (< sm) */}
+            <div className="sm:hidden flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <TrendingDown className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 block truncate">
+                    Monthly Expenses
+                  </span>
+                  <span className="text-[9px] text-neutral-400 font-mono">
+                    {activeMonthExpenseCount} deductions
+                  </span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-xs sm:text-sm font-black text-rose-400 font-mono tabular-nums">
+                  -{formatMoney(activeMonthExpense, currency)}
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop compact layout (sm+) */}
+            <div className="hidden sm:block">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-300 truncate">
+                  Monthly Expenses
+                </span>
+                <TrendingDown className="w-3.5 h-3.5 text-rose-400 shrink-0 opacity-80" />
+              </div>
+              <div className="mt-1 text-xl lg:text-2xl font-black tracking-tight text-rose-400 font-mono tabular-nums leading-none">
+                -{formatMoney(activeMonthExpense, currency)}
+              </div>
+              <div className="mt-1.5 text-[10px] text-neutral-300 font-mono tabular-nums flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" />
+                <span>{activeMonthExpenseCount} expense deductions</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Metric 4: Net Savings & Rate */}
+          <div className="py-2 px-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-950/20 via-neutral-900 to-neutral-900 border border-indigo-500/30 shadow-sm transition-all hover:border-indigo-500/50">
+            {/* Mobile compact row (< sm) */}
+            <div className="sm:hidden flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Receipt className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block truncate">
+                    Surplus / Deficit
+                  </span>
+                  <span className="text-[9px] font-mono font-bold text-neutral-300">
+                    Rate: {activeMonthSavingsRatePct}%
+                  </span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className={`text-xs sm:text-sm font-black font-mono tabular-nums ${
+                  isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
+                }`}>
+                  {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop compact layout (sm+) */}
+            <div className="hidden sm:block">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-indigo-300 truncate">
+                  Surplus / Deficit
+                </span>
+                <Receipt className="w-3.5 h-3.5 text-indigo-400 shrink-0 opacity-80" />
+              </div>
+              <div className="mt-1 flex items-baseline gap-1.5">
+                <span className={`text-xl lg:text-2xl font-black tracking-tight font-mono tabular-nums leading-none ${
+                  isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
+                }`}>
+                  {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
+                </span>
+              </div>
+              <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-neutral-300">
+                <span className="font-mono tabular-nums font-bold text-white bg-indigo-500/20 border border-indigo-500/30 px-1.5 py-0.2 rounded text-[10px]">
+                  {activeMonthSavingsRatePct}%
+                </span>
+                <span className="truncate">savings rate ({formatMonthLabel(selectedBillingMonth)})</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -994,18 +1183,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div>
                 <h2 className="text-base font-semibold text-white">Top Expense Categories</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">Distribution of current month operational expenditure</p>
+                <p className="text-xs text-neutral-400 mt-0.5">Distribution of {formatMonthLabel(selectedBillingMonth)} operational expenditure</p>
               </div>
               <PieIcon className="w-4 h-4 text-neutral-400" />
             </div>
 
-            {topExpenseCategories.length === 0 ? (
+            {activeMonthTopExpenseCategories.length === 0 ? (
               <div className="py-12 text-center text-xs text-neutral-500">
-                No expense transactions recorded for current month.
+                No expense transactions recorded for {formatMonthLabel(selectedBillingMonth)}.
               </div>
             ) : (
               <div className="pt-4 space-y-3.5">
-                {topExpenseCategories.map((c, idx) => (
+                {activeMonthTopExpenseCategories.map((c, idx) => (
                   <div key={idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
@@ -1033,9 +1222,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="pt-4 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
-            <span>Total Operational Spend:</span>
+            <span>Total Operational Spend ({formatMonthLabel(selectedBillingMonth)}):</span>
             <span className="font-mono tabular-nums text-white font-semibold">
-              {formatMoney(monthlyCashFlow.totalExpense, currency)}
+              {formatMoney(activeMonthExpense, currency)}
             </span>
           </div>
         </div>
