@@ -1489,6 +1489,138 @@ export class RelationalDatabaseStore {
     await this.setSetting('sms_settings', JSON.stringify(updated));
     return updated;
   }
+
+  // -------------------------------------------------------------------
+  // SMS LOGS (MongoDB Dedicated Collection + Resilience Fallback)
+  // -------------------------------------------------------------------
+  public async logSms(entry: {
+    type: 'PAYMENT' | 'REGISTRATION' | 'TEST' | 'CUSTOM';
+    recipientPhone: string;
+    customerName?: string;
+    boxNo?: string;
+    message: string;
+    senderId?: string;
+    status: 'DELIVERED' | 'FAILED';
+    gatewayResponse?: string;
+  }): Promise<any> {
+    const logDoc = {
+      type: entry.type,
+      recipientPhone: entry.recipientPhone,
+      customerName: entry.customerName || '',
+      boxNo: entry.boxNo || '',
+      message: entry.message,
+      senderId: entry.senderId || 'NotifyDEMO',
+      status: entry.status,
+      gatewayResponse: entry.gatewayResponse || '',
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      await (prisma as any).$runCommandRaw({
+        insert: 'sms_logs',
+        documents: [logDoc],
+      });
+      return logDoc;
+    } catch (e: any) {
+      console.warn('Failed to insert sms_log via raw command, saving to fallback:', e?.message);
+      try {
+        const existing = await this.getSetting('sms_logs_fallback');
+        const list = existing ? JSON.parse(existing) : [];
+        list.unshift({ ...logDoc, id: 'log_' + Date.now() });
+        if (list.length > 500) list.length = 500;
+        await this.setSetting('sms_logs_fallback', JSON.stringify(list));
+      } catch (err) {
+        console.error('Failed to log SMS to fallback:', err);
+      }
+      return logDoc;
+    }
+  }
+
+  public async getSmsLogs(options?: {
+    type?: string;
+    status?: string;
+    search?: string;
+    limit?: number;
+  }): Promise<any[]> {
+    const limit = options?.limit || 250;
+    const filter: any = {};
+    if (options?.type && options.type !== 'ALL') {
+      filter.type = options.type;
+    }
+    if (options?.status && options.status !== 'ALL') {
+      filter.status = options.status;
+    }
+    if (options?.search && options.search.trim()) {
+      const term = options.search.trim();
+      filter.$or = [
+        { recipientPhone: { $regex: term, $options: 'i' } },
+        { customerName: { $regex: term, $options: 'i' } },
+        { boxNo: { $regex: term, $options: 'i' } },
+        { message: { $regex: term, $options: 'i' } },
+      ];
+    }
+
+    try {
+      const res: any = await (prisma as any).$runCommandRaw({
+        find: 'sms_logs',
+        filter,
+        sort: { createdAt: -1 },
+        limit,
+      });
+
+      if (res?.cursor?.firstBatch) {
+        return res.cursor.firstBatch.map((doc: any) => ({
+          id: doc._id?.$oid || doc._id || String(Math.random()),
+          type: doc.type,
+          recipientPhone: doc.recipientPhone,
+          customerName: doc.customerName,
+          boxNo: doc.boxNo,
+          message: doc.message,
+          senderId: doc.senderId,
+          status: doc.status,
+          gatewayResponse: doc.gatewayResponse,
+          createdAt: doc.createdAt,
+        }));
+      }
+    } catch (e: any) {
+      console.warn('Failed to query sms_logs via raw command, using fallback:', e?.message);
+    }
+
+    try {
+      const fallback = await this.getSetting('sms_logs_fallback');
+      let list = fallback ? JSON.parse(fallback) : [];
+      if (options?.type && options.type !== 'ALL') {
+        list = list.filter((l: any) => l.type === options.type);
+      }
+      if (options?.status && options.status !== 'ALL') {
+        list = list.filter((l: any) => l.status === options.status);
+      }
+      if (options?.search && options.search.trim()) {
+        const term = options.search.trim().toLowerCase();
+        list = list.filter((l: any) =>
+          (l.recipientPhone && l.recipientPhone.toLowerCase().includes(term)) ||
+          (l.customerName && l.customerName.toLowerCase().includes(term)) ||
+          (l.boxNo && l.boxNo.toLowerCase().includes(term)) ||
+          (l.message && l.message.toLowerCase().includes(term))
+        );
+      }
+      return list.slice(0, limit);
+    } catch {
+      return [];
+    }
+  }
+
+  public async clearSmsLogs(): Promise<void> {
+    try {
+      await (prisma as any).$runCommandRaw({
+        delete: 'sms_logs',
+        deletes: [{ q: {}, limit: 0 }],
+      });
+    } catch (e: any) {
+      console.warn('Failed to delete sms_logs via raw command:', e?.message);
+    }
+    await this.setSetting('sms_logs_fallback', JSON.stringify([]));
+  }
 }
 
 export const db = new RelationalDatabaseStore();

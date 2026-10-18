@@ -17,7 +17,9 @@ import {
   DEFAULT_SMS_SETTINGS,
   SendPaymentSmsPayload,
   SendRegistrationSmsPayload,
-  SmsSendResult
+  SmsSendResult,
+  SmsLogEntry,
+  SmsBalanceResponse
 } from '../types/finance.js';
 
 export const CURRENCY_CONF = {
@@ -519,6 +521,59 @@ class ApiClient {
       return {
         success: false,
         message: err?.message || 'Failed to send registration SMS',
+      };
+    }
+  }
+
+  async getSmsBalance(userId?: string, apiKey?: string): Promise<SmsBalanceResponse> {
+    const params = new URLSearchParams();
+    if (userId) params.set('userId', userId);
+    if (apiKey) params.set('apiKey', apiKey);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    try {
+      return await this.request<SmsBalanceResponse>(`/sms/balance${query}`);
+    } catch (err: any) {
+      return {
+        success: false,
+        balance: 0,
+        active: false,
+        checkedAt: new Date().toISOString(),
+        error: err?.message || 'Failed to load SMS account balance',
+      };
+    }
+  }
+
+  async getSmsLogs(options?: {
+    type?: string;
+    status?: string;
+    search?: string;
+    limit?: number;
+  }): Promise<SmsLogEntry[]> {
+    const params = new URLSearchParams();
+    if (options?.type && options.type !== 'ALL') params.set('type', options.type);
+    if (options?.status && options.status !== 'ALL') params.set('status', options.status);
+    if (options?.search) params.set('search', options.search);
+    if (options?.limit) params.set('limit', String(options.limit));
+    const query = params.toString() ? `?${params.toString()}` : '';
+
+    try {
+      const res = await this.request<{ logs: SmsLogEntry[] }>(`/sms/logs${query}`);
+      return res.logs || [];
+    } catch (err) {
+      console.warn('Failed to fetch SMS logs from backend:', err);
+      return [];
+    }
+  }
+
+  async clearSmsLogs(): Promise<{ success: boolean; message: string }> {
+    try {
+      return await this.request<{ success: boolean; message: string }>('/sms/logs', {
+        method: 'DELETE',
+      });
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.message || 'Failed to clear SMS logs',
       };
     }
   }

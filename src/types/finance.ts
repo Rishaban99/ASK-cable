@@ -95,6 +95,27 @@ export interface SmsSendResult {
   data?: any;
 }
 
+export interface SmsLogEntry {
+  id: string;
+  type: 'PAYMENT' | 'REGISTRATION' | 'TEST' | 'CUSTOM';
+  recipientPhone: string;
+  customerName?: string;
+  boxNo?: string;
+  message: string;
+  senderId: string;
+  status: 'DELIVERED' | 'FAILED';
+  gatewayResponse?: string;
+  createdAt: string;
+}
+
+export interface SmsBalanceResponse {
+  success: boolean;
+  balance: number;
+  active: boolean;
+  checkedAt: string;
+  error?: string;
+}
+
 export interface Category {
   id: string;
   name: string;

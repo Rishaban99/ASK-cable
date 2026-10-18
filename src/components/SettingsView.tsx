@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES, SystemProfile, DEFAULT_SYSTEM_PROFILE, SmsSettings, DEFAULT_SMS_SETTINGS } from '../types/finance.js';
+import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES, SystemProfile, DEFAULT_SYSTEM_PROFILE, SmsSettings, DEFAULT_SMS_SETTINGS, SmsLogEntry, SmsBalanceResponse } from '../types/finance.js';
 import { api } from '../api/client.js';
 import { useToast } from './Toast.js';
 import { ConfirmModal } from './ConfirmModal.js';
@@ -39,7 +39,14 @@ import {
   HelpCircle,
   Info,
   ExternalLink,
-  Check
+  Check,
+  RefreshCw,
+  Search,
+  Filter,
+  Clock,
+  Copy,
+  X,
+  XCircle
 } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -167,6 +174,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isSendingTestSms, setIsSendingTestSms] = useState(false);
   const [testSmsResult, setTestSmsResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
 
+  // SMS Account Balance State (Notify.lk live balance)
+  const [smsBalance, setSmsBalance] = useState<SmsBalanceResponse | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+
+  // SMS Logs State (Historical SMS Dispatches)
+  const [smsLogs, setSmsLogs] = useState<SmsLogEntry[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [logsFilterType, setLogsFilterType] = useState<string>('ALL');
+  const [logsFilterStatus, setLogsFilterStatus] = useState<string>('ALL');
+  const [logsSearchTerm, setLogsSearchTerm] = useState('');
+  const [selectedLogForModal, setSelectedLogForModal] = useState<SmsLogEntry | null>(null);
+  const [isClearingLogs, setIsClearingLogs] = useState(false);
+  const [copiedLogId, setCopiedLogId] = useState<string | null>(null);
+
   // Load Users & Privileges & System Profile & SMS Settings from DB
   const fetchUsers = async () => {
     setIsLoadingUsers(true);
@@ -239,12 +260,105 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
+  const fetchBalance = async (customUserId?: string, customApiKey?: string) => {
+    setIsLoadingBalance(true);
+    try {
+      const uId = customUserId || smsSettings.userId;
+      const key = customApiKey || smsSettings.apiKey;
+      const res = await api.getSmsBalance(uId, key);
+      setSmsBalance(res);
+    } catch (e: any) {
+      console.warn('Failed to load SMS balance:', e);
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
+
+  const fetchLogs = async (overrideFilter?: { type?: string; status?: string; search?: string }) => {
+    setIsLoadingLogs(true);
+    try {
+      const type = overrideFilter?.type !== undefined ? overrideFilter.type : logsFilterType;
+      const status = overrideFilter?.status !== undefined ? overrideFilter.status : logsFilterStatus;
+      const search = overrideFilter?.search !== undefined ? overrideFilter.search : logsSearchTerm;
+      const logs = await api.getSmsLogs({ type, status, search });
+      setSmsLogs(logs);
+    } catch (e: any) {
+      console.warn('Failed to load SMS logs:', e);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  const handleClearSmsLogs = () => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Clear All SMS Dispatch Logs',
+      message: 'Are you sure you want to permanently clear all SMS dispatch logs from the database? This action cannot be undone.',
+      confirmText: 'Clear All Logs',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        setIsClearingLogs(true);
+        try {
+          const res = await api.clearSmsLogs();
+          if (res.success) {
+            setSmsLogs([]);
+            toast.success('All SMS dispatch logs have been cleared.');
+          } else {
+            toast.error(res.message || 'Failed to clear logs.');
+          }
+        } catch (err: any) {
+          toast.error(err?.message || 'Failed to clear logs.');
+        } finally {
+          setIsClearingLogs(false);
+        }
+      },
+    });
+  };
+
+  const handleCopyMessage = (text: string, logId: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedLogId(logId);
+    toast.success('SMS message copied to clipboard');
+    setTimeout(() => setCopiedLogId(null), 2000);
+  };
+
+  const formatLogDateTime = (isoString?: string): string => {
+    if (!isoString) return '—';
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return isoString;
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+    } catch {
+      return isoString;
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchPrivileges();
     fetchProfile();
     fetchSmsSettings();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'sms') {
+      fetchBalance();
+      fetchLogs();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'sms') {
+      fetchLogs();
+    }
+  }, [logsFilterType, logsFilterStatus]);
 
   // Save SMS Settings to DB
   const handleSaveSmsSettings = async (e?: React.FormEvent) => {
@@ -263,6 +377,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       toast.success(msg);
       setSmsStatus(msg);
       setTimeout(() => setSmsStatus(null), 3500);
+      fetchBalance(updated.userId, updated.apiKey);
     } catch (err: any) {
       const msg = err?.message || 'Failed to save SMS settings to database.';
       toast.error(msg);
@@ -323,6 +438,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       toast.error(errMsg);
     } finally {
       setIsSendingTestSms(false);
+      fetchBalance();
+      fetchLogs();
     }
   };
 
@@ -1214,60 +1331,132 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================================= */}
       {activeTab === 'sms' && (
         <div className="space-y-6">
-          {/* Gateway Master Card & Toggle */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 shadow-lg">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3.5">
-                <div className={`p-3 rounded-xl border ${
-                  smsSettings.enabled
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                    : 'bg-neutral-800 border-neutral-700 text-neutral-400'
-                }`}>
-                  <MessageSquare className="w-6 h-6" />
+          {/* Top Section: Gateway Master Card & Account Balance Card */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Gateway Master Card & Toggle (8 Columns) */}
+            <div className="lg:col-span-7 xl:col-span-8 bg-neutral-900 border border-neutral-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className={`p-3 rounded-xl border shrink-0 ${
+                    smsSettings.enabled
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                      : 'bg-neutral-800 border-neutral-700 text-neutral-400'
+                  }`}>
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                        Notify.lk SMS Gateway
+                      </h2>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                        smsSettings.enabled
+                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${smsSettings.enabled ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-500'}`} />
+                        {smsSettings.enabled ? 'Automatic Dispatch Active' : 'Automatic Dispatch Disabled'}
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-mono">
+                        Sri Lanka Telco Gateway
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+                      When enabled, whenever a payment is collected in <span className="text-emerald-400 font-semibold">Payment Collection</span> or <span className="text-emerald-400 font-semibold">Monthly Payment</span>, an instant SMS receipt will be automatically delivered to the customer&apos;s mobile number.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                      Notify.lk SMS Gateway
-                    </h2>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                      smsSettings.enabled
-                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                        : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+
+                {/* Master Toggle */}
+                <div className="flex items-center gap-3 self-end sm:self-center bg-neutral-950 p-2 rounded-xl border border-neutral-800 shrink-0">
+                  <span className="text-xs font-semibold text-neutral-300">
+                    {smsSettings.enabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSmsSettings(prev => ({ ...prev, enabled: !prev.enabled }))}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      smsSettings.enabled ? 'bg-emerald-500' : 'bg-neutral-700'
+                    }`}
+                    role="switch"
+                    aria-checked={smsSettings.enabled}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        smsSettings.enabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Balance Card - EXACT VISUAL MATCH TO media_1792347607905_9c268eba.png (4 Columns) */}
+            <div className="lg:col-span-5 xl:col-span-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl p-5 shadow-md flex flex-col justify-between relative transition-all">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-neutral-300">
+                    Account Balance
+                  </span>
+                  {smsBalance && (
+                    <span className={`inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                      smsBalance.active
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
+                        : 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20'
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${smsSettings.enabled ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-500'}`} />
-                      {smsSettings.enabled ? 'Automatic Dispatch Active' : 'Automatic Dispatch Disabled'}
+                      {smsBalance.active ? 'ACTIVE' : 'INACTIVE'}
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-mono">
-                      Sri Lanka Telco Gateway
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fetchBalance()}
+                    disabled={isLoadingBalance}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-neutral-500 dark:hover:text-neutral-200 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50"
+                    title="Refresh Live SMS Balance from Notify.lk"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingBalance ? 'animate-spin text-emerald-500' : ''}`} />
+                  </button>
+
+                  {/* Mail icon with check badge inside rounded badge matching user screenshot */}
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-neutral-800 flex items-center justify-center text-slate-600 dark:text-neutral-300 relative border border-slate-200/60 dark:border-neutral-700/60 shadow-xs">
+                    <Mail className="w-5 h-5 stroke-[1.8]" />
+                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
                     </span>
                   </div>
-                  <p className="text-xs text-neutral-400 mt-1 max-w-2xl leading-relaxed">
-                    When enabled, whenever a payment is collected in <span className="text-emerald-400 font-semibold">Payment Collection</span> or <span className="text-emerald-400 font-semibold">Monthly Payment</span>, an instant SMS receipt will be automatically delivered to the customer&apos;s mobile number.
-                  </p>
                 </div>
               </div>
 
-              {/* Master Toggle */}
-              <div className="flex items-center gap-3 self-end sm:self-center bg-neutral-950 p-2 rounded-xl border border-neutral-800">
-                <span className="text-xs font-semibold text-neutral-300">
-                  {smsSettings.enabled ? 'Enabled' : 'Disabled'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSmsSettings(prev => ({ ...prev, enabled: !prev.enabled }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    smsSettings.enabled ? 'bg-emerald-500' : 'bg-neutral-700'
-                  }`}
-                  role="switch"
-                  aria-checked={smsSettings.enabled}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      smsSettings.enabled ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
+              {/* Big bold balance */}
+              <div className="my-3">
+                {isLoadingBalance && !smsBalance ? (
+                  <div className="h-10 w-28 bg-slate-200 dark:bg-neutral-800 animate-pulse rounded-lg" />
+                ) : (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-sans">
+                      {smsBalance?.balance !== undefined ? smsBalance.balance.toLocaleString() : '—'}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-400 dark:text-neutral-500">
+                      SMS Credits
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer: As of Timestamp matching screenshot */}
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 pt-2 border-t border-slate-100 dark:border-neutral-800/80">
+                <div className="flex items-center gap-1.5 truncate">
+                  <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500 shrink-0" />
+                  <span className="truncate">
+                    {smsBalance?.checkedAt
+                      ? `As of ${formatLogDateTime(smsBalance.checkedAt)}`
+                      : 'Click refresh to query Notify.lk'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -1716,6 +1905,367 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* SMS DISPATCH LOGS & DELIVERY HISTORY                                      */}
+          {/* ========================================================================= */}
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 shadow-lg space-y-4">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                      SMS Dispatch Logs &amp; Delivery History
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-300 text-[11px] font-mono">
+                      {smsLogs.length} Records
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-0.5">
+                    Live audit trail of all automated payment receipts, registration welcomes, and test transmissions.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => fetchLogs()}
+                  disabled={isLoadingLogs}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                  title="Refresh SMS Logs"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingLogs ? 'animate-spin text-emerald-400' : ''}`} />
+                  <span>Refresh</span>
+                </button>
+
+                {smsLogs.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearSmsLogs}
+                    disabled={isClearingLogs}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                    title="Clear All SMS Logs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear Logs</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Filters & Search Row */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                <input
+                  type="text"
+                  placeholder="Search by phone, customer, box #, or message text..."
+                  value={logsSearchTerm}
+                  onChange={(e) => {
+                    setLogsSearchTerm(e.target.value);
+                    fetchLogs({ search: e.target.value });
+                  }}
+                  className="w-full pl-9 pr-8 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                />
+                {logsSearchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLogsSearchTerm('');
+                      fetchLogs({ search: '' });
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Dropdowns */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Type Filter */}
+                <div className="flex items-center gap-1.5 bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5">
+                  <Filter className="w-3 h-3 text-neutral-400" />
+                  <span className="text-[11px] text-neutral-400 font-medium">Type:</span>
+                  <select
+                    value={logsFilterType}
+                    onChange={(e) => setLogsFilterType(e.target.value)}
+                    className="bg-transparent text-xs text-neutral-200 font-semibold focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL" className="bg-neutral-900 text-white">All Dispatches</option>
+                    <option value="PAYMENT" className="bg-neutral-900 text-white">Payment Receipts</option>
+                    <option value="REGISTRATION" className="bg-neutral-900 text-white">Registration Welcome</option>
+                    <option value="TEST" className="bg-neutral-900 text-white">Test SMS</option>
+                  </select>
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex items-center gap-1.5 bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5">
+                  <span className="text-[11px] text-neutral-400 font-medium">Status:</span>
+                  <select
+                    value={logsFilterStatus}
+                    onChange={(e) => setLogsFilterStatus(e.target.value)}
+                    className="bg-transparent text-xs text-neutral-200 font-semibold focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL" className="bg-neutral-900 text-white">All Status</option>
+                    <option value="DELIVERED" className="bg-neutral-900 text-emerald-400">Delivered</option>
+                    <option value="FAILED" className="bg-neutral-900 text-rose-400">Failed</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Logs List Table */}
+            {isLoadingLogs && smsLogs.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                <RefreshCw className="w-6 h-6 animate-spin text-emerald-500" />
+                <p className="text-xs text-neutral-400">Loading SMS dispatch records...</p>
+              </div>
+            ) : smsLogs.length === 0 ? (
+              <div className="py-12 px-4 rounded-xl border border-dashed border-neutral-800 text-center space-y-2">
+                <MessageSquare className="w-8 h-8 mx-auto text-neutral-600" />
+                <h4 className="text-xs sm:text-sm font-bold text-neutral-300">
+                  No SMS Dispatch Records Found
+                </h4>
+                <p className="text-[11.5px] text-neutral-500 max-w-sm mx-auto">
+                  {logsSearchTerm || logsFilterType !== 'ALL' || logsFilterStatus !== 'ALL'
+                    ? 'No SMS logs match the current search filters. Try clearing your search.'
+                    : 'Dispatched payment receipts, registration welcomes, and test SMS messages will automatically appear here.'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-neutral-800">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-neutral-950/70 border-b border-neutral-800 text-neutral-400 font-semibold">
+                      <th className="py-2.5 px-3">Date &amp; Time</th>
+                      <th className="py-2.5 px-3">Type</th>
+                      <th className="py-2.5 px-3">Recipient &amp; Customer</th>
+                      <th className="py-2.5 px-3">Message Content</th>
+                      <th className="py-2.5 px-3">Sender ID</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800/60">
+                    {smsLogs.map((log) => {
+                      const isDelivered = log.status === 'DELIVERED';
+                      return (
+                        <tr
+                          key={log.id}
+                          className="hover:bg-neutral-800/30 transition-colors"
+                        >
+                          {/* Timestamp */}
+                          <td className="py-2.5 px-3 whitespace-nowrap text-neutral-300 font-mono text-[11px]">
+                            {formatLogDateTime(log.createdAt)}
+                          </td>
+
+                          {/* Type */}
+                          <td className="py-2.5 px-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold border ${
+                              log.type === 'PAYMENT'
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                : log.type === 'REGISTRATION'
+                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                                : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                            }`}>
+                              {log.type === 'PAYMENT' ? 'Payment Slip' : log.type === 'REGISTRATION' ? 'Welcome SMS' : 'Test SMS'}
+                            </span>
+                          </td>
+
+                          {/* Recipient & Customer */}
+                          <td className="py-2.5 px-3 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="font-mono font-bold text-white text-xs">
+                                {log.recipientPhone}
+                              </span>
+                              {(log.customerName || log.boxNo) && (
+                                <span className="text-[11px] text-neutral-400">
+                                  {log.customerName} {log.boxNo ? `(${log.boxNo})` : ''}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Message snippet */}
+                          <td className="py-2.5 px-3 max-w-xs truncate text-neutral-300 text-[11.5px]">
+                            <span
+                              title={log.message}
+                              className="cursor-pointer hover:text-white"
+                              onClick={() => setSelectedLogForModal(log)}
+                            >
+                              {log.message}
+                            </span>
+                          </td>
+
+                          {/* Sender ID */}
+                          <td className="py-2.5 px-3 whitespace-nowrap text-neutral-400 font-mono text-[11px]">
+                            {log.senderId || 'NotifyDEMO'}
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-2.5 px-3 whitespace-nowrap">
+                            <span
+                              title={log.gatewayResponse || ''}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-semibold border ${
+                                isDelivered
+                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                  : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                              }`}
+                            >
+                              {isDelivered ? (
+                                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              ) : (
+                                <AlertCircle className="w-3 h-3 text-rose-400" />
+                              )}
+                              <span>{isDelivered ? 'Delivered' : 'Failed'}</span>
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-2.5 px-3 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedLogForModal(log)}
+                                className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer"
+                                title="View Full Message Details"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyMessage(log.message, log.id)}
+                                className="p-1.5 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer"
+                                title="Copy SMS Message Text"
+                              >
+                                {copiedLogId === log.id ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* SMS Log Details Modal */}
+      {selectedLogForModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+                  <Receipt className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-white">
+                    SMS Message Dispatch Record
+                  </h3>
+                  <span className="text-[11px] text-neutral-400 font-mono">
+                    {formatLogDateTime(selectedLogForModal.createdAt)}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedLogForModal(null)}
+                className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quick Meta Grid */}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-neutral-950 rounded-xl border border-neutral-800/80 space-y-1">
+                <span className="text-[10.5px] text-neutral-400 font-medium">Recipient Mobile</span>
+                <p className="font-mono font-bold text-white text-sm">
+                  {selectedLogForModal.recipientPhone}
+                </p>
+                {selectedLogForModal.customerName && (
+                  <p className="text-[11px] text-neutral-400 truncate">
+                    {selectedLogForModal.customerName} {selectedLogForModal.boxNo ? `(${selectedLogForModal.boxNo})` : ''}
+                  </p>
+                )}
+              </div>
+
+              <div className="p-3 bg-neutral-950 rounded-xl border border-neutral-800/80 space-y-1">
+                <span className="text-[10.5px] text-neutral-400 font-medium">Delivery Status</span>
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold border ${
+                    selectedLogForModal.status === 'DELIVERED'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                  }`}>
+                    {selectedLogForModal.status === 'DELIVERED' ? 'DELIVERED' : 'FAILED'}
+                  </span>
+                  <span className="text-[10.5px] text-neutral-400 font-mono">
+                    via {selectedLogForModal.senderId}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Full Message Text Card */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-neutral-300">
+                  Full Dispatched Message Text ({selectedLogForModal.message.length} chars)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleCopyMessage(selectedLogForModal.message, selectedLogForModal.id)}
+                  className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer font-medium"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>{copiedLogId === selectedLogForModal.id ? 'Copied!' : 'Copy Text'}</span>
+                </button>
+              </div>
+
+              <div className="p-3.5 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-200 text-xs leading-relaxed font-sans whitespace-pre-wrap selection:bg-emerald-500/30 max-h-48 overflow-y-auto">
+                {selectedLogForModal.message}
+              </div>
+            </div>
+
+            {/* Gateway Response details if available */}
+            {selectedLogForModal.gatewayResponse && (
+              <div className="p-2.5 bg-neutral-950 rounded-lg border border-neutral-800 text-[11px] text-neutral-400 space-y-1">
+                <span className="font-semibold text-neutral-300">Notify.lk Gateway Response:</span>
+                <p className="font-mono text-[10.5px] break-all text-neutral-400">
+                  {selectedLogForModal.gatewayResponse}
+                </p>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="pt-2 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedLogForModal(null)}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

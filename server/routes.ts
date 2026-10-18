@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { GoogleGenAI } from '@google/genai';
 import { db } from './db.js';
-import { sendNotifyLkSms, compilePaymentSmsTemplate, compileRegistrationSmsTemplate, formatSriLankanPhone } from './sms.js';
+import { sendNotifyLkSms, getNotifyLkBalance, compilePaymentSmsTemplate, compileRegistrationSmsTemplate, formatSriLankanPhone } from './sms.js';
 
 export const router = Router();
 
@@ -668,6 +668,15 @@ router.post('/sms/test', async (req, res) => {
       senderId: effectiveSenderId,
     });
 
+    await db.logSms({
+      type: 'TEST',
+      recipientPhone: phone,
+      message: testMsg,
+      senderId: effectiveSenderId,
+      status: result.success ? 'DELIVERED' : 'FAILED',
+      gatewayResponse: result.message || JSON.stringify(result.data || ''),
+    });
+
     if (result.success) {
       res.json(result);
     } else {
@@ -721,6 +730,17 @@ router.post('/sms/send-payment', async (req, res) => {
       userId: smsSettings.userId,
       apiKey: smsSettings.apiKey,
       senderId: smsSettings.senderId || 'NotifyDEMO',
+    });
+
+    await db.logSms({
+      type: 'PAYMENT',
+      recipientPhone: phoneNo,
+      customerName,
+      boxNo: String(boxNo || ''),
+      message: compiledText,
+      senderId: smsSettings.senderId || 'NotifyDEMO',
+      status: result.success ? 'DELIVERED' : 'FAILED',
+      gatewayResponse: result.message || JSON.stringify(result.data || ''),
     });
 
     if (result.success) {
@@ -787,6 +807,17 @@ router.post('/sms/send-registration', async (req, res) => {
       senderId: smsSettings.senderId || 'NotifyDEMO',
     });
 
+    await db.logSms({
+      type: 'REGISTRATION',
+      recipientPhone: phoneNo,
+      customerName,
+      boxNo: String(boxNo || ''),
+      message: compiledText,
+      senderId: smsSettings.senderId || 'NotifyDEMO',
+      status: result.success ? 'DELIVERED' : 'FAILED',
+      gatewayResponse: result.message || JSON.stringify(result.data || ''),
+    });
+
     if (result.success) {
       res.json({
         success: true,
@@ -799,6 +830,68 @@ router.post('/sms/send-registration', async (req, res) => {
     }
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Failed to dispatch registration SMS' });
+  }
+});
+
+// ==========================================
+// SMS BALANCE & SMS LOGS ROUTES
+// ==========================================
+
+router.get('/sms/balance', async (req, res) => {
+  try {
+    const queryUserId = (req.query.userId as string)?.trim();
+    const queryApiKey = (req.query.apiKey as string)?.trim();
+
+    let userId = queryUserId;
+    let apiKey = queryApiKey;
+
+    if (!userId || !apiKey) {
+      const smsSettings = await db.getSmsSettings();
+      userId = userId || (smsSettings.userId || '').trim();
+      apiKey = apiKey || (smsSettings.apiKey || '').trim();
+    }
+
+    if (!userId || !apiKey) {
+      return res.status(400).json({
+        success: false,
+        balance: 0,
+        active: false,
+        error: 'Notify.lk User ID and API Key are required to check balance.',
+      });
+    }
+
+    const balanceRes = await getNotifyLkBalance({ userId, apiKey });
+    res.json(balanceRes);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      balance: 0,
+      active: false,
+      error: error.message || 'Failed to fetch Notify.lk balance',
+    });
+  }
+});
+
+router.get('/sms/logs', async (req, res) => {
+  try {
+    const type = req.query.type as string | undefined;
+    const status = req.query.status as string | undefined;
+    const search = req.query.search as string | undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : 250;
+
+    const logs = await db.getSmsLogs({ type, status, search, limit });
+    res.json({ logs });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch SMS logs' });
+  }
+});
+
+router.delete('/sms/logs', async (_req, res) => {
+  try {
+    await db.clearSmsLogs();
+    res.json({ success: true, message: 'All SMS logs cleared successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to clear SMS logs' });
   }
 });
 

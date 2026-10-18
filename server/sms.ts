@@ -169,6 +169,76 @@ export async function sendNotifyLkSms(params: NotifyLkSmsParams): Promise<SmsSen
   }
 }
 
+export interface NotifyLkBalanceResponse {
+  success: boolean;
+  balance: number;
+  active: boolean;
+  checkedAt: string;
+  error?: string;
+}
+
+/**
+ * Fetch live account status and credit balance from Notify.lk API
+ * Endpoint: GET https://app.notify.lk/api/v1/status?user_id=...&api_key=...
+ */
+export async function getNotifyLkBalance(credentials: { userId: string; apiKey: string }): Promise<NotifyLkBalanceResponse> {
+  const { userId, apiKey } = credentials;
+  if (!userId || !apiKey) {
+    return {
+      success: false,
+      balance: 0,
+      active: false,
+      checkedAt: new Date().toISOString(),
+      error: 'User ID and API Key are required to check balance.',
+    };
+  }
+
+  try {
+    const url = `https://app.notify.lk/api/v1/status?user_id=${encodeURIComponent(userId.trim())}&api_key=${encodeURIComponent(apiKey.trim())}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    const responseText = await response.text();
+    let result: any;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = { raw: responseText };
+    }
+
+    if (response.ok && (result.status === 'success' || result.data?.acc_balance !== undefined)) {
+      const balance = Number(result.data?.acc_balance ?? 0);
+      const active = Boolean(result.data?.active ?? true);
+      return {
+        success: true,
+        balance,
+        active,
+        checkedAt: new Date().toISOString(),
+      };
+    }
+
+    return {
+      success: false,
+      balance: 0,
+      active: false,
+      checkedAt: new Date().toISOString(),
+      error: result?.message || result?.errors?.join(', ') || responseText || 'Failed to retrieve balance from Notify.lk',
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      balance: 0,
+      active: false,
+      checkedAt: new Date().toISOString(),
+      error: `Network error connecting to Notify.lk: ${error.message || error}`,
+    };
+  }
+}
+
 /**
  * Format YYYY-MM into human-readable English month name (e.g. "2026-10" -> "October 2026")
  */
