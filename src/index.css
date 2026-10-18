@@ -386,38 +386,103 @@ td {
   color: #0d9488 !important;
 }
 
-.theme-light [class*="from-cyan-950"] {
+.theme-light [class*="from-cyan-950"],
+.theme-light [class*="to-cyan-950"] {
   background: linear-gradient(to bottom right, #ecfeff, #ffffff) !important;
   border-color: #a5f3fc !important;
 }
 
-.theme-light [class*="from-emerald-950"] {
+.theme-light [class*="from-emerald-950"],
+.theme-light [class*="to-emerald-950"] {
   background: linear-gradient(to bottom right, #ecfdf5, #ffffff) !important;
   border-color: #a7f3d0 !important;
 }
 
-.theme-light [class*="from-blue-950"] {
+.theme-light [class*="from-blue-950"],
+.theme-light [class*="to-blue-950"] {
   background: linear-gradient(to bottom right, #eff6ff, #ffffff) !important;
   border-color: #bfdbfe !important;
 }
 
-.theme-light [class*="from-amber-950"] {
+.theme-light [class*="from-amber-950"],
+.theme-light [class*="to-amber-950"] {
   background: linear-gradient(to bottom right, #fffbeb, #ffffff) !important;
   border-color: #fde68a !important;
 }
 
-.theme-light [class*="from-rose-950"] {
+.theme-light [class*="from-rose-950"],
+.theme-light [class*="to-rose-950"] {
   background: linear-gradient(to bottom right, #fff1f2, #ffffff) !important;
   border-color: #fecdd3 !important;
 }
 
-.theme-light [class*="from-purple-950"] {
+.theme-light [class*="from-purple-950"],
+.theme-light [class*="to-purple-950"] {
   background: linear-gradient(to bottom right, #faf5ff, #ffffff) !important;
   border-color: #e9d5ff !important;
 }
 
-.theme-light [class*="from-indigo-950"] {
+.theme-light [class*="from-indigo-950"],
+.theme-light [class*="to-indigo-950"] {
   background: linear-gradient(to bottom right, #eef2ff, #ffffff) !important;
   border-color: #c7d2fe !important;
+}
+
+/* Light mode support for 950 alpha background sub-cards */
+.theme-light .bg-emerald-950\/10,
+.theme-light .bg-emerald-950\/20,
+.theme-light .bg-emerald-950\/25,
+.theme-light .bg-emerald-950\/30 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+}
+
+.theme-light .bg-cyan-950\/10,
+.theme-light .bg-cyan-950\/20,
+.theme-light .bg-cyan-950\/25,
+.theme-light .bg-cyan-950\/30 {
+  background-color: #ecfeff !important;
+  border-color: #a5f3fc !important;
+}
+
+.theme-light .bg-blue-950\/10,
+.theme-light .bg-blue-950\/20,
+.theme-light .bg-blue-950\/25,
+.theme-light .bg-blue-950\/30 {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+.theme-light .bg-rose-950\/10,
+.theme-light .bg-rose-950\/20,
+.theme-light .bg-rose-950\/25,
+.theme-light .bg-rose-950\/30 {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+}
+
+.theme-light .bg-purple-950\/10,
+.theme-light .bg-purple-950\/20,
+.theme-light .bg-purple-950\/25,
+.theme-light .bg-purple-950\/30 {
+  background-color: #faf5ff !important;
+  border-color: #e9d5ff !important;
+}
+
+.theme-light .bg-amber-950\/10,
+.theme-light .bg-amber-950\/20,
+.theme-light .bg-amber-950\/25,
+.theme-light .bg-amber-950\/30 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+
+/* Light mode for button chips and pills */
+.theme-light .bg-neutral-800\/60,
+.theme-light .bg-neutral-800\/70,
+.theme-light .bg-neutral-800\/80 {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
 }
 
