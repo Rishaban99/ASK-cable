@@ -348,7 +348,7 @@ router.post('/monthly-payments/bulk', async (req, res) => {
 
     const result = await db.bulkCreateMonthlyPayments({
       month,
-      defaultFee: defaultFee ? Number(defaultFee) : 1300,
+      defaultFee: defaultFee ? Number(defaultFee) : 1200,
     });
 
     res.status(201).json(result);

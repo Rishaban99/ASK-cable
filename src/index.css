@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* -------------------------------------------------------------------
  * PREVENT MOBILE ZOOMING & UNWANTED VIEWPORT SCALING
  * Prevents double-tap zooming, pinch zooming, and iOS input focus zoom
@@ -368,8 +370,21 @@ td {
 
 .theme-light .text-sky-700,
 .theme-light .text-sky-600,
-.theme-light .text-sky-400 {
-  color: #0284c7 !important;
+.theme-light .text-sky-500,
+.theme-light .text-sky-400,
+.theme-light .text-sky-300,
+.theme-light .text-sky-200 {
+  color: #0369a1 !important;
+}
+
+.theme-light .text-emerald-300,
+.theme-light .text-emerald-200 {
+  color: #047857 !important;
+}
+
+.theme-light .text-amber-300,
+.theme-light .text-amber-200 {
+  color: #b45309 !important;
 }
 
 .theme-light .bg-teal-500\/10,

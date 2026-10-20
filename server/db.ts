@@ -743,7 +743,7 @@ export class RelationalDatabaseStore {
     const createdCustomerNames: string[] = [];
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const defaultFee = dto.defaultFee && dto.defaultFee > 0 ? dto.defaultFee : 1300;
+    const defaultFee = dto.defaultFee && dto.defaultFee > 0 ? dto.defaultFee : 1200;
 
     for (const cust of activeCustomers) {
       // 1. Skip customers who registered in target month or later (monthly billing begins after registration month)

@@ -373,20 +373,20 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       <div className={`grid grid-cols-1 ${showRegistrationForm ? 'xl:grid-cols-12' : ''} gap-5 sm:gap-6`}>
         {/* 1. Customer Registration Form Card */}
         {showRegistrationForm && (
-          <div className="xl:col-span-4 p-5 sm:p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 h-fit shadow-xl">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-emerald-400" />
+          <div className="xl:col-span-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-5 h-fit shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-800 pb-3">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                 <span>Customer Registration</span>
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-md">
                   DB Connected
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowRegistrationForm(false)}
-                  className="p-1 text-neutral-400 hover:text-white rounded hover:bg-neutral-800 transition-colors"
+                  className="p-1 text-slate-400 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-white rounded hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors"
                   title="Collapse Registration Form"
                 >
                   <ChevronUp className="w-3.5 h-3.5" />
@@ -395,7 +395,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
             </div>
 
           {errorMsg && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-md flex items-center gap-2">
+            <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -405,7 +405,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
             {/* Customer Name */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-neutral-400 font-medium">Customer Name *</label>
+                <label className="block text-slate-700 dark:text-neutral-300 font-semibold">Customer Name *</label>
                 {name.trim() && (
                   <button
                     type="button"
@@ -415,7 +415,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       if (fixed) setName(fixed);
                       setIsAiFixing(false);
                     }}
-                    className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+                    className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline transition-colors"
                   >
                     <Sparkles className="w-3 h-3" />
                     <span>{isAiFixing ? 'Checking...' : 'Fix AI ✨'}</span>
@@ -428,27 +428,27 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                 placeholder="e.g. K. Perera, A. Rahman"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* NIC No & Phone No */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-neutral-400 font-medium mb-1">NIC No *</label>
+                <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">NIC No *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. 199012345678"
                   value={nicNo}
                   onChange={(e) => setNicNo(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-neutral-500" />
+                <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1 flex items-center gap-1">
+                  <Phone className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
                   <span>Phone No *</span>
                 </label>
                 <input
@@ -457,15 +457,15 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                   placeholder="e.g. 0771234567"
                   value={phoneNo}
                   onChange={(e) => setPhoneNo(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
 
             {/* Address */}
             <div>
-              <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-neutral-500" />
+              <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
                 <span>Address</span>
               </label>
               <input
@@ -473,15 +473,15 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                 placeholder="e.g. 45 Main Street, Jaffna"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* Box No & Customer Status */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
-                  <Box className="w-3 h-3 text-neutral-500" />
+                <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1 flex items-center gap-1">
+                  <Box className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
                   <span>Box No *</span>
                 </label>
                 <input
@@ -490,16 +490,16 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                   placeholder="e.g. BOX-1042"
                   value={boxNo}
                   onChange={(e) => setBoxNo(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono uppercase placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono uppercase placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-neutral-400 font-medium mb-1">Customer Status</label>
+                <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">Customer Status</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="ACTIVE">Active</option>
                   <option value="INACTIVE">Inactive</option>
@@ -511,8 +511,8 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
             {/* Financials: Total Amount & Paid Amount */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
-                  <CreditCard className="w-3 h-3 text-neutral-500" />
+                <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1 flex items-center gap-1">
+                  <CreditCard className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
                   <span>Total Amount</span>
                 </label>
                 <input
@@ -522,12 +522,12 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                   placeholder="0.00"
                   value={totalAmount}
                   onChange={(e) => setTotalAmount(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-neutral-400 font-medium mb-1">Paid Amount</label>
+                <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">Paid Amount</label>
                 <input
                   type="number"
                   step="0.01"
@@ -535,16 +535,16 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                   placeholder="0.00"
                   value={paidAmount}
                   onChange={(e) => setPaidAmount(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
 
             {/* Calculated Balance Amount Badge */}
-            <div className="p-3 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between">
-              <span className="text-neutral-400 font-medium">Balance Amount Due:</span>
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 flex items-center justify-between">
+              <span className="text-slate-600 dark:text-neutral-400 font-semibold">Balance Amount Due:</span>
               <span className={`font-mono font-bold text-sm ${
-                calculatedBalance === 0 ? 'text-emerald-400' : 'text-amber-400'
+                calculatedBalance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
               }`}>
                 {formatMoney(calculatedBalance, currency)}
               </span>
@@ -552,8 +552,8 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 
             {/* Registration Date (Read Only - Cannot be changed) */}
             <div>
-              <label className="block text-neutral-400 font-medium mb-1 flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-neutral-500" />
+              <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1 flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
                 <span>Registration Date (Fixed System Date)</span>
               </label>
               <input
@@ -561,14 +561,14 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                 readOnly
                 disabled
                 value={todayStr}
-                className="w-full px-3 py-2 bg-neutral-950/60 border border-neutral-850 rounded-md text-neutral-400 font-mono cursor-not-allowed select-none"
+                className="w-full px-3 py-2 bg-slate-100 dark:bg-neutral-950/60 border border-slate-200 dark:border-neutral-850 rounded-xl text-slate-500 dark:text-neutral-400 font-mono cursor-not-allowed select-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 px-4 text-xs font-semibold text-neutral-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2.5 px-4 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               <UserPlus className="w-4 h-4" />
               <span>{isSubmitting ? 'Registering...' : 'Register Customer'}</span>
@@ -578,38 +578,38 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         )}
 
         {/* 2. Registered Customer Table Card */}
-        <div className={`${showRegistrationForm ? 'xl:col-span-8' : 'w-full'} p-4 sm:p-5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl flex flex-col justify-between`}>
+        <div className={`${showRegistrationForm ? 'xl:col-span-8' : 'w-full'} p-4 sm:p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-4 shadow-sm flex flex-col justify-between`}>
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-neutral-800 pb-3">
               <div>
-                <h2 className="text-base font-semibold text-white">Registered Customers ({customers.length})</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">Live database records with edit and delete operations</p>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Registered Customers ({customers.length})</h2>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">Live database records with edit and delete operations</p>
               </div>
 
               {/* Filters */}
               <div className="flex flex-wrap items-center gap-2">
                 {/* Search Filter */}
                 <div className="relative w-full sm:w-56">
-                  <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-2.5" />
+                  <Search className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500 absolute left-2.5 top-2.5" />
                   <input
                     type="text"
                     placeholder="Search name, NIC, box..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-2 py-1.5 bg-neutral-950 border border-neutral-800 rounded-md text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700"
+                    className="w-full pl-8 pr-2 py-1.5 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-lg text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 {/* Status Filter Buttons */}
-                <div className="flex items-center gap-1 bg-neutral-950 p-1 border border-neutral-800 rounded-md">
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-neutral-950 p-1 border border-slate-200 dark:border-neutral-800 rounded-lg">
                   {(['ALL', 'ACTIVE', 'INACTIVE', 'DISCONNECTED'] as const).map((st) => (
                     <button
                       key={st}
                       onClick={() => setStatusFilter(st)}
-                      className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${
+                      className={`px-2 py-0.5 text-[10px] rounded font-semibold transition-colors cursor-pointer ${
                         statusFilter === st
-                          ? 'bg-emerald-400 text-neutral-950 font-bold'
-                          : 'text-neutral-400 hover:text-neutral-200'
+                          ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                          : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
                       }`}
                     >
                       {st}
@@ -622,62 +622,66 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
             {/* Mobile Cards View (block md:hidden) - Perfectly Aligned */}
             <div className="block md:hidden space-y-3">
               {filteredCustomers.length === 0 ? (
-                <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-950 rounded-xl border border-neutral-800">
+                <div className="p-6 text-center text-slate-400 dark:text-neutral-500 text-xs bg-slate-50 dark:bg-neutral-950 rounded-xl border border-slate-200 dark:border-neutral-800">
                   No customer records found matching the criteria.
                 </div>
               ) : (
                 filteredCustomers.map((cust) => (
-                  <div key={cust.id} className="p-4 space-y-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all hover:border-emerald-500/40">
+                  <div key={cust.id} className="p-4 space-y-3.5 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-sm transition-all hover:border-slate-300 dark:hover:border-neutral-700">
                     {/* Header: Name + Status Badge + Box No Pill */}
-                    <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-neutral-800/80 pb-3">
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex items-center flex-wrap gap-2">
-                          <h3 className="font-black text-xl sm:text-2xl text-white tracking-tight leading-tight">
+                          <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight leading-tight">
                             {cust.name}
                           </h3>
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-extrabold rounded-full ${
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10.5px] font-bold rounded-full border ${
                             (cust.status || 'ACTIVE') === 'ACTIVE'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
                               : (cust.status || 'ACTIVE') === 'INACTIVE'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
-                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-xs'
+                              ? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700'
+                              : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30'
                           }`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${
-                              (cust.status || 'ACTIVE') === 'ACTIVE' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                              (cust.status || 'ACTIVE') === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
                             }`} />
                             {cust.status || 'ACTIVE'}
                           </span>
                         </div>
 
-                        {/* Colorful Address Badge */}
+                        {/* Clean Address Badge */}
                         {cust.address && (
-                          <div className="flex items-start gap-1.5 text-xs text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2.5 py-1.5 rounded-xl shadow-xs">
-                            <MapPin className="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5" />
-                            <span className="font-semibold leading-tight">{cust.address}</span>
+                          <div className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-neutral-300 bg-slate-50 dark:bg-neutral-950/70 border border-slate-200/80 dark:border-neutral-800/80 px-2.5 py-1.5 rounded-lg">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-400 shrink-0 mt-0.5" />
+                            <span className="font-medium leading-tight">{cust.address}</span>
                           </div>
                         )}
 
-                        {/* Colorful NIC & Phone Badges */}
+                        {/* Clean NIC & Phone Badges */}
                         <div className="flex items-center flex-wrap gap-2 text-xs font-mono pt-0.5">
                           {cust.nicNo && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-300 font-bold shadow-xs">
-                              <ShieldCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 font-semibold shadow-2xs">
+                              <ShieldCheck className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400 shrink-0" />
                               <span>NIC: {cust.nicNo}</span>
                             </span>
                           )}
                           {cust.phoneNo && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold shadow-xs">
-                              <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <a
+                              href={`tel:${cust.phoneNo}`}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 font-semibold shadow-2xs transition-colors"
+                              title="Tap to call"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                               <span>Tel: {cust.phoneNo}</span>
-                            </span>
+                            </a>
                           )}
                         </div>
                       </div>
 
                       {/* Box Number Pill */}
                       <div className="shrink-0">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-500/40 rounded-xl text-xs font-mono font-black text-emerald-300 shadow-xs">
-                          <Box className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-lg text-xs font-mono font-bold text-slate-800 dark:text-neutral-200 shadow-2xs">
+                          <Box className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" />
                           <span>Box: {cust.boxNo || '-'}</span>
                         </span>
                       </div>
@@ -686,29 +690,25 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                     {/* Financial Metrics 3-Column Color Cards */}
                     <div className="grid grid-cols-3 gap-2 font-mono">
                       {/* TOTAL TILE */}
-                      <div className="p-2.5 bg-sky-500/10 border border-sky-500/25 rounded-xl text-center space-y-0.5 shadow-xs">
-                        <span className="text-[10px] text-sky-400 font-sans block uppercase font-extrabold tracking-wide">Total</span>
-                        <span className="text-white font-black text-xs sm:text-sm block">{formatMoney(cust.totalAmount, currency)}</span>
+                      <div className="p-2.5 bg-slate-50 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-center space-y-0.5 shadow-2xs">
+                        <span className="text-[10px] text-slate-500 dark:text-neutral-400 font-sans block uppercase font-bold tracking-wide">Total</span>
+                        <span className="text-slate-900 dark:text-white font-extrabold text-xs sm:text-sm block">{formatMoney(cust.totalAmount, currency)}</span>
                       </div>
 
                       {/* PAID TILE */}
-                      <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl text-center space-y-0.5 shadow-xs">
-                        <span className="text-[10px] text-emerald-400 font-sans block uppercase font-extrabold tracking-wide">Paid</span>
-                        <span className="text-emerald-400 font-black text-xs sm:text-sm block">{formatMoney(cust.paidAmount, currency)}</span>
+                      <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/40 rounded-xl text-center space-y-0.5 shadow-2xs">
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-sans block uppercase font-bold tracking-wide">Paid</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-extrabold text-xs sm:text-sm block">{formatMoney(cust.paidAmount, currency)}</span>
                       </div>
 
                       {/* BALANCE TILE */}
-                      <div className={`p-2.5 rounded-xl text-center space-y-0.5 shadow-xs ${
+                      <div className={`p-2.5 rounded-xl text-center space-y-0.5 shadow-2xs border ${
                         cust.balanceAmount === 0
-                          ? 'bg-emerald-500/10 border border-emerald-500/25'
-                          : 'bg-amber-500/15 border border-amber-500/35'
+                          ? 'bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400'
+                          : 'bg-rose-50 dark:bg-rose-950/25 border-rose-200 dark:border-rose-800/40 text-rose-700 dark:text-rose-400'
                       }`}>
-                        <span className={`text-[10px] font-sans block uppercase font-extrabold tracking-wide ${
-                          cust.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'
-                        }`}>Balance</span>
-                        <span className={`font-black text-xs sm:text-sm block ${
-                          cust.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'
-                        }`}>
+                        <span className="text-[10px] font-sans block uppercase font-bold tracking-wide">Balance</span>
+                        <span className="font-extrabold text-xs sm:text-sm block">
                           {formatMoney(cust.balanceAmount, currency)}
                         </span>
                       </div>
@@ -721,13 +721,13 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                         {cust.balanceAmount > 0 ? (
                           <button
                             onClick={() => handleOpenPayBalance(cust)}
-                            className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95 btn-gradient-submit"
+                            className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95"
                           >
                             <CreditCard className="w-3.5 h-3.5 text-white" />
                             <span>Pay Balance</span>
                           </button>
                         ) : (
-                          <div className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold font-mono">
+                          <div className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-bold font-mono">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Fully Paid</span>
                           </div>
@@ -736,28 +736,28 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                         {onViewHistory && (
                           <button
                             onClick={() => onViewHistory(cust.id)}
-                            className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/25 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+                            className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
                           >
-                            <History className="w-3.5 h-3.5 text-indigo-400" />
+                            <History className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                             <span>History</span>
                           </button>
                         )}
                       </div>
 
                       {/* Bottom Row Secondary Actions */}
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/80">
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-neutral-800/80">
                         <button
                           onClick={() => handlePrintCustomerBill(cust)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 text-neutral-200 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-neutral-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
                         >
-                          <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                          <Printer className="w-3.5 h-3.5 text-slate-600 dark:text-emerald-400" />
                           <span>Print Bill</span>
                         </button>
 
                         <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             onClick={() => handleOpenEdit(cust)}
-                            className="p-2 text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/25 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
+                            className="p-2 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 border border-sky-200 dark:border-sky-500/25 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
                             title="Edit Customer"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -765,7 +765,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                           {currentUser?.role === 'ADMIN' && (
                             <button
                               onClick={() => handleDelete(cust.id, cust.name)}
-                              className="p-2 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
+                              className="p-2 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/25 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
                               title="Delete Customer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -780,82 +780,88 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
             </div>
 
             {/* Desktop Table View (hidden md:block) */}
-            <div className="hidden md:block rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
+            <div className="hidden md:block rounded-xl border border-slate-200 dark:border-neutral-800 overflow-hidden bg-white dark:bg-neutral-950 shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono text-[11px]">
+                  <thead className="bg-slate-50 dark:bg-neutral-900 border-b border-slate-200 dark:border-neutral-800 text-slate-600 dark:text-neutral-400 font-bold text-[11px] uppercase tracking-wider">
                     <tr>
-                      <th className="px-2.5 sm:px-3 py-2.5">Customer</th>
-                      <th className="px-2.5 sm:px-3 py-2.5">NIC & Phone</th>
-                      <th className="px-2.5 sm:px-3 py-2.5">Box No</th>
-                      <th className="px-2.5 sm:px-3 py-2.5 text-center">Status</th>
-                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Total</th>
-                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Paid</th>
-                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Balance</th>
-                      <th className="px-2.5 sm:px-3 py-2.5 text-right">Actions</th>
+                      <th className="px-3.5 py-3">Customer</th>
+                      <th className="px-3 py-3">NIC &amp; Phone</th>
+                      <th className="px-3 py-3">Box No</th>
+                      <th className="px-3 py-3 text-center">Status</th>
+                      <th className="px-3 py-3 text-right">Total</th>
+                      <th className="px-3 py-3 text-right">Paid</th>
+                      <th className="px-3 py-3 text-right">Balance</th>
+                      <th className="px-3.5 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-850">
+                  <tbody className="divide-y divide-slate-100 dark:divide-neutral-800/80">
                     {filteredCustomers.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-3 py-10 text-center text-neutral-500">
+                        <td colSpan={8} className="px-3 py-10 text-center text-slate-400 dark:text-neutral-500">
                           No customer records found matching the criteria.
                         </td>
                       </tr>
                     ) : (
                       filteredCustomers.map((cust) => (
-                        <tr key={cust.id} className="hover:bg-neutral-900/60 transition-colors">
-                          <td className="px-2.5 sm:px-3 py-2.5">
-                            <p className="font-black text-sm text-white leading-snug">{cust.name}</p>
-                            <p className="text-[11px] text-purple-300 truncate max-w-[140px] 2xl:max-w-[200px]" title={cust.address || 'No Address'}>
+                        <tr key={cust.id} className="hover:bg-slate-50/80 dark:hover:bg-neutral-900/60 transition-colors">
+                          <td className="px-3.5 py-3">
+                            <p className="font-bold text-sm text-slate-900 dark:text-white leading-snug">{cust.name}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium truncate max-w-[150px] 2xl:max-w-[220px]" title={cust.address || 'No Address'}>
                               {cust.address || 'No Address'}
                             </p>
                           </td>
-                          <td className="px-2.5 sm:px-3 py-2.5 font-mono whitespace-nowrap">
-                            <p className="text-sky-300 font-bold text-xs">{cust.nicNo || '-'}</p>
-                            <p className="text-emerald-300 font-bold text-[11px]">{cust.phoneNo || '-'}</p>
+                          <td className="px-3 py-3 font-mono whitespace-nowrap">
+                            <p className="text-slate-800 dark:text-neutral-200 font-semibold text-xs">{cust.nicNo || '-'}</p>
+                            {cust.phoneNo ? (
+                              <a href={`tel:${cust.phoneNo}`} className="text-emerald-700 dark:text-emerald-400 hover:underline font-medium text-[11px] block">
+                                {cust.phoneNo}
+                              </a>
+                            ) : (
+                              <p className="text-slate-400 dark:text-neutral-500 text-[11px]">-</p>
+                            )}
                           </td>
-                          <td className="px-2.5 sm:px-3 py-2.5 font-mono whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-500/40 rounded-lg text-xs font-bold text-emerald-300 shadow-xs">
-                              <Box className="w-3 h-3 text-emerald-400" />
+                          <td className="px-3 py-3 font-mono whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700/80 rounded-md text-xs font-bold text-slate-800 dark:text-neutral-200 shadow-2xs">
+                              <Box className="w-3 h-3 text-slate-500 dark:text-neutral-400" />
                               <span>{cust.boxNo || '-'}</span>
                             </span>
                           </td>
-                          <td className="px-2.5 sm:px-3 py-2.5 text-center font-mono whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-extrabold rounded-full ${
+                          <td className="px-3 py-3 text-center font-mono whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
                               (cust.status || 'ACTIVE') === 'ACTIVE'
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
                                 : (cust.status || 'ACTIVE') === 'INACTIVE'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-xs'
-                                : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-xs'
+                                ? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700'
+                                : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30'
                             }`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${
-                                (cust.status || 'ACTIVE') === 'ACTIVE' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                                (cust.status || 'ACTIVE') === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
                               }`} />
                               {cust.status || 'ACTIVE'}
                             </span>
                           </td>
-                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono text-sky-200 font-bold whitespace-nowrap text-xs">
+                          <td className="px-3 py-3 text-right font-mono font-bold text-slate-900 dark:text-neutral-100 whitespace-nowrap text-xs">
                             {formatMoney(cust.totalAmount, currency)}
                           </td>
-                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono font-bold text-emerald-400 whitespace-nowrap text-xs">
+                          <td className="px-3 py-3 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap text-xs">
                             {formatMoney(cust.paidAmount, currency)}
                           </td>
-                          <td className="px-2.5 sm:px-3 py-2.5 text-right font-mono font-bold whitespace-nowrap text-xs">
-                            <span className={`px-2 py-0.5 rounded-lg text-xs font-black inline-block ${
+                          <td className="px-3 py-3 text-right font-mono font-bold whitespace-nowrap text-xs">
+                            <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border inline-block ${
                               cust.balanceAmount === 0
-                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-amber-500/15 text-amber-400 border border-amber-500/40'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                                : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30 font-extrabold'
                             }`}>
                               {formatMoney(cust.balanceAmount, currency)}
                             </span>
                           </td>
-                          <td className="px-2.5 sm:px-3 py-2.5 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1">
+                          <td className="px-3.5 py-3 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
                               {cust.balanceAmount > 0 && (
                                 <button
                                   onClick={() => handleOpenPayBalance(cust)}
-                                  className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
+                                  className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-[11px] font-semibold transition-colors cursor-pointer shadow-xs shrink-0"
                                   title="Pay Balance"
                                 >
                                   <CreditCard className="w-3 h-3" />
@@ -865,7 +871,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               {onViewHistory && (
                                 <button
                                   onClick={() => onViewHistory(cust.id)}
-                                  className="p-1.5 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 rounded transition-colors cursor-pointer shrink-0"
+                                  className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60 rounded-md transition-colors cursor-pointer shrink-0"
                                   title="View Customer Payment History"
                                 >
                                   <History className="w-3.5 h-3.5" />
@@ -873,14 +879,14 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               )}
                               <button
                                 onClick={() => handlePrintCustomerBill(cust)}
-                                className="p-1.5 bg-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-700 rounded transition-colors cursor-pointer shrink-0"
+                                className="p-1.5 bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 hover:bg-slate-200 dark:hover:bg-neutral-700 border border-slate-200 dark:border-neutral-700 rounded-md transition-colors cursor-pointer shrink-0"
                                 title="Print Customer Receipt / Bill"
                               >
-                                <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                                <Printer className="w-3.5 h-3.5 text-slate-700 dark:text-neutral-300" />
                               </button>
                               <button
                                 onClick={() => handleOpenEdit(cust)}
-                                className="p-1.5 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-900 rounded transition-colors cursor-pointer shrink-0"
+                                className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-md transition-colors cursor-pointer shrink-0"
                                 title="Edit Customer"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -888,7 +894,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               {currentUser?.role !== 'STAFF' && (
                                 <button
                                   onClick={() => handleDelete(cust.id, cust.name)}
-                                  className="p-1.5 text-neutral-400 hover:text-rose-400 hover:bg-neutral-900 rounded transition-colors cursor-pointer shrink-0"
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-neutral-800 rounded-md transition-colors cursor-pointer shrink-0"
                                   title="Delete Customer (Admin Only)"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />

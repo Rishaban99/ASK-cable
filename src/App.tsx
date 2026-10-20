@@ -60,6 +60,19 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light', 'theme-light');
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.classList.add('light', 'theme-light');
+      root.classList.remove('dark');
+      root.setAttribute('data-theme', 'light');
+    }
+  }, [theme]);
+
   // Staff Privileges State
   const [staffPrivileges, setStaffPrivileges] = useState<StaffPrivileges>(() => {
     try {
@@ -186,7 +199,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen transition-colors duration-200 flex flex-col md:flex-row font-sans selection:bg-emerald-500/20 selection:text-emerald-300 ${
-      theme === 'light' ? 'theme-light bg-slate-50 text-slate-900' : 'bg-neutral-950 text-neutral-100'
+      theme === 'light' ? 'theme-light light bg-slate-50 text-slate-900' : 'dark bg-neutral-950 text-neutral-100'
     }`}>
       {/* Side Menu Navigation (Desktop Fixed + Mobile Drawer Overlay) */}
       <Sidebar
