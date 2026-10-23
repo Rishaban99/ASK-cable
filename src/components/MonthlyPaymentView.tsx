@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Customer, MonthlyPayment, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
@@ -194,6 +195,10 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   const [payBalancePayment, setPayBalancePayment] = useState<MonthlyPayment | null>(null);
   const [payAmount, setPayAmount] = useState('');
   const [isPaying, setIsPaying] = useState(false);
+
+  // Mobile Accordion State
+  const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null);
+  const togglePaymentExpand = (id: string) => setExpandedPaymentId((prev) => (prev === id ? null : id));
 
   // Bill Printing Modal States
   const [activeBillData, setActiveBillData] = useState<BillData | null>(null);
@@ -1203,145 +1208,233 @@ Monthly bills or payment records are not created for new subscribers during thei
               </div>
             </div>
 
-            {/* Mobile Cards View (block md:hidden) - Perfectly Aligned */}
+            {/* Mobile Cards View (block md:hidden) - Native App Style Accordion */}
             <div className="block md:hidden space-y-3">
               {filteredPayments.length === 0 ? (
                 <div className="p-6 text-center text-slate-400 dark:text-neutral-500 text-xs bg-slate-50 dark:bg-neutral-950 rounded-xl border border-slate-200 dark:border-neutral-800">
                   No monthly payment records match the current filters.
                 </div>
               ) : (
-                filteredPayments.map((pmt) => (
-                  <div key={pmt.id} className="p-4 space-y-3.5 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-sm transition-all hover:border-slate-300 dark:hover:border-neutral-700">
-                    {/* Header: Name + Status Badge + Box No Pill */}
-                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-neutral-800/80 pb-3">
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex items-center flex-wrap gap-2">
-                          <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight leading-tight">
-                            {pmt.customerName}
-                          </h3>
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10.5px] font-bold rounded-full border ${
-                            pmt.status === 'PAID'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
-                              : pmt.status === 'PARTIAL'
-                              ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30'
-                              : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30'
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${
-                              pmt.status === 'PAID' ? 'bg-emerald-500' : pmt.status === 'PARTIAL' ? 'bg-amber-500 animate-pulse' : 'bg-rose-500'
-                            }`} />
-                            {pmt.status}
-                          </span>
-                        </div>
-
-                        {/* Month Pill Badge */}
-                        <div className="flex items-center flex-wrap gap-2 pt-0.5">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 text-xs font-mono font-semibold shadow-2xs">
-                            <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400 shrink-0" />
-                            <span>Billing Month: {pmt.month}</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Box Number Pill */}
-                      <div className="shrink-0">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-lg text-xs font-mono font-bold text-slate-800 dark:text-neutral-200 shadow-2xs">
-                          <Box className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" />
-                          <span>Box: {pmt.boxNo || '-'}</span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Financial Metrics 3-Column Color Cards */}
-                    <div className="grid grid-cols-3 gap-2 font-mono">
-                      {/* MONTHLY FEE TILE */}
-                      <div className="p-2.5 bg-slate-50 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-center space-y-0.5 shadow-2xs">
-                        <span className="text-[10px] text-slate-500 dark:text-neutral-400 font-sans block uppercase font-bold tracking-wide">Monthly Fee</span>
-                        <span className="text-slate-900 dark:text-white font-extrabold text-xs sm:text-sm block">{formatMoney(pmt.monthlyFee, currency)}</span>
-                      </div>
-
-                      {/* PAID TILE */}
-                      <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/40 rounded-xl text-center space-y-0.5 shadow-2xs">
-                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-sans block uppercase font-bold tracking-wide">Paid</span>
-                        <span className="text-emerald-700 dark:text-emerald-400 font-extrabold text-xs sm:text-sm block">{formatMoney(pmt.paidAmount, currency)}</span>
-                      </div>
-
-                      {/* BALANCE TILE */}
-                      <div className={`p-2.5 rounded-xl text-center space-y-0.5 shadow-2xs border ${
-                        pmt.balanceAmount === 0
-                          ? 'bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400'
-                          : 'bg-rose-50 dark:bg-rose-950/25 border-rose-200 dark:border-rose-800/40 text-rose-700 dark:text-rose-400'
-                      }`}>
-                        <span className="text-[10px] font-sans block uppercase font-bold tracking-wide">Balance</span>
-                        <span className="font-extrabold text-xs sm:text-sm block">
-                          {formatMoney(pmt.balanceAmount, currency)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Perfectly Aligned Action Buttons Grid */}
-                    <div className="flex flex-col gap-2 pt-1">
-                      {/* Top Row Primary Actions */}
-                      <div className="grid grid-cols-2 gap-2">
-                        {pmt.balanceAmount > 0 ? (
-                          <button
-                            onClick={() => handleOpenPayBalance(pmt)}
-                            className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md active:scale-95"
-                          >
-                            <CreditCard className="w-3.5 h-3.5 text-white" />
-                            <span>Pay Balance</span>
-                          </button>
-                        ) : (
-                          <div className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-bold font-mono">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Fully Paid</span>
+                filteredPayments.map((pmt) => {
+                  const isExpanded = expandedPaymentId === pmt.id;
+                  const cust = customers.find((c) => c.id === pmt.customerId);
+                  return (
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+                      key={pmt.id}
+                      className="p-4 space-y-3.5 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-sm transition-all hover:border-slate-300 dark:hover:border-neutral-700"
+                    >
+                      {/* Header: Tap to toggle accordion */}
+                      <div
+                        onClick={() => togglePaymentExpand(pmt.id)}
+                        className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-neutral-800/80 pb-3 cursor-pointer select-none"
+                      >
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="flex items-center flex-wrap gap-2">
+                            <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight leading-tight">
+                              {pmt.customerName}
+                            </h3>
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10.5px] font-bold rounded-full border ${
+                              pmt.status === 'PAID'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                                : pmt.status === 'PARTIAL'
+                                ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30'
+                                : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                pmt.status === 'PAID' ? 'bg-emerald-500' : pmt.status === 'PARTIAL' ? 'bg-amber-500 animate-pulse' : 'bg-rose-500'
+                              }`} />
+                              {pmt.status}
+                            </span>
                           </div>
-                        )}
 
-                        {onViewHistory && pmt.customerId && (
-                          <button
-                            onClick={() => onViewHistory(pmt.customerId)}
-                            className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+                          {/* Month Pill Badge */}
+                          <div className="flex items-center flex-wrap gap-2 pt-0.5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 text-xs font-mono font-semibold shadow-2xs">
+                              <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400 shrink-0" />
+                              <span>Billing Month: {pmt.month}</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Box Number Pill & Accordion Indicator */}
+                        <div className="shrink-0 flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-lg text-xs font-mono font-bold text-slate-800 dark:text-neutral-200 shadow-2xs">
+                            <Box className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" />
+                            <span>Box: {pmt.boxNo || '-'}</span>
+                          </span>
+                          <motion.div
+                            animate={{ rotate: isExpanded ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="p-1 rounded-md text-slate-400 dark:text-neutral-500 hover:text-slate-600 dark:hover:text-neutral-300"
                           >
-                            <History className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                            <span>History</span>
-                          </button>
-                        )}
+                            <ChevronDown className="w-4 h-4" />
+                          </motion.div>
+                        </div>
                       </div>
 
-                      {/* Bottom Row Secondary Actions */}
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-neutral-800/80">
-                        <button
-                          onClick={() => handlePrintMonthlyBill(pmt)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-neutral-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
-                        >
-                          <Printer className="w-3.5 h-3.5 text-slate-600 dark:text-emerald-400" />
-                          <span>Print Bill</span>
-                        </button>
-
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            onClick={() => handleOpenEdit(pmt)}
-                            className="p-2 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 border border-sky-200 dark:border-sky-500/25 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
-                            title="Edit Record"
+                      {/* Expandable Details Drawer */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                            className="overflow-hidden space-y-2 text-xs"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          {currentUser?.role !== 'STAFF' && (
-                            <button
-                              onClick={() => handleDelete(pmt.id, pmt.customerName, pmt.month)}
-                              className="p-2 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/25 rounded-xl transition-colors cursor-pointer shadow-xs active:scale-95"
-                              title="Delete Record"
+                            <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950/80 border border-slate-200 dark:border-neutral-800/80 space-y-2">
+                              {cust?.address && (
+                                <div className="flex items-start justify-between text-slate-600 dark:text-neutral-400">
+                                  <span className="font-medium shrink-0">Address:</span>
+                                  <span className="text-right font-medium text-slate-800 dark:text-neutral-200 max-w-[200px]">{cust.address}</span>
+                                </div>
+                              )}
+                              {pmt.paymentDate && (
+                                <div className="flex items-center justify-between text-slate-600 dark:text-neutral-400">
+                                  <span className="font-medium">Payment Date:</span>
+                                  <span className="font-mono text-slate-800 dark:text-neutral-200">{pmt.paymentDate.split('T')[0]}</span>
+                                </div>
+                              )}
+                              {cust?.phoneNo && (
+                                <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/80 dark:border-neutral-800/80">
+                                  <span className="font-medium text-slate-600 dark:text-neutral-400">Direct Actions:</span>
+                                  <div className="flex items-center gap-2">
+                                    <a
+                                      href={`tel:${cust.phoneNo}`}
+                                      className="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 hover:bg-emerald-500/25 transition-colors"
+                                    >
+                                      <span>Call ({cust.phoneNo})</span>
+                                    </a>
+                                    <a
+                                      href={`sms:${cust.phoneNo}`}
+                                      className="px-2.5 py-1 rounded-lg bg-sky-500/15 text-sky-700 dark:text-sky-400 font-bold flex items-center gap-1 hover:bg-sky-500/25 transition-colors"
+                                    >
+                                      <span>SMS</span>
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Financial Metrics 3-Column Color Cards */}
+                      <div className="grid grid-cols-3 gap-2 font-mono">
+                        {/* MONTHLY FEE TILE */}
+                        <div className="p-2.5 bg-slate-50 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-center space-y-0.5 shadow-2xs">
+                          <span className="text-[10px] text-slate-500 dark:text-neutral-400 font-sans block uppercase font-bold tracking-wide">Monthly Fee</span>
+                          <span className="text-slate-900 dark:text-white font-extrabold text-xs sm:text-sm block">{formatMoney(pmt.monthlyFee, currency)}</span>
+                        </div>
+
+                        {/* PAID TILE */}
+                        <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/40 rounded-xl text-center space-y-0.5 shadow-2xs">
+                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-sans block uppercase font-bold tracking-wide">Paid</span>
+                          <span className="text-emerald-700 dark:text-emerald-400 font-extrabold text-xs sm:text-sm block">{formatMoney(pmt.paidAmount, currency)}</span>
+                        </div>
+
+                        {/* BALANCE TILE */}
+                        <div className={`p-2.5 rounded-xl text-center space-y-0.5 shadow-2xs border ${
+                          pmt.balanceAmount === 0
+                            ? 'bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400'
+                            : 'bg-rose-50 dark:bg-rose-950/25 border-rose-200 dark:border-rose-800/40 text-rose-700 dark:text-rose-400'
+                        }`}>
+                          <span className="text-[10px] font-sans block uppercase font-bold tracking-wide">Balance</span>
+                          <span className="font-extrabold text-xs sm:text-sm block">
+                            {formatMoney(pmt.balanceAmount, currency)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Perfectly Aligned Action Buttons Grid */}
+                      <div className="flex flex-col gap-2 pt-1">
+                        {/* Top Row Primary Actions */}
+                        <div className="grid grid-cols-2 gap-2">
+                          {pmt.balanceAmount > 0 ? (
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleOpenPayBalance(pmt)}
+                              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                              <CreditCard className="w-3.5 h-3.5 text-white" />
+                              <span>Pay Balance</span>
+                            </motion.button>
+                          ) : (
+                            <div className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-bold font-mono">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Fully Paid</span>
+                            </div>
+                          )}
+
+                          {onViewHistory && pmt.customerId && (
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => onViewHistory(pmt.customerId)}
+                              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                            >
+                              <History className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                              <span>History</span>
+                            </motion.button>
                           )}
                         </div>
+
+                        {/* Bottom Row Secondary Actions */}
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-neutral-800/80">
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handlePrintMonthlyBill(pmt)}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-neutral-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-slate-600 dark:text-emerald-400" />
+                            <span>Print Bill</span>
+                          </motion.button>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <motion.button
+                              whileTap={{ scale: 0.92 }}
+                              onClick={() => handleOpenEdit(pmt)}
+                              className="p-2 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 border border-sky-200 dark:border-sky-500/25 rounded-xl transition-colors cursor-pointer shadow-xs"
+                              title="Edit Record"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </motion.button>
+                            {currentUser?.role !== 'STAFF' && (
+                              <motion.button
+                                whileTap={{ scale: 0.92 }}
+                                onClick={() => handleDelete(pmt.id, pmt.customerName, pmt.month)}
+                                className="p-2 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/25 rounded-xl transition-colors cursor-pointer shadow-xs"
+                                title="Delete Record"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </motion.button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))
+                    </motion.div>
+                  );
+                })
               )}
             </div>
+
+            {/* Mobile Floating Action Button (FAB) for quick bill creation */}
+            <motion.button
+              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.05 }}
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                const customerSelect = document.querySelector<HTMLSelectElement>('select');
+                if (customerSelect) customerSelect.focus();
+              }}
+              className="fixed bottom-20 right-4 z-30 md:hidden w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 flex items-center justify-center shadow-lg shadow-emerald-500/40 border-2 border-white dark:border-neutral-900 cursor-pointer"
+              title="Add Monthly Bill"
+            >
+              <PlusCircle className="w-5 h-5 stroke-[2.3]" />
+            </motion.button>
 
             {/* Desktop Table View (hidden md:block) */}
             <div className="hidden md:block rounded-xl border border-slate-200 dark:border-neutral-800 overflow-hidden bg-white dark:bg-neutral-950 shadow-xs">
@@ -1479,231 +1572,287 @@ Monthly bills or payment records are not created for new subscribers during thei
       </div>
 
       {/* ------------------------------------------------------------------- */}
-      {/* EDIT MONTHLY PAYMENT MODAL */}
+      {/* EDIT MONTHLY PAYMENT MODAL (Responsive Bottom Sheet / Modal) */}
       {/* ------------------------------------------------------------------- */}
-      {editingPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-xl bg-neutral-900 border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                <Edit2 className="w-4 h-4 text-emerald-400" />
-                <span>Edit Monthly Payment Record</span>
-              </h2>
-              <button onClick={() => setEditingPayment(null)} className="text-neutral-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      <AnimatePresence>
+        {editingPayment && (
+          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setEditingPayment(null)}
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            />
 
-            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-              <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800">
-                <p className="font-semibold text-white">{editingPayment.customerName}</p>
-                <p className="text-xs text-neutral-400 font-mono mt-0.5">Box No: {editingPayment.boxNo}</p>
-              </div>
+            {/* Bottom Sheet on Mobile / Centered Modal on Desktop */}
+            <motion.div
+              initial={{ y: '100%', opacity: 0.5 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+              className="relative w-full md:max-w-md rounded-t-3xl md:rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto z-10"
+            >
+              {/* Native Mobile Pull Handle */}
+              <div className="md:hidden w-12 h-1.5 rounded-full bg-slate-300 dark:bg-neutral-700 mx-auto -mt-1 mb-2" />
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-neutral-400 font-medium">Month *</label>
-                  {editMinEligibleMonth && (
-                    <span className="text-[10px] text-emerald-400 font-mono">
-                      Earliest: {editMinEligibleMonth}
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="month"
-                  required
-                  min={editMinEligibleMonth || undefined}
-                  value={editMonth}
-                  onChange={(e) => setEditMonth(e.target.value)}
-                  className={`w-full px-3 py-2 bg-neutral-950 border rounded-md text-white font-mono ${
-                    isEditDuplicateMonth
-                      ? 'border-rose-500/60 ring-1 ring-rose-500/30'
-                      : isEditMonthIneligible
-                      ? 'border-amber-500/60 ring-1 ring-amber-500/30'
-                      : 'border-neutral-800'
-                  }`}
-                />
-              </div>
-
-              {isEditDuplicateMonth && (
-                <div className="p-2.5 rounded-lg bg-rose-950/40 border border-rose-500/40 flex items-start gap-2 text-rose-200 text-xs">
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  <div className="space-y-0.5 text-[11px]">
-                    <p className="font-semibold text-rose-300">
-                      Duplicate Month: {editMonth}
-                    </p>
-                    <p className="text-neutral-300">
-                      A monthly payment record for this subscriber already exists for {editMonth}. Duplicate monthly records cannot be created.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {isEditMonthIneligible && (
-                <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40 flex items-start gap-2 text-amber-200 text-xs">
-                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <div className="space-y-0.5 text-[11px]">
-                    <p className="font-semibold text-amber-300">
-                      Cannot set month to {editMonth}
-                    </p>
-                    <p className="text-neutral-300">
-                      Subscriber registered in {editRegMonth}. Billing begins from {editMinEligibleMonth}.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-neutral-400 font-medium mb-1">Monthly Fee (LKR)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={editMonthlyFee}
-                    onChange={(e) => setEditMonthlyFee(e.target.value)}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-neutral-400 font-medium mb-1">Paid Amount (LKR)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={editPaidAmount}
-                    onChange={(e) => setEditPaidAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between">
-                <span className="text-neutral-400 font-medium">Updated Balance Amount:</span>
-                <span className={`font-mono font-bold text-sm ${
-                  calculatedEditBalance === 0 ? 'text-emerald-400' : 'text-amber-400'
-                }`}>
-                  {formatMoney(calculatedEditBalance, currency)}
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-medium mb-1">Payment Date</label>
-                <input
-                  type="date"
-                  value={editPaymentDate}
-                  onChange={(e) => setEditPaymentDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingPayment(null)}
-                  className="px-3 py-1.5 rounded bg-neutral-800 text-neutral-300 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isEditMonthIneligible || isEditDuplicateMonth}
-                  className={`px-4 py-1.5 rounded font-semibold ${
-                    isEditMonthIneligible || isEditDuplicateMonth
-                      ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                      : 'bg-emerald-400 text-neutral-950 hover:bg-emerald-300'
-                  }`}
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------------- */}
-      {/* PAY BALANCE MODAL */}
-      {/* ------------------------------------------------------------------- */}
-      {payBalancePayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-xl bg-neutral-900 border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <div>
-                <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-emerald-400" />
-                  <span>Pay Monthly Dues Balance</span>
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 pb-3">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Edit2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                  <span>Edit Monthly Payment Record</span>
                 </h2>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  {payBalancePayment.customerName} ({payBalancePayment.month})
-                </p>
-              </div>
-              <button onClick={() => setPayBalancePayment(null)} className="text-neutral-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleConfirmPayBalance} className="space-y-4 text-xs">
-              <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800 space-y-1.5">
-                <div className="flex justify-between text-neutral-400">
-                  <span>Monthly Fee:</span>
-                  <span className="font-mono text-white">{formatMoney(payBalancePayment.monthlyFee, currency)}</span>
-                </div>
-                <div className="flex justify-between text-neutral-400">
-                  <span>Already Paid:</span>
-                  <span className="font-mono text-emerald-400">{formatMoney(payBalancePayment.paidAmount, currency)}</span>
-                </div>
-                <div className="flex justify-between font-bold border-t border-neutral-850 pt-1.5 text-amber-400">
-                  <span>Remaining Balance Due:</span>
-                  <span className="font-mono text-sm">{formatMoney(payBalancePayment.balanceAmount, currency)}</span>
-                </div>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setEditingPayment(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-md transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-neutral-400 font-medium">Payment Amount (LKR) *</label>
-                  <button
+              <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800">
+                  <p className="font-bold text-slate-900 dark:text-white text-sm">{editingPayment.customerName}</p>
+                  <p className="text-xs text-slate-500 dark:text-neutral-400 font-mono mt-0.5">Box No: <span className="font-bold text-emerald-600 dark:text-emerald-400">{editingPayment.boxNo}</span></p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-600 dark:text-neutral-400 font-medium">Month *</label>
+                    {editMinEligibleMonth && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+                        Earliest: {editMinEligibleMonth}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="month"
+                    required
+                    min={editMinEligibleMonth || undefined}
+                    value={editMonth}
+                    onChange={(e) => setEditMonth(e.target.value)}
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-950 border rounded-xl text-slate-900 dark:text-white font-mono ${
+                      isEditDuplicateMonth
+                        ? 'border-rose-500/60 ring-1 ring-rose-500/30'
+                        : isEditMonthIneligible
+                        ? 'border-amber-500/60 ring-1 ring-amber-500/30'
+                        : 'border-slate-200 dark:border-neutral-800'
+                    }`}
+                  />
+                </div>
+
+                {isEditDuplicateMonth && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/40 flex items-start gap-2 text-rose-800 dark:text-rose-200 text-xs">
+                    <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5 text-[11px]">
+                      <p className="font-bold text-rose-900 dark:text-rose-300">
+                        Duplicate Month: {editMonth}
+                      </p>
+                      <p className="text-slate-600 dark:text-neutral-300">
+                        A monthly payment record for this subscriber already exists for {editMonth}.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {isEditMonthIneligible && (
+                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/40 flex items-start gap-2 text-amber-800 dark:text-amber-200 text-xs">
+                    <AlertCircle className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5 text-[11px]">
+                      <p className="font-bold text-amber-900 dark:text-amber-300">
+                        Cannot set month to {editMonth}
+                      </p>
+                      <p className="text-slate-600 dark:text-neutral-300">
+                        Subscriber registered in {editRegMonth}. Billing begins from {editMinEligibleMonth}.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 dark:text-neutral-400 font-medium mb-1">Monthly Fee (LKR)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editMonthlyFee}
+                      onChange={(e) => setEditMonthlyFee(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 dark:text-neutral-400 font-medium mb-1">Paid Amount (LKR)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editPaidAmount}
+                      onChange={(e) => setEditPaidAmount(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-neutral-400 font-medium">Updated Balance Amount:</span>
+                  <span className={`font-mono font-bold text-sm ${
+                    calculatedEditBalance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                  }`}>
+                    {formatMoney(calculatedEditBalance, currency)}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 dark:text-neutral-400 font-medium mb-1">Payment Date</label>
+                  <input
+                    type="date"
+                    value={editPaymentDate}
+                    onChange={(e) => setEditPaymentDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <motion.button
                     type="button"
-                    onClick={() => setPayAmount(payBalancePayment.balanceAmount.toString())}
-                    className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300"
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setEditingPayment(null)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white font-medium"
                   >
-                    Pay Full Balance
-                  </button>
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    type="submit"
+                    whileTap={{ scale: 0.95 }}
+                    disabled={isEditMonthIneligible || isEditDuplicateMonth}
+                    className={`px-5 py-2 rounded-xl font-bold ${
+                      isEditMonthIneligible || isEditDuplicateMonth
+                        ? 'bg-slate-200 dark:bg-neutral-800 text-slate-400 dark:text-neutral-500 cursor-not-allowed'
+                        : 'bg-emerald-500 text-neutral-950 hover:bg-emerald-400 shadow-md shadow-emerald-500/20'
+                    }`}
+                  >
+                    Save Changes
+                  </motion.button>
                 </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  max={payBalancePayment.balanceAmount}
-                  required
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono text-sm focus:outline-none focus:border-emerald-500"
-                />
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* PAY BALANCE MODAL (Responsive Bottom Sheet / Modal) */}
+      {/* ------------------------------------------------------------------- */}
+      <AnimatePresence>
+        {payBalancePayment && (
+          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setPayBalancePayment(null)}
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            />
+
+            {/* Bottom Sheet on Mobile / Centered Modal on Desktop */}
+            <motion.div
+              initial={{ y: '100%', opacity: 0.5 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+              className="relative w-full md:max-w-md rounded-t-3xl md:rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto z-10"
+            >
+              {/* Native Mobile Pull Handle */}
+              <div className="md:hidden w-12 h-1.5 rounded-full bg-slate-300 dark:bg-neutral-700 mx-auto -mt-1 mb-2" />
+
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 pb-3">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                    <span>Pay Monthly Dues Balance</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                    {payBalancePayment.customerName} (<span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{payBalancePayment.month}</span>)
+                  </p>
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setPayBalancePayment(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-md transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setPayBalancePayment(null)}
-                  className="px-3.5 py-2 rounded bg-neutral-800 text-neutral-300 hover:text-white font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPaying}
-                  className="px-4 py-2 rounded bg-emerald-400 font-semibold text-neutral-950 hover:bg-emerald-300 flex items-center gap-1.5 cursor-pointer"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{isPaying ? 'Processing...' : 'Confirm Payment'}</span>
-                </button>
-              </div>
-            </form>
+              <form onSubmit={handleConfirmPayBalance} className="space-y-4 text-xs">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 space-y-2">
+                  <div className="flex justify-between text-slate-600 dark:text-neutral-400">
+                    <span>Monthly Fee:</span>
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">{formatMoney(payBalancePayment.monthlyFee, currency)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 dark:text-neutral-400">
+                    <span>Already Paid:</span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(payBalancePayment.paidAmount, currency)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold border-t border-slate-200 dark:border-neutral-800 pt-2 text-rose-600 dark:text-amber-400">
+                    <span>Remaining Balance Due:</span>
+                    <span className="font-mono text-sm">{formatMoney(payBalancePayment.balanceAmount, currency)}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-slate-600 dark:text-neutral-400 font-medium">Payment Amount (LKR) *</label>
+                    <button
+                      type="button"
+                      onClick={() => setPayAmount(payBalancePayment.balanceAmount.toString())}
+                      className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                    >
+                      Pay Full Balance
+                    </button>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max={payBalancePayment.balanceAmount}
+                    required
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:border-emerald-500 font-bold"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setPayBalancePayment(null)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white font-medium"
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    type="submit"
+                    disabled={isPaying}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-500 font-bold text-neutral-950 hover:bg-emerald-400 flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{isPaying ? 'Processing...' : 'Confirm Payment'}</span>
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Printable Receipt Modal */}
       <BillPrintModal

@@ -214,7 +214,7 @@ export default function App() {
       />
 
       {/* Main Viewport Content */}
-      <main className="flex-1 min-w-0 md:pl-64 lg:pl-72 pb-16">
+      <main className="flex-1 min-w-0 md:pl-64 lg:pl-72 pb-24 md:pb-16">
         {currentTab === 'dashboard' && (
           <DashboardView
             analytics={analytics}

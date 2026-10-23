@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { SupportedCurrency, User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES } from '../types/finance.js';
 import { CURRENCY_CONF } from '../api/client.js';
 import {
@@ -126,141 +127,266 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </header>
 
       {/* ------------------------------------------------------------------- */}
-      {/* 2. MOBILE SIDEBAR DRAWER OVERLAY (Mobile Only) */}
+      {/* 2. MOBILE SIDEBAR DRAWER OVERLAY (Animated with Framer Motion) */}
       {/* ------------------------------------------------------------------- */}
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          {/* Backdrop Overlay */}
-          <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
-            onClick={() => setIsMobileOpen(false)}
-          />
+      <AnimatePresence>
+        {isMobileOpen && (
+          <div className="fixed inset-0 z-50 md:hidden flex">
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+              onClick={() => setIsMobileOpen(false)}
+            />
 
-          {/* Slide-out Drawer */}
-          <div className="relative w-72 max-w-[80vw] bg-neutral-950 border-r border-neutral-800 flex flex-col justify-between h-full z-10 p-4 space-y-4 shadow-2xl animate-slide-in-left">
-            <div className="space-y-6 overflow-y-auto">
-              {/* Drawer Top Header */}
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400">
-                    <Tv className="w-5 h-5" />
+            {/* Slide-out Drawer */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+              className="relative w-72 max-w-[80vw] bg-white dark:bg-neutral-950 border-r border-slate-200 dark:border-neutral-800 flex flex-col justify-between h-full z-10 p-4 space-y-4 shadow-2xl"
+            >
+              <div className="space-y-6 overflow-y-auto">
+                {/* Drawer Top Header */}
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400">
+                      <Tv className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-slate-900 dark:text-white tracking-tight text-base">
+                        <span className="text-emerald-500 dark:text-emerald-400">ASK</span> Cable
+                      </h2>
+                      <p className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono">Subscription ERP</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="font-bold text-white tracking-tight text-base">
-                      <span className="text-emerald-400">ASK</span> Cable
-                    </h2>
-                    <p className="text-[10px] text-neutral-400 font-mono">Subscription ERP</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsMobileOpen(false)}
-                  className="p-1.5 text-neutral-400 hover:text-white bg-neutral-900 border border-neutral-800 rounded-md transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Mobile Menu Links */}
-              <div className="space-y-5">
-                <div>
-                  <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500 mb-2 px-2">
-                    Main Menu
-                  </p>
-                  <div className="space-y-1">
-                    {mainSectionItems.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = currentTab === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => handleNavClick(item.id)}
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                            isActive
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs'
-                              : 'text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10'
-                          }`}
-                        >
-                          <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-neutral-400'}`} />
-                          <span>{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setIsMobileOpen(false)}
+                    className="p-1.5 text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-md transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </motion.button>
                 </div>
 
-                {adminSectionItems.length > 0 && (
+                {/* Mobile Menu Links */}
+                <div className="space-y-5">
                   <div>
-                    <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500 mb-2 px-2">
-                      Admin Tools
+                    <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-2 px-2">
+                      Main Menu
                     </p>
                     <div className="space-y-1">
-                      {adminSectionItems.map((item) => {
+                      {mainSectionItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = currentTab === item.id;
                         return (
-                          <button
+                          <motion.button
                             key={item.id}
+                            whileTap={{ scale: 0.97 }}
                             onClick={() => handleNavClick(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                               isActive
-                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs'
-                                : 'text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10'
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-xs'
+                                : 'text-slate-600 dark:text-neutral-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-neutral-900'
                             }`}
                           >
-                            <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-neutral-400'}`} />
+                            <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-neutral-400'}`} />
                             <span>{item.label}</span>
-                          </button>
+                          </motion.button>
                         );
                       })}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
 
-            {/* Mobile Drawer Footer User Profile */}
-            <div className="pt-3 border-t border-neutral-800 space-y-3">
-              {currentUser && (
-                <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-neutral-800 text-neutral-300 flex items-center justify-center font-bold text-xs">
-                        {currentUser.name ? currentUser.name.charAt(0) : currentUser.username.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white truncate max-w-[120px]">{currentUser.name}</p>
-                        <p className="text-[10px] font-mono text-neutral-400">{currentUser.username}</p>
+                  {adminSectionItems.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-2 px-2">
+                        Admin Tools
+                      </p>
+                      <div className="space-y-1">
+                        {adminSectionItems.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = currentTab === item.id;
+                          return (
+                            <motion.button
+                              key={item.id}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => handleNavClick(item.id)}
+                              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                                isActive
+                                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-xs'
+                                  : 'text-slate-600 dark:text-neutral-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-neutral-900'
+                              }`}
+                            >
+                              <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-neutral-400'}`} />
+                              <span>{item.label}</span>
+                            </motion.button>
+                          );
+                        })}
                       </div>
                     </div>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                        currentUser.role === 'ADMIN'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                      }`}
-                    >
-                      {currentUser.role}
-                    </span>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {onLogout && (
-                <button
-                  onClick={() => {
-                    setIsMobileOpen(false);
-                    onLogout();
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sign Out</span>
-                </button>
-              )}
-            </div>
+              {/* Mobile Drawer Footer User Profile */}
+              <div className="pt-3 border-t border-slate-200 dark:border-neutral-800 space-y-3">
+                {currentUser && (
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-neutral-800 text-slate-800 dark:text-neutral-300 flex items-center justify-center font-bold text-xs">
+                          {currentUser.name ? currentUser.name.charAt(0) : currentUser.username.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[120px]">{currentUser.name}</p>
+                          <p className="text-[10px] font-mono text-slate-500 dark:text-neutral-400">{currentUser.username}</p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                          currentUser.role === 'ADMIN'
+                            ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                            : 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30'
+                        }`}
+                      >
+                        {currentUser.role}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {onLogout && (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setIsMobileOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 hover:bg-rose-100 dark:hover:bg-rose-500/20 rounded-xl transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </motion.button>
+                )}
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
+      {/* ------------------------------------------------------------------- */}
+      {/* 2B. NATIVE MOBILE BOTTOM NAVIGATION BAR (iOS / Android Style) */}
+      {/* ------------------------------------------------------------------- */}
+      <nav className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white/95 dark:bg-neutral-950/95 backdrop-blur-xl border-t border-slate-200/90 dark:border-neutral-800/90 px-2 py-1.5 flex items-center justify-around shadow-[0_-4px_25px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_25px_rgba(0,0,0,0.6)]">
+        {/* Dashboard */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => handleNavClick('dashboard')}
+          className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-colors ${
+            currentTab === 'dashboard'
+              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+              : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          {currentTab === 'dashboard' && (
+            <motion.div
+              layoutId="mobile-bottom-nav-pill"
+              className="absolute inset-0 bg-emerald-50 dark:bg-emerald-500/15 rounded-xl border border-emerald-200/60 dark:border-emerald-500/25"
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            />
+          )}
+          <LayoutDashboard className="w-5 h-5 relative z-10" />
+          <span className="text-[10px] tracking-tight relative z-10 mt-0.5">Home</span>
+        </motion.button>
+
+        {/* Collect Payment - Center Floating Native Style */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => handleNavClick('payment-collection')}
+          className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
+            currentTab === 'payment-collection'
+              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+              : 'text-slate-600 dark:text-neutral-300'
+          }`}
+        >
+          {currentTab === 'payment-collection' ? (
+            <motion.div
+              layoutId="mobile-bottom-nav-pill"
+              className="absolute inset-0 bg-emerald-50 dark:bg-emerald-500/15 rounded-xl border border-emerald-200/60 dark:border-emerald-500/25"
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-emerald-500 text-neutral-950 flex items-center justify-center shadow-md shadow-emerald-500/30">
+              <Banknote className="w-4 h-4 stroke-[2.5]" />
+            </div>
+          )}
+          {currentTab === 'payment-collection' ? (
+            <Banknote className="w-5 h-5 relative z-10" />
+          ) : null}
+          <span className="text-[10px] tracking-tight relative z-10 mt-0.5 font-bold">Collect</span>
+        </motion.button>
+
+        {/* Customers */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => handleNavClick('customers')}
+          className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-colors ${
+            currentTab === 'customers'
+              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+              : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          {currentTab === 'customers' && (
+            <motion.div
+              layoutId="mobile-bottom-nav-pill"
+              className="absolute inset-0 bg-emerald-50 dark:bg-emerald-500/15 rounded-xl border border-emerald-200/60 dark:border-emerald-500/25"
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            />
+          )}
+          <Users className="w-5 h-5 relative z-10" />
+          <span className="text-[10px] tracking-tight relative z-10 mt-0.5">Customers</span>
+        </motion.button>
+
+        {/* Monthly Payment */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => handleNavClick('monthly-payment')}
+          className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-colors ${
+            currentTab === 'monthly-payment'
+              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+              : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          {currentTab === 'monthly-payment' && (
+            <motion.div
+              layoutId="mobile-bottom-nav-pill"
+              className="absolute inset-0 bg-emerald-50 dark:bg-emerald-500/15 rounded-xl border border-emerald-200/60 dark:border-emerald-500/25"
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            />
+          )}
+          <CalendarCheck className="w-5 h-5 relative z-10" />
+          <span className="text-[10px] tracking-tight relative z-10 mt-0.5">Monthly</span>
+        </motion.button>
+
+        {/* More / Menu Drawer Toggle */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => setIsMobileOpen(true)}
+          className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-colors ${
+            isMobileOpen || currentTab === 'settings' || currentTab === 'summary' || currentTab === 'customer-history' || currentTab === 'transactions'
+              ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+              : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Menu className="w-5 h-5 relative z-10" />
+          <span className="text-[10px] tracking-tight relative z-10 mt-0.5">Menu</span>
+        </motion.button>
+      </nav>
 
       {/* ------------------------------------------------------------------- */}
       {/* 3. DESKTOP FIXED SIDEBAR MENU (Desktop Only: hidden md:flex) */}

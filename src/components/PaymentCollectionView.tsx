@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Customer, MonthlyPayment, IncomeRecord, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
@@ -610,20 +611,28 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
               </span>
             </div>
 
-            {/* Stepper Dots & Tabs */}
-            <div className="grid grid-cols-3 gap-2 pt-1">
-              <button
+            {/* Stepper Dots & Tabs with Animated Sliding Indicator */}
+            <div className="grid grid-cols-3 gap-2 pt-1 relative">
+              <motion.button
                 type="button"
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setMobileStep(1)}
-                className={`py-2 px-2 rounded-xl text-center transition-all cursor-pointer border flex flex-col items-center gap-0.5 ${
+                className={`relative py-2 px-2 rounded-xl text-center transition-all cursor-pointer border flex flex-col items-center gap-0.5 ${
                   mobileStep === 1
-                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold shadow-xs'
+                    ? 'border-emerald-500 text-emerald-300 font-bold shadow-xs'
                     : selectedCustId
                     ? 'bg-neutral-950 border-emerald-500/30 text-emerald-400/90'
                     : 'bg-neutral-950/60 border-neutral-800 text-neutral-500'
                 }`}
               >
-                <div className="flex items-center gap-1.5 text-[11px]">
+                {mobileStep === 1 && (
+                  <motion.div
+                    layoutId="stepper-tab-pill"
+                    className="absolute inset-0 bg-emerald-500/20 rounded-xl"
+                    transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                  />
+                )}
+                <div className="relative z-10 flex items-center gap-1.5 text-[11px]">
                   {selectedCustId && mobileStep > 1 ? (
                     <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
                   ) : (
@@ -633,23 +642,31 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                   )}
                   <span className="truncate">Subscriber</span>
                 </div>
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
                 type="button"
+                whileTap={{ scale: selectedCustId ? 0.95 : 1 }}
                 onClick={() => { if (selectedCustId) setMobileStep(2); }}
                 disabled={!selectedCustId}
-                className={`py-2 px-2 rounded-xl text-center transition-all border flex flex-col items-center gap-0.5 ${
+                className={`relative py-2 px-2 rounded-xl text-center transition-all border flex flex-col items-center gap-0.5 ${
                   !selectedCustId
                     ? 'bg-neutral-950/40 border-neutral-850 text-neutral-600 opacity-60 cursor-not-allowed'
                     : mobileStep === 2
-                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold shadow-xs cursor-pointer'
+                    ? 'border-emerald-500 text-emerald-300 font-bold shadow-xs cursor-pointer'
                     : mobileStep > 2
                     ? 'bg-neutral-950 border-emerald-500/30 text-emerald-400/90 cursor-pointer'
                     : 'bg-neutral-950/60 border-neutral-800 text-neutral-400 cursor-pointer'
                 }`}
               >
-                <div className="flex items-center gap-1.5 text-[11px]">
+                {mobileStep === 2 && (
+                  <motion.div
+                    layoutId="stepper-tab-pill"
+                    className="absolute inset-0 bg-emerald-500/20 rounded-xl"
+                    transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                  />
+                )}
+                <div className="relative z-10 flex items-center gap-1.5 text-[11px]">
                   {mobileStep > 2 ? (
                     <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
                   ) : (
@@ -659,36 +676,53 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                   )}
                   <span className="truncate">Select Due</span>
                 </div>
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
                 type="button"
+                whileTap={{ scale: selectedCustId && (hasMonthlyDue || hasRegDue) ? 0.95 : 1 }}
                 onClick={() => { if (selectedCustId && (hasMonthlyDue || hasRegDue)) setMobileStep(3); }}
                 disabled={!selectedCustId || (!hasMonthlyDue && !hasRegDue)}
-                className={`py-2 px-2 rounded-xl text-center transition-all border flex flex-col items-center gap-0.5 ${
+                className={`relative py-2 px-2 rounded-xl text-center transition-all border flex flex-col items-center gap-0.5 ${
                   !selectedCustId || (!hasMonthlyDue && !hasRegDue)
                     ? 'bg-neutral-950/40 border-neutral-850 text-neutral-600 opacity-60 cursor-not-allowed'
                     : mobileStep === 3
-                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold shadow-xs cursor-pointer'
+                    ? 'border-emerald-500 text-emerald-300 font-bold shadow-xs cursor-pointer'
                     : 'bg-neutral-950/60 border-neutral-800 text-neutral-400 cursor-pointer'
                 }`}
               >
-                <div className="flex items-center gap-1.5 text-[11px]">
+                {mobileStep === 3 && (
+                  <motion.div
+                    layoutId="stepper-tab-pill"
+                    className="absolute inset-0 bg-emerald-500/20 rounded-xl"
+                    transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                  />
+                )}
+                <div className="relative z-10 flex items-center gap-1.5 text-[11px]">
                   <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
                     mobileStep === 3 ? 'bg-emerald-500 text-white' : 'bg-neutral-800 text-neutral-300'
                   }`}>3</span>
                   <span className="truncate">Collect & Bill</span>
                 </div>
-              </button>
+              </motion.button>
             </div>
           </div>
 
-          {/* STEP 1: SELECT SUBSCRIBER */}
-          {mobileStep === 1 && (
-            <div className="space-y-3.5">
-              {/* Fast Search Input */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
+          {/* Stepped Form Wizard Transition Container */}
+          <AnimatePresence mode="wait">
+            {/* STEP 1: SELECT SUBSCRIBER */}
+            {mobileStep === 1 && (
+              <motion.div
+                key="step-1"
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 16 }}
+                transition={{ duration: 0.22, ease: 'easeInOut' }}
+                className="space-y-3.5"
+              >
+                {/* Fast Search Input */}
+                <div className="relative">
+                  <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="Search subscriber by Name, Box No, NIC, or Phone..."
@@ -836,22 +870,30 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                     </span>
                   </div>
 
-                  <button
+                  <motion.button
                     type="button"
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setMobileStep(2)}
                     className="w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-[0.99] text-white font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20"
                   >
                     <span>Continue to Select Due</span>
                     <ChevronRight className="w-4 h-4" />
-                  </button>
+                  </motion.button>
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
 
           {/* STEP 2: CHOOSE BILL / DUES */}
           {mobileStep === 2 && currentCustomer && (
-            <div className="space-y-3.5">
+            <motion.div
+              key="step-2"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.22, ease: 'easeInOut' }}
+              className="space-y-3.5"
+            >
               {/* Selected Customer Mini Bar */}
               <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between">
                 <div className="min-w-0 pr-2">
@@ -1029,17 +1071,19 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
 
               {/* Buttons: Back & Continue */}
               <div className="grid grid-cols-2 gap-2.5 pt-2">
-                <button
+                <motion.button
                   type="button"
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => setMobileStep(1)}
                   className="py-3 px-4 bg-neutral-800 hover:bg-neutral-750 text-neutral-300 font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Back</span>
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
                   type="button"
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => setMobileStep(3)}
                   disabled={
                     (paymentTargetType === 'MONTHLY' && (!selectedMonthlyPmt || selectedMonthlyPmt.balanceAmount === 0)) ||
@@ -1049,14 +1093,22 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                 >
                   <span>Enter Amount</span>
                   <ChevronRight className="w-4 h-4" />
-                </button>
+                </motion.button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* STEP 3: ENTER PAYMENT AMOUNT, PRESETS & CONFIRM */}
           {mobileStep === 3 && currentCustomer && (
-            <form onSubmit={handleSubmitPayment} className="space-y-3.5">
+            <motion.form
+              key="step-3"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.22, ease: 'easeInOut' }}
+              onSubmit={handleSubmitPayment}
+              className="space-y-3.5"
+            >
               {/* Selected Target Summary Card */}
               <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-2">
                 <div className="flex items-center justify-between text-xs">
@@ -1233,17 +1285,19 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
 
               {/* Navigation & Submit Buttons */}
               <div className="grid grid-cols-3 gap-2 pt-2">
-                <button
+                <motion.button
                   type="button"
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => setMobileStep(2)}
                   className="col-span-1 py-3 px-3 bg-neutral-800 hover:bg-neutral-750 text-neutral-300 font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Back</span>
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
                   type="submit"
+                  whileTap={{ scale: 0.97 }}
                   disabled={isSubmitting || !payAmount || parseFloat(payAmount) <= 0}
                   className="col-span-2 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none text-white font-bold rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/25 btn-gradient-submit"
                 >
@@ -1258,7 +1312,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                       <span>Collect & Print Bill</span>
                     </>
                   )}
-                </button>
+                </motion.button>
               </div>
 
               {/* Quick Reset for Next Subscriber Button */}
@@ -1272,8 +1326,9 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                   <span>Collect payment for another subscriber</span>
                 </button>
               </div>
-            </form>
+            </motion.form>
           )}
+        </AnimatePresence>
 
           {/* Collapsible Recent Collections Log in Stepped View */}
           {liveDbCollectionLogs.length > 0 && (
