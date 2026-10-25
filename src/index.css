@@ -179,9 +179,30 @@ td {
 
 .theme-light .bg-neutral-850,
 .theme-light .bg-neutral-850\/50,
-.theme-light .bg-neutral-800 {
+.theme-light .bg-neutral-800,
+.theme-light .bg-neutral-800\/95,
+.theme-light .bg-neutral-800\/90,
+.theme-light .bg-neutral-800\/85,
+.theme-light .bg-neutral-800\/80,
+.theme-light .bg-neutral-800\/75,
+.theme-light .bg-neutral-800\/70,
+.theme-light .bg-neutral-800\/60,
+.theme-light .bg-neutral-800\/50,
+.theme-light .bg-neutral-800\/40 {
   background-color: #e2e8f0 !important; /* Slate-200 */
+  color: #0f172a !important;
   border-color: #cbd5e1 !important;
+}
+
+.theme-light .bg-neutral-800 *,
+.theme-light .bg-neutral-800\/95 *,
+.theme-light .bg-neutral-800\/90 *,
+.theme-light .bg-neutral-800\/85 *,
+.theme-light .bg-neutral-800\/80 *,
+.theme-light .bg-neutral-800\/75 *,
+.theme-light .bg-neutral-800\/70 *,
+.theme-light .bg-neutral-800\/60 * {
+  color: #0f172a !important;
 }
 
 /* Light mode high-visibility borders */
@@ -493,11 +514,17 @@ td {
 }
 
 /* Light mode for button chips and pills */
-.theme-light .bg-neutral-800\/60,
+.theme-light .bg-neutral-800,
+.theme-light .bg-neutral-800\/95,
+.theme-light .bg-neutral-800\/90,
+.theme-light .bg-neutral-800\/85,
+.theme-light .bg-neutral-800\/80,
+.theme-light .bg-neutral-800\/75,
 .theme-light .bg-neutral-800\/70,
-.theme-light .bg-neutral-800\/80 {
-  background-color: #f1f5f9 !important;
-  color: #334155 !important;
+.theme-light .bg-neutral-800\/60,
+.theme-light .bg-neutral-800\/50 {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
   border-color: #cbd5e1 !important;
 }
 

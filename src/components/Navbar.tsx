@@ -1,7 +1,7 @@
 import React from 'react';
 import { AnalyticsOverview, SupportedCurrency, User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES } from '../types/finance.js';
 import { CURRENCY_CONF } from '../api/client.js';
-import { LogOut, ShieldCheck, UserCheck, Settings, Sun, Moon } from 'lucide-react';
+import { LogOut, ShieldCheck, UserCheck, Settings, Sun, Moon, Printer } from 'lucide-react';
 
 export type NavTab = 'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment' | 'customer-history' | 'settings';
 
@@ -48,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       }
       return true; // Admin has access to all pages
     }),
-    ...(currentUser?.role === 'ADMIN' ? [{ id: 'settings' as const, label: 'Settings' }] : []),
+    ...(currentUser ? [{ id: 'settings' as const, label: currentUser.role === 'STAFF' ? 'Thermal Printer' : 'Settings' }] : []),
   ];
 
   return (
@@ -74,7 +74,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   isActive ? 'text-white' : 'text-neutral-400 hover:text-neutral-200'
                 }`}
               >
-                {link.id === 'settings' && <Settings className="w-3.5 h-3.5 text-emerald-400" />}
+                {link.id === 'settings' && (
+                  currentUser?.role === 'STAFF' ? (
+                    <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                  ) : (
+                    <Settings className="w-3.5 h-3.5 text-emerald-400" />
+                  )
+                )}
                 {link.label}
                 {isActive && (
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-400 rounded-full" />
@@ -113,19 +119,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* User Profile & Role Badge */}
           {currentUser && (
             <div className="flex items-center gap-2 border-l border-neutral-800 pl-2 sm:pl-3">
-              {currentUser.role === 'ADMIN' && (
-                <button
-                  onClick={() => onSelectTab('settings')}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    currentTab === 'settings'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
-                  }`}
-                  title="Admin Settings & Staff Privileges"
-                >
+              <button
+                onClick={() => onSelectTab('settings')}
+                className={`p-1.5 rounded-md transition-colors ${
+                  currentTab === 'settings'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                }`}
+                title={currentUser.role === 'STAFF' ? 'Bluetooth Thermal Printer Settings' : 'Admin Settings & Staff Privileges'}
+              >
+                {currentUser.role === 'STAFF' ? (
+                  <Printer className="w-4 h-4 text-emerald-400" />
+                ) : (
                   <Settings className="w-4 h-4" />
-                </button>
-              )}
+                )}
+              </button>
 
               <div
                 className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-mono font-bold ${

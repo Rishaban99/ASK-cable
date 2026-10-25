@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES, SystemProfile, DEFAULT_SYSTEM_PROFILE, SmsSettings, DEFAULT_SMS_SETTINGS, SmsLogEntry, SmsBalanceResponse } from '../types/finance.js';
 import { api } from '../api/client.js';
@@ -137,6 +137,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onProfileUpdated,
 }) => {
   const toast = useToast();
+  const isAdmin = currentUser.role === 'ADMIN';
+  const isStaff = currentUser.role === 'STAFF';
+
+  // Visible tabs: Staff can ONLY access Bluetooth Thermal Printer
+  const visibleTabs = useMemo(() => {
+    return SETTINGS_TABS.filter((tab) => isAdmin || tab.id === 'printer');
+  }, [isAdmin]);
+
   // Privileges State
   const [privileges, setPrivileges] = useState<StaffPrivileges>(() => {
     try {
@@ -176,8 +184,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [newRole, setNewRole] = useState<'ADMIN' | 'STAFF'>('STAFF');
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
-  // Active Tab in Settings Page
-  const [activeTab, setActiveTab] = useState<'privileges' | 'users' | 'system' | 'sms' | 'printer'>('privileges');
+  // Active Tab in Settings Page (defaults to 'printer' for staff)
+  const [activeTab, setActiveTab] = useState<'privileges' | 'users' | 'system' | 'sms' | 'printer'>(() => {
+    return currentUser.role === 'STAFF' ? 'printer' : 'privileges';
+  });
 
   // SMS Gateway State (Notify.lk Integration)
   const [smsSettings, setSmsSettings] = useState<SmsSettings>(() => {
@@ -438,24 +448,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   useEffect(() => {
-    fetchUsers();
-    fetchPrivileges();
-    fetchProfile();
-    fetchSmsSettings();
-  }, []);
+    if (isAdmin) {
+      fetchUsers();
+      fetchPrivileges();
+      fetchProfile();
+      fetchSmsSettings();
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
-    if (activeTab === 'sms') {
+    if (isAdmin && activeTab === 'sms') {
       fetchBalance();
       fetchLogs();
     }
-  }, [activeTab]);
+  }, [activeTab, isAdmin]);
 
   useEffect(() => {
-    if (activeTab === 'sms') {
+    if (isAdmin && activeTab === 'sms') {
       fetchLogs();
     }
-  }, [logsFilterType, logsFilterStatus]);
+  }, [logsFilterType, logsFilterStatus, isAdmin]);
 
   // Save SMS Settings to DB
   const handleSaveSmsSettings = async (e?: React.FormEvent) => {
@@ -725,8 +737,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     });
   };
 
-  // Non-Admin Access Guard
-  if (currentUser.role !== 'ADMIN') {
+  // Access Guard (Staff and Admin permitted)
+  if (currentUser.role !== 'ADMIN' && currentUser.role !== 'STAFF') {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 mb-4">
@@ -734,7 +746,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">Access Restricted</h2>
         <p className="text-neutral-400 max-w-md mx-auto">
-          System Settings and Page Privileges are only accessible to System Administrators. Please contact an Administrator if you require access.
+          You do not have permission to access Settings.
         </p>
       </div>
     );
@@ -747,79 +759,83 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Title and Description */}
         <div className="flex items-center gap-3">
           <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
-            <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
+            {isAdmin ? <Settings className="w-5 h-5 sm:w-6 sm:h-6" /> : <Printer className="w-5 h-5 sm:w-6 sm:h-6" />}
           </div>
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
-              Admin System Settings
+              {isAdmin ? 'Admin System Settings' : 'Bluetooth Thermal Receipt Printer'}
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 line-clamp-1 sm:line-clamp-none">
-              Manage Staff privileges, user accounts, system profile, SMS & thermal printer.
+              {isAdmin
+                ? 'Manage Staff privileges, user accounts, system profile, SMS & thermal printer.'
+                : '1-Click Bluetooth printer pairing and roll width settings for mobile receipt printing.'}
             </p>
           </div>
         </div>
 
-        {/* Tab Switcher - 100% Mobile Responsive Horizontal Scrollable Ribbon with Active Animated Pill */}
-        <div className="-mx-3 sm:mx-0 px-3 sm:px-0">
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {SETTINGS_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap ${
-                    isActive
-                      ? 'text-neutral-950 font-bold'
-                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800/60 bg-neutral-900/60 border border-neutral-800'
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="settings-active-tab-indicator"
-                      className="absolute inset-0 bg-emerald-500 rounded-xl shadow-md shadow-emerald-500/20 border border-emerald-400"
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="hidden sm:inline">{tab.label}</span>
-                    <span className="sm:hidden">{tab.shortLabel}</span>
-                  </span>
-                </button>
-              );
-            })}
+        {/* Tab Switcher - Shown for Admin who has multiple tabs */}
+        {visibleTabs.length > 1 && (
+          <div className="-mx-3 sm:mx-0 px-3 sm:px-0">
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {visibleTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? 'text-neutral-950 font-bold'
+                        : 'text-neutral-400 hover:text-white hover:bg-neutral-800/60 bg-neutral-900/60 border border-neutral-800'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="settings-active-tab-indicator"
+                        className="absolute inset-0 bg-emerald-500 rounded-xl shadow-md shadow-emerald-500/20 border border-emerald-400"
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                      <span className="sm:hidden">{tab.shortLabel}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Notifications */}
-      {smsStatus && (
+      {/* Notifications (Admin only) */}
+      {isAdmin && smsStatus && (
         <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium animate-fade-in">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
           <span>{smsStatus}</span>
         </div>
       )}
-      {profileStatus && (
+      {isAdmin && profileStatus && (
         <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium animate-fade-in">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
           <span>{profileStatus}</span>
         </div>
       )}
-      {privilegeSaveStatus && (
+      {isAdmin && privilegeSaveStatus && (
         <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium animate-fade-in">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
           <span>{privilegeSaveStatus}</span>
         </div>
       )}
-      {userSuccess && (
+      {isAdmin && userSuccess && (
         <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium">
           <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
           <span>{userSuccess}</span>
         </div>
       )}
-      {userError && (
+      {isAdmin && userError && (
         <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-lg text-xs font-medium">
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
           <span>{userError}</span>
@@ -827,7 +843,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       )}
 
       {/* TAB 1: STAFF PAGE PRIVILEGES */}
-      {activeTab === 'privileges' && (
+      {isAdmin && activeTab === 'privileges' && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-neutral-900/70 p-4 rounded-xl border border-neutral-800">
             <div>
@@ -930,7 +946,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       )}
 
       {/* TAB 2: USER MANAGEMENT */}
-      {activeTab === 'users' && (
+      {isAdmin && activeTab === 'users' && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-neutral-900/70 p-4 rounded-xl border border-neutral-800">
             <div>
@@ -1107,7 +1123,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* =========================================================================
           TAB 3: SYSTEM PROFILE (Stored Permanently in Database)
           ========================================================================= */}
-      {activeTab === 'system' && (
+      {isAdmin && activeTab === 'system' && (
         <div className="space-y-6">
           {/* Header Banner */}
           <div className="p-4 sm:p-5 bg-neutral-900 border border-neutral-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1415,7 +1431,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================================= */}
       {/* TAB 4: SMS GATEWAY (NOTIFY.LK)                                             */}
       {/* ========================================================================= */}
-      {activeTab === 'sms' && (
+      {isAdmin && activeTab === 'sms' && (
         <div className="space-y-6">
           {/* Top Section: Gateway Master Card & Account Balance Card */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -2256,7 +2272,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================================= */}
       {/* TAB 5: THERMAL PRINTER SETTINGS (ONE-TIME BLUETOOTH PAIRING & AUTO-PRINT) */}
       {/* ========================================================================= */}
-      {activeTab === 'printer' && (
+      {(isStaff || activeTab === 'printer') && (
         <div className="space-y-6">
           {/* Top Banner Card: Bluetooth Thermal Printer Status */}
           <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">

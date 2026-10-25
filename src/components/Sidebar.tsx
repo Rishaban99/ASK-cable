@@ -18,7 +18,8 @@ import {
   Menu,
   X,
   Tv,
-  Banknote
+  Banknote,
+  Printer,
 } from 'lucide-react';
 
 export type NavTab = 'dashboard' | 'transactions' | 'summary' | 'customers' | 'monthly-payment' | 'customer-history' | 'payment-collection' | 'settings';
@@ -67,7 +68,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Filter links dynamically based on user role and Admin-configured Staff Privileges
   const visibleNavItems = ALL_NAV_ITEMS.filter((item) => {
     if (currentUser?.role === 'STAFF') {
-      if (item.id === 'settings') return false;
+      // Bluetooth Thermal Receipt Printer in Settings is allowed for Staff & Admin
+      if (item.id === 'settings') return true;
       const privilegeKey = item.id as keyof StaffPrivileges;
       return staffPrivileges[privilegeKey] !== false;
     }
@@ -82,7 +84,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setIsMobileOpen(false);
   };
 
-  const currentTabLabel = ALL_NAV_ITEMS.find((i) => i.id === currentTab)?.label || 'Dashboard';
+  const currentTabLabel = currentTab === 'settings' && currentUser?.role === 'STAFF'
+    ? 'Thermal Printer'
+    : (ALL_NAV_ITEMS.find((i) => i.id === currentTab)?.label || 'Dashboard');
 
   return (
     <>
@@ -205,11 +209,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {adminSectionItems.length > 0 && (
                     <div>
                       <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 mb-2 px-2">
-                        Admin Tools
+                        {currentUser?.role === 'STAFF' ? 'Printer & Tools' : 'Admin Tools'}
                       </p>
                       <div className="space-y-1">
                         {adminSectionItems.map((item) => {
-                          const Icon = item.icon;
+                          const Icon = item.id === 'settings' && currentUser?.role === 'STAFF' ? Printer : item.icon;
+                          const label = item.id === 'settings' && currentUser?.role === 'STAFF' ? 'Thermal Printer' : item.label;
                           const isActive = currentTab === item.id;
                           return (
                             <motion.button
@@ -223,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               }`}
                             >
                               <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-neutral-400'}`} />
-                              <span>{item.label}</span>
+                              <span>{label}</span>
                             </motion.button>
                           );
                         })}
@@ -448,11 +453,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {adminSectionItems.length > 0 && (
               <div>
                 <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500 mb-2.5 px-3">
-                  Admin Tools
+                  {currentUser?.role === 'STAFF' ? 'Printer & Tools' : 'Admin Tools'}
                 </p>
                 <div className="space-y-1">
                   {adminSectionItems.map((item) => {
-                    const Icon = item.icon;
+                    const Icon = item.id === 'settings' && currentUser?.role === 'STAFF' ? Printer : item.icon;
+                    const label = item.id === 'settings' && currentUser?.role === 'STAFF' ? 'Thermal Printer' : item.label;
                     const isActive = currentTab === item.id;
                     return (
                       <button
@@ -466,7 +472,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       >
                         <div className="flex items-center gap-3">
                           <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-neutral-400'}`} />
-                          <span>{item.label}</span>
+                          <span>{label}</span>
                         </div>
                         {isActive && (
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-xs" />

@@ -138,8 +138,8 @@ export default function App() {
   // Staff Permission Guard: Redirect Staff away from restricted pages
   useEffect(() => {
     if (currentUser?.role === 'STAFF') {
+      // Settings is allowed for Staff (to access Bluetooth Thermal Receipt Printer)
       if (currentTab === 'settings') {
-        setCurrentTab('dashboard');
         return;
       }
       const isAllowed = staffPrivileges[currentTab as keyof StaffPrivileges];
@@ -309,7 +309,7 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'settings' && currentUser.role === 'ADMIN' && (
+        {currentTab === 'settings' && (
           <SettingsView
             currentUser={currentUser}
             onPrivilegesUpdated={reloadPrivileges}

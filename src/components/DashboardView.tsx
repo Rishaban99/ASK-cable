@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   AnalyticsOverview,
   SupportedCurrency,
@@ -32,8 +33,10 @@ import {
   Layers,
   LayoutGrid,
   Smartphone,
+  Sparkles,
 } from 'lucide-react';
 import { Spinner } from './Spinner.tsx';
+import { useToast } from './Toast.js';
 
 interface DashboardViewProps {
   analytics: AnalyticsOverview | null;
@@ -145,6 +148,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   expenses = [],
   categories = [],
 }) => {
+  const toast = useToast();
   const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);
   const [hoveredFlowIdx, setHoveredFlowIdx] = useState<number | null>(null);
 
@@ -511,27 +515,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="mx-auto max-w-7xl px-2.5 sm:px-6 py-3 sm:py-6 space-y-3 sm:space-y-5">
       {/* Editorial Page Lead */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white">ASK Cable Financial Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">ASK Cable Financial Dashboard</h1>
+            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 backdrop-blur-md">
+              <Sparkles className="w-2.5 h-2.5" />
+              <span>v18 Pro</span>
+            </span>
+          </div>
           <p className="hidden sm:block text-xs text-neutral-400 mt-0.5">
             Real-time subscriber billing operations, customer eligibility, and multi-stream cashflow monitoring in Sri Lankan Rupees (LKR)
           </p>
         </div>
         <div className="flex items-center gap-2.5">
           {isLoading && (
-            <span className="flex items-center gap-1.5 text-[11px] text-neutral-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 rounded-md font-medium">
+            <span className="flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl font-medium backdrop-blur-md">
               <Spinner size="sm" />
-              <span>Syncing live data...</span>
+              <span>Syncing live...</span>
             </span>
           )}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
             onClick={onOpenRecordModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-950 bg-emerald-400 rounded-md hover:bg-emerald-300 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-neutral-950 bg-emerald-400 rounded-xl hover:bg-emerald-300 shadow-lg shadow-emerald-500/20 transition-all"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>Record Transaction</span>
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -540,87 +552,109 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           ========================================================================== */}
       <div className="space-y-2 sm:space-y-3">
         {/* Month Selector Bar & Operational Status Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-neutral-900/90 border border-neutral-800 py-2 px-3 sm:py-2.5 sm:px-4 rounded-lg sm:rounded-xl shadow-sm">
+        <div className="backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 p-3 sm:p-3.5 rounded-2xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
-              <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide">
-                Billing & Customer Status — {formatMonthLabel(selectedBillingMonth)}
-              </h2>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-1.5">
+                  <span>Billing & Customer Status</span>
+                  <span className="text-neutral-500">·</span>
+                  <span className="text-emerald-400 font-mono font-bold">{formatMonthLabel(selectedBillingMonth)}</span>
+                </h2>
+                <p className="hidden sm:block text-[11px] text-neutral-400 mt-0.5">
+                  Accurate database-driven metrics for customer eligibility, billing generation, and collections
+                </p>
+              </div>
             </div>
-            <p className="hidden sm:block text-[11px] text-neutral-400 mt-0.5">
-              Accurate database-driven metrics for customer eligibility, billing generation, and collections
-            </p>
           </div>
 
-          {/* Month Selector Controls */}
+          {/* Floating Capsule Month Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2 self-start sm:self-auto flex-wrap">
-            <button
-              type="button"
-              onClick={handlePrevMonth}
-              title="Previous Billing Month"
-              className="p-1 sm:p-1.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-750 text-neutral-200 transition-colors"
-            >
-              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
+            <div className="flex items-center bg-neutral-950/70 border border-neutral-800 p-1 rounded-xl shadow-inner">
+              <motion.button
+                whileTap={{ scale: 0.88 }}
+                type="button"
+                onClick={handlePrevMonth}
+                title="Previous Billing Month"
+                className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </motion.button>
 
-            <input
-              type="month"
-              value={selectedBillingMonth}
-              onChange={(e) => e.target.value && setSelectedBillingMonth(e.target.value)}
-              className="px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-mono font-medium rounded-lg border border-neutral-700 bg-neutral-800 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-            />
+              <input
+                type="month"
+                value={selectedBillingMonth}
+                onChange={(e) => e.target.value && setSelectedBillingMonth(e.target.value)}
+                className="px-2 py-0.5 text-xs font-mono font-bold rounded-md bg-transparent text-white focus:outline-none focus:bg-neutral-800/90 transition-colors cursor-pointer"
+              />
 
-            <button
-              type="button"
-              onClick={handleNextMonth}
-              title="Next Billing Month"
-              className="p-1 sm:p-1.5 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-750 text-neutral-200 transition-colors"
-            >
-              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
+              <motion.button
+                whileTap={{ scale: 0.88 }}
+                type="button"
+                onClick={handleNextMonth}
+                title="Next Billing Month"
+                className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </motion.button>
+            </div>
 
             {!isCurrentMonthSelected && (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.92 }}
                 type="button"
                 onClick={() => setSelectedBillingMonth(currentMonthStr)}
-                className="px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-semibold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                className="px-3 py-1.5 text-xs font-bold rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-xs"
               >
                 Current
-              </button>
+              </motion.button>
             )}
           </div>
         </div>
 
         {/* Mobile View Mode Switcher (Screening vs Super Cards) */}
-        <div className="sm:hidden flex items-center justify-between bg-neutral-900/90 border border-neutral-800 p-1.5 rounded-xl shadow-sm">
+        <div className="sm:hidden flex items-center justify-between backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 p-2 rounded-2xl shadow-md">
           <div className="flex items-center gap-1.5 px-2">
-            <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-[11px] font-bold text-white tracking-wide">Mobile View</span>
+            <Smartphone className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs font-bold text-white tracking-wide">Mobile View</span>
           </div>
-          <div className="flex items-center gap-1 bg-neutral-950 p-0.5 rounded-lg border border-neutral-800">
+          <div className="relative flex items-center bg-neutral-950 p-1 rounded-xl border border-neutral-800">
             <button
               type="button"
               onClick={() => setMobileViewMode('SCREENING')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
-                mobileViewMode === 'SCREENING'
-                  ? 'bg-emerald-500 text-neutral-950 shadow-sm'
-                  : 'text-neutral-400 hover:text-white'
+              className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                mobileViewMode === 'SCREENING' ? 'text-neutral-950' : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <Layers className="w-3 h-3" />
+              {mobileViewMode === 'SCREENING' && (
+                <motion.div
+                  layoutId="mobileViewModePill"
+                  transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                  className="absolute inset-0 bg-emerald-400 rounded-lg -z-10 shadow-sm"
+                />
+              )}
+              <Layers className="w-3.5 h-3.5" />
               <span>Screening</span>
             </button>
+
             <button
               type="button"
               onClick={() => setMobileViewMode('GRID')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
-                mobileViewMode === 'GRID'
-                  ? 'bg-emerald-500 text-neutral-950 shadow-sm'
-                  : 'text-neutral-400 hover:text-white'
+              className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                mobileViewMode === 'GRID' ? 'text-neutral-950' : 'text-neutral-400 hover:text-white'
               }`}
             >
-              <LayoutGrid className="w-3 h-3" />
+              {mobileViewMode === 'GRID' && (
+                <motion.div
+                  layoutId="mobileViewModePill"
+                  transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                  className="absolute inset-0 bg-emerald-400 rounded-lg -z-10 shadow-sm"
+                />
+              )}
+              <LayoutGrid className="w-3.5 h-3.5" />
               <span>Cards</span>
             </button>
           </div>
@@ -631,355 +665,418 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             ========================================================================= */}
         {mobileViewMode === 'SCREENING' && (
           <div
-            className="sm:hidden space-y-2 select-none"
+            className="sm:hidden space-y-2.5 select-none"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {/* Screen 1 of 4: Monthly Finances */}
-            {activeScreenSlide === 0 && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-950/25 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-xl space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      <Receipt className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                        Monthly Finances
-                      </h4>
-                      <span className="text-[10px] font-mono text-emerald-400">
-                        {formatMonthLabel(selectedBillingMonth)}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-300">
-                    Screen 1 / 4
-                  </span>
-                </div>
-
-                {/* Hero Net Metric */}
-                <div className="p-2.5 rounded-xl bg-neutral-950/60 border border-neutral-800">
-                  <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                    Net Surplus / Deficit
-                  </span>
-                  <div className={`mt-0.5 text-2xl font-black font-mono tabular-nums leading-tight ${
-                    isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
-                  }`}>
-                    {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
-                  </div>
-                  <div className="mt-1 flex items-center justify-between text-[10px]">
-                    <span className="text-neutral-400">Savings Rate:</span>
-                    <span className="font-mono font-bold text-white bg-indigo-500/20 border border-indigo-500/30 px-1.5 py-0.2 rounded">
-                      {activeMonthSavingsRatePct}%
-                    </span>
-                  </div>
-                </div>
-
-                {/* Inflow vs Expense Sub-cards */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-300 uppercase">
-                      <TrendingUp className="w-3 h-3 text-emerald-400" />
-                      <span>Income Inflow</span>
-                    </div>
-                    <div className="mt-1 text-sm font-black text-emerald-400 font-mono tabular-nums truncate">
-                      +{formatMoney(activeMonthIncome, currency)}
-                    </div>
-                    <div className="mt-0.5 text-[9px] text-neutral-400 font-mono">
-                      {activeMonthIncomeCount} rev. trans.
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-rose-300 uppercase">
-                      <TrendingDown className="w-3 h-3 text-rose-400" />
-                      <span>Expenses</span>
-                    </div>
-                    <div className="mt-1 text-sm font-black text-rose-400 font-mono tabular-nums truncate">
-                      -{formatMoney(activeMonthExpense, currency)}
-                    </div>
-                    <div className="mt-0.5 text-[9px] text-neutral-400 font-mono">
-                      {activeMonthExpenseCount} deductions
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onOpenRecordModal}
-                  className="w-full py-1.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+            <AnimatePresence mode="wait">
+              {/* Screen 1 of 4: Monthly Finances */}
+              {activeScreenSlide === 0 && (
+                <motion.div
+                  key="slide-0"
+                  initial={{ opacity: 0, scale: 0.97, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97, y: -8 }}
+                  transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                  className="p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-emerald-950/30 via-neutral-900/90 to-neutral-900/90 border border-emerald-500/30 shadow-2xl space-y-3"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Record Transaction</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 2 of 4: Subscribers Overview */}
-            {activeScreenSlide === 1 && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-cyan-950/25 via-neutral-900 to-neutral-900 border border-cyan-500/30 shadow-xl space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                      <Users className="w-3.5 h-3.5" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <Receipt className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                          Monthly Finances
+                        </h4>
+                        <span className="text-[11px] font-mono text-emerald-400 font-medium">
+                          {formatMonthLabel(selectedBillingMonth)}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                        Subscribers Overview
-                      </h4>
-                      <span className="text-[10px] font-mono text-cyan-400">
-                        {totalCustomersCount} Total Registered
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-800/90 border border-neutral-700/80 text-neutral-300">
+                      Screen 1 / 4
+                    </span>
+                  </div>
+
+                  {/* Hero Net Metric */}
+                  <div className="p-3.5 rounded-2xl bg-neutral-950/70 border border-neutral-800/90">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                      Net Surplus / Deficit
+                    </span>
+                    <div className={`mt-1 text-2xl font-black font-mono tabular-nums leading-tight ${
+                      isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
+                    }`}>
+                      {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between text-xs">
+                      <span className="text-neutral-400">Savings Rate:</span>
+                      <span className="font-mono font-bold text-white bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg text-[11px]">
+                        {activeMonthSavingsRatePct}%
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-300">
-                    Screen 2 / 4
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/25">
-                    <span className="text-[10px] font-semibold text-cyan-300 uppercase tracking-wider block">
-                      Active Subscribers
-                    </span>
-                    <div className="mt-1 text-2xl font-black text-white font-mono leading-none">
-                      {activeCustomersCount}
+                  {/* Inflow vs Expense Sub-cards */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-300 uppercase">
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Income Inflow</span>
+                      </div>
+                      <div className="mt-1.5 text-sm font-black text-emerald-400 font-mono tabular-nums truncate">
+                        +{formatMoney(activeMonthIncome, currency)}
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-neutral-400 font-mono">
+                        {activeMonthIncomeCount} rev. trans.
+                      </div>
                     </div>
-                    <span className="text-[9px] text-neutral-400 mt-1 block">
-                      Active connections
-                    </span>
-                  </div>
 
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
-                    <span className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider block">
-                      Eligible This Month
-                    </span>
-                    <div className="mt-1 text-2xl font-black text-emerald-400 font-mono leading-none">
-                      {eligibleCustomersCount}
-                    </div>
-                    <span className="text-[9px] text-neutral-400 mt-1 block">
-                      Ready for {formatMonthLabel(selectedBillingMonth).split(' ')[0]}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Skipped Banner */}
-                <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <UserX className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                    <div>
-                      <span className="text-[11px] font-bold text-purple-300 block">
-                        Skipped Customers: {totalSkippedCount}
-                      </span>
-                      <span className="text-[9px] text-neutral-400">
-                        Bypassed in bulk bill generation
-                      </span>
+                    <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-300 uppercase">
+                        <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+                        <span>Expenses</span>
+                      </div>
+                      <div className="mt-1.5 text-sm font-black text-rose-400 font-mono tabular-nums truncate">
+                        -{formatMoney(activeMonthExpense, currency)}
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-neutral-400 font-mono">
+                        {activeMonthExpenseCount} deductions
+                      </div>
                     </div>
                   </div>
-                  <button
+
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
                     type="button"
-                    onClick={() => setIsSkippedModalOpen(true)}
-                    className="px-2 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-[10px] font-bold border border-purple-500/30 flex items-center gap-1 shrink-0"
+                    onClick={onOpenRecordModal}
+                    className="w-full py-2.5 px-4 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-500/20"
                   >
-                    <span>Reasons</span>
-                    <ArrowRight className="w-2.5 h-2.5" />
-                  </button>
-                </div>
+                    <Plus className="w-4 h-4" />
+                    <span>Record Transaction</span>
+                  </motion.button>
+                </motion.div>
+              )}
 
-                <button
-                  type="button"
-                  onClick={() => onNavigateToTab('customers')}
-                  className="w-full py-1.5 px-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+              {/* Screen 2 of 4: Subscribers Overview */}
+              {activeScreenSlide === 1 && (
+                <motion.div
+                  key="slide-1"
+                  initial={{ opacity: 0, scale: 0.97, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97, y: -8 }}
+                  transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                  className="p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-cyan-950/30 via-neutral-900/90 to-neutral-900/90 border border-cyan-500/30 shadow-2xl space-y-3"
                 >
-                  <Users className="w-3.5 h-3.5" />
-                  <span>Manage All Customers</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 3 of 4: Monthly Billing Pipeline */}
-            {activeScreenSlide === 2 && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-950/25 via-neutral-900 to-neutral-900 border border-blue-500/30 shadow-xl space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                      <Receipt className="w-3.5 h-3.5" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                          Subscribers Overview
+                        </h4>
+                        <span className="text-[11px] font-mono text-cyan-400 font-medium">
+                          {totalCustomersCount} Total Registered
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                        Billing Pipeline
-                      </h4>
-                      <span className="text-[10px] font-mono text-blue-400">
-                        {formatMonthLabel(selectedBillingMonth)}
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-800/90 border border-neutral-700/80 text-neutral-300">
+                      Screen 2 / 4
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/25">
+                      <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider block">
+                        Active Subscribers
+                      </span>
+                      <div className="mt-1.5 text-2xl font-black text-white font-mono leading-none">
+                        {activeCustomersCount}
+                      </div>
+                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                        Active connections
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25">
+                      <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
+                        Eligible This Month
+                      </span>
+                      <div className="mt-1.5 text-2xl font-black text-emerald-400 font-mono leading-none">
+                        {eligibleCustomersCount}
+                      </div>
+                      <span className="text-[10px] text-neutral-400 mt-1 block truncate">
+                        Ready for {formatMonthLabel(selectedBillingMonth).split(' ')[0]}
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-300">
-                    Screen 3 / 4
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/25">
-                    <span className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider block">
-                      Bills Generated
-                    </span>
-                    <div className="mt-1 text-2xl font-black text-white font-mono leading-none">
-                      {billsGeneratedCount}
+                  {/* Skipped Banner */}
+                  <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <UserX className="w-4 h-4 text-purple-400 shrink-0" />
+                      <div>
+                        <span className="text-xs font-bold text-purple-300 block">
+                          Skipped Customers: {totalSkippedCount}
+                        </span>
+                        <span className="text-[10px] text-neutral-400">
+                          Bypassed in bulk bill generation
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-[9px] text-blue-300 font-mono mt-1 block truncate">
-                      Billed: {formatMoney(totalBilledAmount, currency)}
-                    </span>
+                    <motion.button
+                      whileTap={{ scale: 0.94 }}
+                      type="button"
+                      onClick={() => setIsSkippedModalOpen(true)}
+                      className="px-2.5 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-[11px] font-bold border border-purple-500/30 flex items-center gap-1 shrink-0"
+                    >
+                      <span>Reasons</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </motion.button>
                   </div>
 
-                  <div className={`p-2.5 rounded-xl ${
-                    billsPendingCount > 0
-                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                      : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                  } border`}>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider block">
-                      Bills Pending
-                    </span>
-                    <div className="mt-1 text-2xl font-black font-mono leading-none">
-                      {billsPendingCount}
-                    </div>
-                    <span className="text-[9px] text-neutral-400 mt-1 block">
-                      {billsPendingCount === 0 ? '✓ Complete' : '⚠️ Awaiting'}
-                    </span>
-                  </div>
-                </div>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    type="button"
+                    onClick={() => onNavigateToTab('customers')}
+                    className="w-full py-2.5 px-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-lg shadow-cyan-500/20"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Manage All Customers</span>
+                  </motion.button>
+                </motion.div>
+              )}
 
-                <div className="p-2 rounded-xl bg-neutral-950/50 border border-neutral-800 space-y-1">
-                  <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-neutral-400">Generation Progress</span>
-                    <span className="text-blue-400 font-bold">{generationPct}%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
-                    <div style={{ width: `${generationPct}%` }} className="h-full bg-blue-500 rounded-full" />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onNavigateToTab('monthly-payment')}
-                  className="w-full py-1.5 px-3 rounded-xl bg-blue-500 hover:bg-blue-400 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+              {/* Screen 3 of 4: Monthly Billing Pipeline */}
+              {activeScreenSlide === 2 && (
+                <motion.div
+                  key="slide-2"
+                  initial={{ opacity: 0, scale: 0.97, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97, y: -8 }}
+                  transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                  className="p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-blue-950/30 via-neutral-900/90 to-neutral-900/90 border border-blue-500/30 shadow-2xl space-y-3"
                 >
-                  <Receipt className="w-3.5 h-3.5" />
-                  <span>Open Monthly Bills</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 4 of 4: Payment Collections */}
-            {activeScreenSlide === 3 && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-950/25 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-xl space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        <Receipt className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                          Billing Pipeline
+                        </h4>
+                        <span className="text-[11px] font-mono text-blue-400 font-medium">
+                          {formatMonthLabel(selectedBillingMonth)}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                        Payment Collections
-                      </h4>
-                      <span className="text-[10px] font-mono text-emerald-400">
-                        {formatMonthLabel(selectedBillingMonth)}
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-800/90 border border-neutral-700/80 text-neutral-300">
+                      Screen 3 / 4
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/25">
+                      <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider block">
+                        Bills Generated
+                      </span>
+                      <div className="mt-1.5 text-2xl font-black text-white font-mono leading-none">
+                        {billsGeneratedCount}
+                      </div>
+                      <span className="text-[10px] text-blue-300 font-mono mt-1 block truncate">
+                        Billed: {formatMoney(totalBilledAmount, currency)}
+                      </span>
+                    </div>
+
+                    <div className={`p-3 rounded-2xl ${
+                      billsPendingCount > 0
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                    } border`}>
+                      <span className="text-[10px] font-bold uppercase tracking-wider block">
+                        Bills Pending
+                      </span>
+                      <div className="mt-1.5 text-2xl font-black font-mono leading-none">
+                        {billsPendingCount}
+                      </div>
+                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                        {billsPendingCount === 0 ? '✓ Complete' : '⚠️ Awaiting'}
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-300">
-                    Screen 4 / 4
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
-                    <span className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider block">
-                      Payments Received
-                    </span>
-                    <div className="mt-1 text-sm font-black text-emerald-400 font-mono tabular-nums leading-none truncate">
-                      +{formatMoney(paymentsReceivedAmount, currency)}
+                  <div className="p-3 rounded-2xl bg-neutral-950/60 border border-neutral-800 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-mono">
+                      <span className="text-neutral-400">Generation Progress</span>
+                      <span className="text-blue-400 font-bold">{generationPct}%</span>
                     </div>
-                    <span className="text-[9px] text-neutral-400 mt-1 block">
-                      {paymentsReceivedCount} paid records
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25">
-                    <span className="text-[10px] font-semibold text-rose-300 uppercase tracking-wider block">
-                      Balance Due
-                    </span>
-                    <div className="mt-1 text-sm font-black text-rose-400 font-mono tabular-nums leading-none truncate">
-                      {formatMoney(paymentsPendingAmount, currency)}
+                    <div className="h-2 w-full bg-neutral-800 rounded-full overflow-hidden">
+                      <div style={{ width: `${generationPct}%` }} className="h-full bg-blue-500 rounded-full transition-all duration-500" />
                     </div>
-                    <span className="text-[9px] text-neutral-400 mt-1 block">
-                      {unpaidBillsCount} unpaid bills
-                    </span>
                   </div>
-                </div>
 
-                <div className="p-2 rounded-xl bg-neutral-950/50 border border-neutral-800 space-y-1">
-                  <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-neutral-400">Recovery Rate</span>
-                    <span className="text-emerald-400 font-bold">{collectionPct}%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
-                    <div style={{ width: `${collectionPct}%` }} className="h-full bg-emerald-500 rounded-full" />
-                  </div>
-                </div>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    type="button"
+                    onClick={() => onNavigateToTab('monthly-payment')}
+                    className="w-full py-2.5 px-4 rounded-2xl bg-blue-400 hover:bg-blue-300 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
+                  >
+                    <Receipt className="w-4 h-4" />
+                    <span>Open Monthly Bills</span>
+                  </motion.button>
+                </motion.div>
+              )}
 
-                <button
-                  type="button"
-                  onClick={() => onNavigateToTab('payment-collection')}
-                  className="w-full py-1.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+              {/* Screen 4 of 4: Payment Collections */}
+              {activeScreenSlide === 3 && (
+                <motion.div
+                  key="slide-3"
+                  initial={{ opacity: 0, scale: 0.97, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97, y: -8 }}
+                  transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                  className="p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-emerald-950/30 via-neutral-900/90 to-neutral-900/90 border border-emerald-500/30 shadow-2xl space-y-3"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Collect Payments Now</span>
-                </button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                          Payment Collections
+                        </h4>
+                        <span className="text-[11px] font-mono text-emerald-400 font-medium">
+                          {formatMonthLabel(selectedBillingMonth)}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-800/90 border border-neutral-700/80 text-neutral-300">
+                      Screen 4 / 4
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25">
+                      <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
+                        Payments Received
+                      </span>
+                      <div className="mt-1.5 text-sm font-black text-emerald-400 font-mono tabular-nums leading-none truncate">
+                        +{formatMoney(paymentsReceivedAmount, currency)}
+                      </div>
+                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                        {paymentsReceivedCount} paid records
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/25">
+                      <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                        Balance Due
+                      </span>
+                      <div className="mt-1.5 text-sm font-black text-rose-400 font-mono tabular-nums leading-none truncate">
+                        {formatMoney(paymentsPendingAmount, currency)}
+                      </div>
+                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                        {unpaidBillsCount} unpaid bills
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-neutral-950/60 border border-neutral-800 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-mono">
+                      <span className="text-neutral-400">Recovery Rate</span>
+                      <span className="text-emerald-400 font-bold">{collectionPct}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-neutral-800 rounded-full overflow-hidden">
+                      <div style={{ width: `${collectionPct}%` }} className="h-full bg-emerald-500 rounded-full transition-all duration-500" />
+                    </div>
+                  </div>
+
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    type="button"
+                    onClick={() => onNavigateToTab('payment-collection')}
+                    className="w-full py-2.5 px-4 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-500/20"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Collect Payments Now</span>
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Carousel Screening Navigation Strip with Gliding Spring Pill */}
+            <div className="backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 p-2 rounded-2xl shadow-md space-y-2">
+              <div className="flex items-center justify-between gap-1">
+                <motion.button
+                  whileTap={{ scale: 0.88 }}
+                  type="button"
+                  onClick={() => setActiveScreenSlide((prev) => (prev > 0 ? prev - 1 : 3))}
+                  className="p-2 rounded-xl bg-neutral-800/80 hover:bg-neutral-800 text-neutral-200 transition-colors"
+                  title="Previous Screen"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </motion.button>
+
+                <div className="relative flex items-center gap-1 bg-neutral-950/80 p-1 rounded-xl border border-neutral-800">
+                  {[
+                    { label: 'Finances' },
+                    { label: 'Subscribers' },
+                    { label: 'Billing' },
+                    { label: 'Collections' },
+                  ].map((tab, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveScreenSlide(idx)}
+                      className={`relative z-10 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+                        activeScreenSlide === idx
+                          ? 'text-neutral-950'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      {activeScreenSlide === idx && (
+                        <motion.div
+                          layoutId="carouselTabIndicator"
+                          transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                          className="absolute inset-0 bg-emerald-400 rounded-lg -z-10 shadow-sm"
+                        />
+                      )}
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <motion.button
+                  whileTap={{ scale: 0.88 }}
+                  type="button"
+                  onClick={() => setActiveScreenSlide((prev) => (prev < 3 ? prev + 1 : 0))}
+                  className="p-2 rounded-xl bg-neutral-800/80 hover:bg-neutral-800 text-neutral-200 transition-colors"
+                  title="Next Screen"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </motion.button>
               </div>
-            )}
 
-            {/* Carousel Screening Navigation Strip */}
-            <div className="flex items-center justify-between gap-1 bg-neutral-900/90 border border-neutral-800 p-1.5 rounded-xl shadow-sm">
-              <button
-                type="button"
-                onClick={() => setActiveScreenSlide((prev) => (prev > 0 ? prev - 1 : 3))}
-                className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-750 text-neutral-200 transition-colors"
-                title="Previous Screen"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-
-              <div className="flex items-center gap-1 overflow-x-auto">
-                {[
-                  { label: 'Finances' },
-                  { label: 'Subscribers' },
-                  { label: 'Billing' },
-                  { label: 'Collections' },
-                ].map((tab, idx) => (
+              {/* iOS 18 Pagination Dots */}
+              <div className="flex items-center justify-center gap-1.5 pt-0.5">
+                {[0, 1, 2, 3].map((idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setActiveScreenSlide(idx)}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
                       activeScreenSlide === idx
-                        ? 'bg-emerald-500 text-neutral-950 shadow-sm'
-                        : 'bg-neutral-800 text-neutral-400 hover:text-white'
+                        ? 'w-6 bg-emerald-400'
+                        : 'w-1.5 bg-neutral-700 hover:bg-neutral-600'
                     }`}
-                  >
-                    <span>{tab.label}</span>
-                  </button>
+                    aria-label={`Slide ${idx + 1}`}
+                  />
                 ))}
               </div>
-
-              <button
-                type="button"
-                onClick={() => setActiveScreenSlide((prev) => (prev < 3 ? prev + 1 : 0))}
-                className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-750 text-neutral-200 transition-colors"
-                title="Next Screen"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
             </div>
           </div>
         )}
@@ -988,101 +1085,129 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             SUPER CARDS GRID: Active when mobileViewMode === 'GRID' on mobile,
             AND ALWAYS VISIBLE on Desktop (hidden sm:grid)
             ========================================================================= */}
-        <div className={`${mobileViewMode === 'GRID' ? 'grid' : 'hidden sm:grid'} grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2`}>
+        <div className={`${mobileViewMode === 'GRID' ? 'grid' : 'hidden sm:grid'} grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5`}>
           {/* Card 1: Total Active Customers */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-950/25 via-neutral-900 to-neutral-900 border border-cyan-500/30 shadow-sm hover:border-cyan-500/50 transition-all flex flex-col justify-between">
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-cyan-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-cyan-500/50 shadow-sm hover:shadow-cyan-500/10 transition-all flex flex-col justify-between"
+          >
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300 truncate">
                   Active Customers
                 </span>
-                <Users className="w-3.5 h-3.5 text-cyan-400 shrink-0 opacity-80" />
+                <div className="p-1 rounded-lg bg-cyan-500/10 text-cyan-400">
+                  <Users className="w-3.5 h-3.5" />
+                </div>
               </div>
-              <div className="my-1.5">
+              <div className="my-2">
                 <div className="text-xl sm:text-2xl font-black text-white font-mono tabular-nums leading-none">
                   {activeCustomersCount}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-0.5 truncate">
+                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
                   {totalCustomersCount} total registered
                 </div>
               </div>
             </div>
-            <div className="pt-1.5 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
+            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
               <span className="text-neutral-400 font-mono text-[9px]">Active</span>
               <button
                 onClick={() => onNavigateToTab('customers')}
-                className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-0.5 transition-colors shrink-0"
+                className="text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-0.5 transition-colors shrink-0"
               >
                 <span>Manage</span>
                 <ArrowRight className="w-2.5 h-2.5" />
               </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Card 2: Eligible for This Month */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-950/25 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-sm hover:border-emerald-500/50 transition-all flex flex-col justify-between">
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-emerald-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-emerald-500/50 shadow-sm hover:shadow-emerald-500/10 transition-all flex flex-col justify-between"
+          >
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 truncate">
                   Eligible This Month
                 </span>
-                <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 opacity-80" />
+                <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <UserCheck className="w-3.5 h-3.5" />
+                </div>
               </div>
-              <div className="my-1.5">
+              <div className="my-2">
                 <div className="text-xl sm:text-2xl font-black text-emerald-400 font-mono tabular-nums leading-none">
                   {eligibleCustomersCount}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-0.5 truncate">
+                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
                   Ready for {formatMonthLabel(selectedBillingMonth).split(' ')[0]}
                 </div>
               </div>
             </div>
-            <div className="pt-1.5 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-emerald-400/90 font-mono text-[9px]">
+            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
+              <span className="text-emerald-400/90 font-mono text-[9px] font-semibold">
                 {activeCustomersCount > 0 ? Math.round((eligibleCustomersCount / activeCustomersCount) * 100) : 0}% active
               </span>
-              <span className="text-neutral-400 font-mono text-[9px] uppercase px-1 py-0.2 rounded bg-neutral-800 shrink-0" title="Customers registered in or after selected month excluded">
-                Rule
-              </span>
+              <button
+                type="button"
+                onClick={() => toast.info(`Eligible Rule: Customers registered in or after ${formatMonthLabel(selectedBillingMonth).split(' ')[0]} are excluded.`)}
+                className="inline-flex items-center gap-1 font-mono text-[9px] font-bold uppercase px-2 py-0.5 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 dark:bg-neutral-800/90 dark:hover:bg-neutral-750 dark:text-neutral-200 dark:border-neutral-700/80 transition-colors shrink-0 cursor-pointer shadow-xs active:scale-95"
+                title="Customers registered in or after selected month excluded"
+              >
+                <Info className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>Rule</span>
+              </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Card 3: Bills Generated */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-blue-950/25 via-neutral-900 to-neutral-900 border border-blue-500/30 shadow-sm hover:border-blue-500/50 transition-all flex flex-col justify-between">
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-blue-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-blue-500/50 shadow-sm hover:shadow-blue-500/10 transition-all flex flex-col justify-between"
+          >
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300 truncate">
                   Bills Generated
                 </span>
-                <Receipt className="w-3.5 h-3.5 text-blue-400 shrink-0 opacity-80" />
+                <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400">
+                  <Receipt className="w-3.5 h-3.5" />
+                </div>
               </div>
-              <div className="my-1.5">
+              <div className="my-2">
                 <div className="text-xl sm:text-2xl font-black text-white font-mono tabular-nums leading-none">
                   {billsGeneratedCount}
                 </div>
-                <div className="text-[10px] text-blue-300 font-mono mt-0.5 truncate" title={`Total Billed: ${formatMoney(totalBilledAmount, currency)}`}>
+                <div className="text-[10px] text-blue-300 font-mono mt-1 truncate" title={`Total Billed: ${formatMoney(totalBilledAmount, currency)}`}>
                   Billed: {formatMoney(totalBilledAmount, currency)}
                 </div>
               </div>
             </div>
-            <div className="pt-1.5 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-neutral-400 font-mono text-[9px]">{generationPct}% done</span>
+            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
+              <span className="text-neutral-400 font-mono text-[9px] font-semibold">{generationPct}% done</span>
               <button
                 onClick={() => onNavigateToTab('monthly-payment')}
-                className="text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-0.5 transition-colors shrink-0"
+                className="text-blue-400 hover:text-blue-300 font-bold flex items-center gap-0.5 transition-colors shrink-0"
               >
                 <span>Bills</span>
                 <ArrowRight className="w-2.5 h-2.5" />
               </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Card 4: Bills Pending */}
-          <div className={`p-3 rounded-xl bg-gradient-to-br ${
-            billsPendingCount > 0
-              ? 'from-amber-950/25 via-neutral-900 to-neutral-900 border-amber-500/40 hover:border-amber-500/60'
-              : 'from-emerald-950/20 via-neutral-900 to-neutral-900 border-emerald-500/30 hover:border-emerald-500/50'
-          } border shadow-sm transition-all flex flex-col justify-between`}>
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className={`p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br ${
+              billsPendingCount > 0
+                ? 'from-amber-950/20 via-neutral-900/90 to-neutral-900/90 border-neutral-800/80 hover:border-amber-500/50'
+                : 'from-emerald-950/20 via-neutral-900/90 to-neutral-900/90 border-neutral-800/80 hover:border-emerald-500/50'
+            } border shadow-sm transition-all flex flex-col justify-between`}
+          >
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className={`text-[10px] font-bold uppercase tracking-wider truncate ${
@@ -1090,350 +1215,383 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 }`}>
                   Bills Pending
                 </span>
-                <Clock className={`w-3.5 h-3.5 shrink-0 opacity-80 ${
-                  billsPendingCount > 0 ? 'text-amber-400' : 'text-emerald-400'
-                }`} />
+                <div className={`p-1 rounded-lg ${billsPendingCount > 0 ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                  <Clock className="w-3.5 h-3.5" />
+                </div>
               </div>
-              <div className="my-1.5">
+              <div className="my-2">
                 <div className={`text-xl sm:text-2xl font-black font-mono tabular-nums leading-none ${
                   billsPendingCount > 0 ? 'text-amber-400' : 'text-emerald-400'
                 }`}>
                   {billsPendingCount}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-0.5 truncate">
+                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
                   {billsPendingCount === 0 ? 'All bills created' : 'Awaiting creation'}
                 </div>
               </div>
             </div>
-            <div className="pt-1.5 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
+            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
               {billsPendingCount > 0 ? (
                 <>
-                  <span className="text-amber-400 font-mono font-medium text-[9px]">Pending</span>
+                  <span className="text-amber-400 font-mono font-semibold text-[9px]">Pending</span>
                   <button
                     onClick={() => onNavigateToTab('monthly-payment')}
-                    className="text-amber-300 hover:text-amber-200 font-semibold flex items-center gap-0.5 transition-colors shrink-0"
+                    className="text-amber-300 hover:text-amber-200 font-bold flex items-center gap-0.5 transition-colors shrink-0"
                   >
                     <span>Generate</span>
                     <ArrowRight className="w-2.5 h-2.5" />
                   </button>
                 </>
               ) : (
-                <span className="text-emerald-400 font-mono flex items-center gap-0.5 text-[9px]">
+                <span className="text-emerald-400 font-mono font-semibold flex items-center gap-0.5 text-[9px]">
                   <CheckCircle2 className="w-2.5 h-2.5" />
                   Complete
                 </span>
               )}
             </div>
-          </div>
+          </motion.div>
 
           {/* Card 5: Payments Received */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-950/30 via-neutral-900 to-neutral-900 border border-emerald-500/40 shadow-sm hover:border-emerald-500/60 transition-all flex flex-col justify-between">
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-emerald-950/25 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-emerald-500/50 shadow-sm hover:shadow-emerald-500/10 transition-all flex flex-col justify-between"
+          >
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 truncate">
                   Payments Received
                 </span>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 opacity-80" />
+                <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </div>
               </div>
-              <div className="my-1.5">
+              <div className="my-2">
                 <div
                   className="text-sm sm:text-lg font-black text-emerald-400 font-mono tabular-nums leading-none truncate"
                   title={`+${formatMoney(paymentsReceivedAmount, currency)}`}
                 >
                   +{formatMoney(paymentsReceivedAmount, currency)}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-0.5 truncate">
+                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
                   {paymentsReceivedCount} paid records
                 </div>
               </div>
             </div>
-            <div className="pt-1.5 border-t border-neutral-800/80 space-y-1">
-              <div className="flex items-center justify-between text-[9px] font-mono">
+            <div className="pt-2 border-t border-neutral-800/80 space-y-1">
+              <div className="flex items-center justify-between text-[9px] font-mono font-semibold">
                 <span className="text-neutral-400">Rate:</span>
-                <span className="text-emerald-400 font-bold">{collectionPct}%</span>
+                <span className="text-emerald-400">{collectionPct}%</span>
               </div>
-              <div className="h-1 w-full bg-neutral-800 rounded-full overflow-hidden">
-                <div style={{ width: `${collectionPct}%` }} className="h-full bg-emerald-500 rounded-full" />
+              <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
+                <div style={{ width: `${collectionPct}%` }} className="h-full bg-emerald-500 rounded-full transition-all duration-500" />
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Card 6: Payments Pending */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-rose-950/25 via-neutral-900 to-neutral-900 border border-rose-500/40 shadow-sm hover:border-rose-500/60 transition-all flex flex-col justify-between">
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-rose-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-rose-500/50 shadow-sm hover:shadow-rose-500/10 transition-all flex flex-col justify-between"
+          >
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 truncate">
                   Payments Pending
                 </span>
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 opacity-80" />
+                <div className="p-1 rounded-lg bg-rose-500/10 text-rose-400">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                </div>
               </div>
-              <div className="my-1.5">
+              <div className="my-2">
                 <div
                   className="text-sm sm:text-lg font-black text-rose-400 font-mono tabular-nums leading-none truncate"
                   title={formatMoney(paymentsPendingAmount, currency)}
                 >
                   {formatMoney(paymentsPendingAmount, currency)}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-0.5 truncate">
+                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
                   {paymentsPendingCount} balance bills
                 </div>
               </div>
             </div>
-            <div className="pt-1.5 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-neutral-400 font-mono text-[9px]">{unpaidBillsCount} unpaid</span>
+            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
+              <span className="text-neutral-400 font-mono text-[9px] font-semibold">{unpaidBillsCount} unpaid</span>
               <button
                 onClick={() => onNavigateToTab('payment-collection')}
-                className="text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-0.5 transition-colors shrink-0"
+                className="text-rose-400 hover:text-rose-300 font-bold flex items-center gap-0.5 transition-colors shrink-0"
               >
                 <span>Collect</span>
                 <ArrowRight className="w-2.5 h-2.5" />
               </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Card 7: Skipped Customers (spans 2-col on mobile for balanced grid) */}
-          <div className="col-span-2 md:col-span-1 lg:col-span-1 p-3 rounded-xl bg-gradient-to-br from-purple-950/25 via-neutral-900 to-neutral-900 border border-purple-500/40 shadow-sm hover:border-purple-500/60 transition-all flex flex-col justify-between">
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="col-span-2 md:col-span-1 lg:col-span-1 p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-purple-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-purple-500/50 shadow-sm hover:shadow-purple-500/10 transition-all flex flex-col justify-between"
+          >
             <div>
               <div className="flex items-center justify-between gap-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300 truncate">
                   Skipped Customers
                 </span>
-                <UserX className="w-3.5 h-3.5 text-purple-400 shrink-0 opacity-80" />
+                <div className="p-1 rounded-lg bg-purple-500/10 text-purple-400">
+                  <UserX className="w-3.5 h-3.5" />
+                </div>
               </div>
-              <div className="my-1.5">
+              <div className="my-2">
                 <div className="text-xl sm:text-2xl font-black text-purple-300 font-mono tabular-nums leading-none">
                   {totalSkippedCount}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-0.5 truncate">
+                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
                   Bypassed in bulk bill generation
                 </div>
               </div>
             </div>
-            <div className="pt-1.5 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-purple-400 font-mono text-[9px] font-semibold">{totalSkippedCount} Skipped</span>
+            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
+              <span className="text-purple-400 font-mono text-[9px] font-bold">{totalSkippedCount} Skipped</span>
               <button
                 type="button"
                 onClick={() => setIsSkippedModalOpen(true)}
-                className="text-purple-300 hover:text-purple-200 font-semibold flex items-center gap-0.5 bg-purple-500/20 hover:bg-purple-500/30 px-1.5 py-0.5 rounded border border-purple-500/30 transition-colors shrink-0"
+                className="text-purple-300 hover:text-purple-200 font-bold flex items-center gap-0.5 bg-purple-500/20 hover:bg-purple-500/30 px-2 py-0.5 rounded-lg border border-purple-500/30 transition-colors shrink-0"
               >
                 <span>Reasons</span>
                 <ArrowRight className="w-2.5 h-2.5" />
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       {/* ==========================================================================
           MODAL: SKIPPED CUSTOMERS REASONS & BREAKDOWN
           ========================================================================== */}
-      {isSkippedModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
-            {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-900">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
-                  <UserX className="w-5 h-5" />
+      <AnimatePresence>
+        {isSkippedModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 350 }}
+              className="backdrop-blur-2xl bg-neutral-900/95 border border-neutral-800/90 rounded-t-3xl sm:rounded-3xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[88vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-4 sm:p-5 border-b border-neutral-800/80 flex items-center justify-between bg-neutral-900/90">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
+                    <UserX className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                      <span>Skipped Customers — {formatMonthLabel(selectedBillingMonth)}</span>
+                      <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                        {totalSkippedCount} Total
+                      </span>
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      Accurate, database-driven reasons why these customer accounts are bypassed during bulk bill generation.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                    <span>Skipped Customers — {formatMonthLabel(selectedBillingMonth)}</span>
-                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
-                      {totalSkippedCount} Total
-                    </span>
-                  </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    Accurate, database-driven reasons why these customer accounts are bypassed during bulk bill generation.
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  type="button"
+                  onClick={() => setIsSkippedModalOpen(false)}
+                  className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </motion.button>
+              </div>
+
+              {/* Filter Tabs & Search Bar */}
+              <div className="p-4 border-b border-neutral-800/80 bg-neutral-900/60 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  {/* Reason Category Filter Tabs */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setSkippedFilterTab('ALL')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                        skippedFilterTab === 'ALL'
+                          ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/20'
+                          : 'bg-neutral-800/80 text-neutral-300 border-neutral-700/80 hover:bg-neutral-750'
+                      }`}
+                    >
+                      All ({totalSkippedCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSkippedFilterTab('NEW_REGISTRATION')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                        skippedFilterTab === 'NEW_REGISTRATION'
+                          ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/20'
+                          : 'bg-neutral-800/80 text-neutral-300 border-neutral-700/80 hover:bg-neutral-750'
+                      }`}
+                    >
+                      New Registration ({skippedNewRegCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSkippedFilterTab('INACTIVE_STATUS')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                        skippedFilterTab === 'INACTIVE_STATUS'
+                          ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/20'
+                          : 'bg-neutral-800/80 text-neutral-300 border-neutral-700/80 hover:bg-neutral-750'
+                      }`}
+                    >
+                      Inactive / Disconnected ({skippedInactiveCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSkippedFilterTab('ALREADY_BILLED')}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                        skippedFilterTab === 'ALREADY_BILLED'
+                          ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/20'
+                          : 'bg-neutral-800/80 text-neutral-300 border-neutral-700/80 hover:bg-neutral-750'
+                      }`}
+                    >
+                      Already Billed ({skippedAlreadyBilledCount})
+                    </button>
+                  </div>
+
+                  {/* Search */}
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                    <input
+                      type="text"
+                      value={skippedSearchTerm}
+                      onChange={(e) => setSkippedSearchTerm(e.target.value)}
+                      placeholder="Search Box No, Name, Phone..."
+                      className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-neutral-700/80 bg-neutral-950/70 text-white placeholder-neutral-400 focus:outline-none focus:border-purple-400 font-mono"
+                    />
+                    {skippedSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setSkippedSearchTerm('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Informational Rule Alert */}
+                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-200">
+                  <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                  <p>
+                    <strong className="text-white">Business Rule:</strong> Customers registering in month <span className="font-mono font-bold text-purple-300">{selectedBillingMonth}</span> are excluded from billing for their registration month and earlier months. Billing begins in the subsequent month.
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsSkippedModalOpen(false)}
-                className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* Filter Tabs & Search Bar */}
-            <div className="p-4 border-b border-neutral-800 bg-neutral-900 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                {/* Reason Category Filter Tabs */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setSkippedFilterTab('ALL')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
-                      skippedFilterTab === 'ALL'
-                        ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
-                        : 'bg-neutral-800 text-neutral-300 border-neutral-750 hover:bg-neutral-750'
-                    }`}
-                  >
-                    All ({totalSkippedCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSkippedFilterTab('NEW_REGISTRATION')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
-                      skippedFilterTab === 'NEW_REGISTRATION'
-                        ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
-                        : 'bg-neutral-800 text-neutral-300 border-neutral-750 hover:bg-neutral-750'
-                    }`}
-                  >
-                    New Registration ({skippedNewRegCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSkippedFilterTab('INACTIVE_STATUS')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
-                      skippedFilterTab === 'INACTIVE_STATUS'
-                        ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
-                        : 'bg-neutral-800 text-neutral-300 border-neutral-750 hover:bg-neutral-750'
-                    }`}
-                  >
-                    Inactive / Disconnected ({skippedInactiveCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSkippedFilterTab('ALREADY_BILLED')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
-                      skippedFilterTab === 'ALREADY_BILLED'
-                        ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
-                        : 'bg-neutral-800 text-neutral-300 border-neutral-750 hover:bg-neutral-750'
-                    }`}
-                  >
-                    Already Billed ({skippedAlreadyBilledCount})
-                  </button>
-                </div>
-
-                {/* Search */}
-                <div className="relative w-full sm:w-64">
-                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-                  <input
-                    type="text"
-                    value={skippedSearchTerm}
-                    onChange={(e) => setSkippedSearchTerm(e.target.value)}
-                    placeholder="Search Box No, Name, Phone..."
-                    className="w-full pl-8 pr-8 py-1.5 text-xs rounded-lg border border-neutral-700 bg-neutral-800 text-white placeholder-neutral-400 focus:outline-none focus:border-purple-400 font-mono"
-                  />
-                  {skippedSearchTerm && (
-                    <button
-                      type="button"
-                      onClick={() => setSkippedSearchTerm('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Informational Rule Alert */}
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-900 dark:text-purple-200">
-                <Info className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
-                <p>
-                  <strong className="text-purple-950 dark:text-white">Business Rule:</strong> Customers registering in month <span className="font-mono font-bold text-purple-700 dark:text-purple-300">{selectedBillingMonth}</span> are excluded from billing for their registration month and earlier months. Billing begins in the subsequent month.
-                </p>
-              </div>
-            </div>
-
-            {/* Modal Body / Customer Table */}
-            <div className="flex-1 overflow-y-auto p-4 divide-y divide-neutral-800">
-              {filteredSkippedList.length === 0 ? (
-                <div className="py-16 text-center text-xs text-neutral-400">
-                  No skipped customers found matching current filters.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredSkippedList.map((item) => {
-                    const { customer, category, reason } = item;
-                    return (
-                      <div
-                        key={customer.id}
-                        className="p-3.5 rounded-xl bg-neutral-850 border border-neutral-800 hover:border-neutral-700 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
-                      >
-                        {/* Customer Identification */}
-                        <div className="space-y-1 min-w-[220px]">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-neutral-900 dark:text-white bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 rounded border border-neutral-300 dark:border-neutral-700">
-                              Box #{customer.boxNo}
-                            </span>
-                            <span className="font-bold text-neutral-900 dark:text-white text-sm truncate">
-                              {customer.name}
-                            </span>
+              {/* Modal Body / Customer Table */}
+              <div className="flex-1 overflow-y-auto p-4 divide-y divide-neutral-800/80">
+                {filteredSkippedList.length === 0 ? (
+                  <div className="py-16 text-center text-xs text-neutral-400">
+                    No skipped customers found matching current filters.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredSkippedList.map((item) => {
+                      const { customer, category, reason } = item;
+                      return (
+                        <div
+                          key={customer.id}
+                          className="p-3.5 rounded-2xl bg-neutral-950/50 border border-neutral-800/80 hover:border-neutral-700/80 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+                        >
+                          {/* Customer Identification */}
+                          <div className="space-y-1 min-w-[220px]">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-white bg-neutral-800 px-2.5 py-0.5 rounded-lg border border-neutral-700">
+                                Box #{customer.boxNo}
+                              </span>
+                              <span className="font-bold text-white text-sm truncate">
+                                {customer.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-neutral-400 font-mono">
+                              <span>Phone: {customer.phoneNo || 'N/A'}</span>
+                              {customer.nicNo && <span>· NIC: {customer.nicNo}</span>}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] text-neutral-600 dark:text-neutral-400 font-mono">
-                            <span>Phone: {customer.phoneNo || 'N/A'}</span>
-                            {customer.nicNo && <span>· NIC: {customer.nicNo}</span>}
-                          </div>
-                        </div>
 
-                        {/* Customer Status & Reg Date */}
-                        <div className="flex items-center gap-2 min-w-[160px] text-[11px] font-mono">
-                          <span
-                            className={`px-2 py-0.5 rounded-md font-semibold border ${
-                              customer.status === 'ACTIVE'
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                            }`}
-                          >
-                            {customer.status || 'ACTIVE'}
-                          </span>
-                          <span className="text-neutral-600 dark:text-neutral-400">
-                            Reg: {customer.createdAt ? customer.createdAt.slice(0, 10) : (item.regMonth || 'N/A')}
-                          </span>
-                        </div>
-
-                        {/* Skipped Reason Callout */}
-                        <div className="flex-1 min-w-[260px]">
-                          <div
-                            className={`p-2.5 rounded-lg border text-[11px] leading-relaxed ${
-                              category === 'NEW_REGISTRATION'
-                                ? 'bg-purple-500/15 text-purple-900 dark:text-purple-200 border-purple-500/30'
-                                : category === 'INACTIVE_STATUS'
-                                ? 'bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/30'
-                                : 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-500/30'
-                            }`}
-                          >
+                          {/* Customer Status & Reg Date */}
+                          <div className="flex items-center gap-2 min-w-[160px] text-[11px] font-mono">
                             <span
-                              className={`font-bold uppercase tracking-wider block text-[10px] mb-0.5 ${
-                                category === 'NEW_REGISTRATION'
-                                  ? 'text-purple-700 dark:text-purple-300'
-                                  : category === 'INACTIVE_STATUS'
-                                  ? 'text-rose-700 dark:text-rose-300'
-                                  : 'text-blue-700 dark:text-blue-300'
+                              className={`px-2.5 py-0.5 rounded-lg font-semibold border ${
+                                customer.status === 'ACTIVE'
+                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                               }`}
                             >
-                              {category === 'NEW_REGISTRATION' && '⚡ New Registration (Starts Next Month)'}
-                              {category === 'INACTIVE_STATUS' && '⛔ Inactive Account Status'}
-                              {category === 'ALREADY_BILLED' && '✓ Bill Already Created (No Duplicates)'}
+                              {customer.status || 'ACTIVE'}
                             </span>
-                            {reason}
+                            <span className="text-neutral-400">
+                              Reg: {customer.createdAt ? customer.createdAt.slice(0, 10) : (item.regMonth || 'N/A')}
+                            </span>
+                          </div>
+
+                          {/* Skipped Reason Callout */}
+                          <div className="flex-1 min-w-[260px]">
+                            <div
+                              className={`p-3 rounded-xl border text-[11px] leading-relaxed ${
+                                category === 'NEW_REGISTRATION'
+                                  ? 'bg-purple-500/10 text-purple-200 border-purple-500/25'
+                                  : category === 'INACTIVE_STATUS'
+                                  ? 'bg-rose-500/10 text-rose-200 border-rose-500/25'
+                                  : 'bg-blue-500/10 text-blue-200 border-blue-500/25'
+                              }`}
+                            >
+                              <span
+                                className={`font-bold uppercase tracking-wider block text-[10px] mb-0.5 ${
+                                  category === 'NEW_REGISTRATION'
+                                    ? 'text-purple-300'
+                                    : category === 'INACTIVE_STATUS'
+                                    ? 'text-rose-300'
+                                    : 'text-blue-300'
+                                }`}
+                              >
+                                {category === 'NEW_REGISTRATION' && '⚡ New Registration (Starts Next Month)'}
+                                {category === 'INACTIVE_STATUS' && '⛔ Inactive Account Status'}
+                                {category === 'ALREADY_BILLED' && '✓ Bill Already Created (No Duplicates)'}
+                              </span>
+                              {reason}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
-            {/* Modal Footer */}
-            <div className="p-3.5 border-t border-neutral-800 bg-neutral-900 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
-              <span>Showing {filteredSkippedList.length} of {totalSkippedCount} skipped customers</span>
-              <button
-                type="button"
-                onClick={() => setIsSkippedModalOpen(false)}
-                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-neutral-200 hover:bg-neutral-300 text-neutral-900 dark:bg-neutral-800 dark:hover:bg-neutral-750 dark:text-white border border-neutral-300 dark:border-neutral-700 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-neutral-800/80 bg-neutral-900/90 flex items-center justify-between text-xs text-neutral-400">
+                <span>Showing {filteredSkippedList.length} of {totalSkippedCount} skipped customers</span>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  type="button"
+                  onClick={() => setIsSkippedModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-neutral-800 hover:bg-neutral-750 text-white border border-neutral-700/80 transition-colors"
+                >
+                  Close
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ==========================================================================
           SECTION 2: FINANCIAL METRICS OVERVIEW (LINKED TO MONTH SELECTOR)
@@ -1441,138 +1599,169 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           - Unified Master Financial Card on mobile in GRID mode
           - 3-Column spacious layout on desktop (sm+)
           ========================================================================== */}
-      <div className={`${mobileViewMode === 'SCREENING' ? 'hidden sm:block' : 'block'} space-y-1.5 sm:space-y-2`}>
+      <div className={`${mobileViewMode === 'SCREENING' ? 'hidden sm:block' : 'block'} space-y-2.5 sm:space-y-3`}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <Receipt className="w-4 h-4" />
+            </div>
             <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
               Financial Overview
             </h3>
-            <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
               {formatMonthLabel(selectedBillingMonth)}
             </span>
           </div>
           {!isCurrentMonthSelected && (
-            <span className="text-[9px] sm:text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-amber-400">
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-400">
               Filtered
             </span>
           )}
         </div>
 
         {/* Mobile Unified Financial Card (Visible only in GRID mode on mobile) */}
-        <div className="sm:hidden p-3 rounded-xl bg-gradient-to-br from-emerald-950/25 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-sm space-y-2.5">
+        <motion.div
+          whileHover={{ y: -2 }}
+          className="sm:hidden p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-emerald-950/25 via-neutral-900/90 to-neutral-900/90 border border-emerald-500/30 shadow-xl space-y-3"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
               <Receipt className="w-3.5 h-3.5 text-indigo-400" />
               <span>Net Surplus / Deficit</span>
             </div>
-            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
               Rate: {activeMonthSavingsRatePct}%
             </span>
           </div>
           <div>
-            <div className={`text-xl font-black font-mono tabular-nums leading-none ${
+            <div className={`text-2xl font-black font-mono tabular-nums leading-tight ${
               isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
             }`}>
               {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-neutral-800/80">
-            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25">
-              <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-300 uppercase">
-                <TrendingUp className="w-2.5 h-2.5 text-emerald-400" />
+          <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-neutral-800/80">
+            <div className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-300 uppercase">
+                <TrendingUp className="w-3 h-3 text-emerald-400" />
                 <span>Income Inflow</span>
               </div>
-              <div className="text-xs font-black text-emerald-400 font-mono tabular-nums mt-0.5 truncate">
+              <div className="text-xs font-black text-emerald-400 font-mono tabular-nums mt-1 truncate">
                 +{formatMoney(activeMonthIncome, currency)}
               </div>
-              <span className="text-[8px] text-neutral-400 font-mono block mt-0.5">{activeMonthIncomeCount} rev. trans.</span>
+              <span className="text-[9px] text-neutral-400 font-mono block mt-0.5">{activeMonthIncomeCount} rev. trans.</span>
             </div>
-            <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/25">
-              <div className="flex items-center gap-1 text-[9px] font-bold text-rose-300 uppercase">
-                <TrendingDown className="w-2.5 h-2.5 text-rose-400" />
+            <div className="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-rose-300 uppercase">
+                <TrendingDown className="w-3 h-3 text-rose-400" />
                 <span>Expenses</span>
               </div>
-              <div className="text-xs font-black text-rose-400 font-mono tabular-nums mt-0.5 truncate">
+              <div className="text-xs font-black text-rose-400 font-mono tabular-nums mt-1 truncate">
                 -{formatMoney(activeMonthExpense, currency)}
               </div>
-              <span className="text-[8px] text-neutral-400 font-mono block mt-0.5">{activeMonthExpenseCount} deductions</span>
+              <span className="text-[9px] text-neutral-400 font-mono block mt-0.5">{activeMonthExpenseCount} deductions</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Desktop 3-Card Grid (sm+) */}
-        <div className="hidden sm:grid sm:grid-cols-3 gap-2.5">
+        <div className="hidden sm:grid sm:grid-cols-3 gap-3">
           {/* Metric 2: Monthly Income Inflow */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-950/20 via-neutral-900 to-neutral-900 border border-emerald-500/30 shadow-sm transition-all hover:border-emerald-500/50">
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-300 truncate">
-                Monthly Income Inflow
-              </span>
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400 shrink-0 opacity-80" />
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 rounded-3xl backdrop-blur-xl bg-gradient-to-br from-emerald-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-emerald-500/50 shadow-md hover:shadow-emerald-500/10 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 truncate">
+                  Monthly Income Inflow
+                </span>
+                <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-2xl font-black tracking-tight text-emerald-400 font-mono tabular-nums leading-none">
+                +{formatMoney(activeMonthIncome, currency)}
+              </div>
             </div>
-            <div className="mt-1 text-xl lg:text-2xl font-black tracking-tight text-emerald-400 font-mono tabular-nums leading-none">
-              +{formatMoney(activeMonthIncome, currency)}
-            </div>
-            <div className="mt-1.5 text-[10px] text-neutral-300 font-mono tabular-nums flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+            <div className="mt-3 pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400 font-mono tabular-nums flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shadow-sm" />
               <span>{activeMonthIncomeCount} revenue transactions</span>
             </div>
-          </div>
+          </motion.div>
 
           {/* Metric 3: Monthly Expenses */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-rose-950/20 via-neutral-900 to-neutral-900 border border-rose-500/30 shadow-sm transition-all hover:border-rose-500/50">
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-300 truncate">
-                Monthly Expenses
-              </span>
-              <TrendingDown className="w-3.5 h-3.5 text-rose-400 shrink-0 opacity-80" />
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 rounded-3xl backdrop-blur-xl bg-gradient-to-br from-rose-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-rose-500/50 shadow-md hover:shadow-rose-500/10 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-300 truncate">
+                  Monthly Expenses
+                </span>
+                <div className="p-1 rounded-lg bg-rose-500/10 text-rose-400">
+                  <TrendingDown className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-2 text-2xl font-black tracking-tight text-rose-400 font-mono tabular-nums leading-none">
+                -{formatMoney(activeMonthExpense, currency)}
+              </div>
             </div>
-            <div className="mt-1 text-xl lg:text-2xl font-black tracking-tight text-rose-400 font-mono tabular-nums leading-none">
-              -{formatMoney(activeMonthExpense, currency)}
-            </div>
-            <div className="mt-1.5 text-[10px] text-neutral-300 font-mono tabular-nums flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" />
+            <div className="mt-3 pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400 font-mono tabular-nums flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-rose-400 inline-block shadow-sm" />
               <span>{activeMonthExpenseCount} expense deductions</span>
             </div>
-          </div>
+          </motion.div>
 
           {/* Metric 4: Net Savings & Rate */}
-          <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-950/20 via-neutral-900 to-neutral-900 border border-indigo-500/30 shadow-sm transition-all hover:border-indigo-500/50">
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-indigo-300 truncate">
-                Surplus / Deficit
-              </span>
-              <Receipt className="w-3.5 h-3.5 text-indigo-400 shrink-0 opacity-80" />
+          <motion.div
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 rounded-3xl backdrop-blur-xl bg-gradient-to-br from-indigo-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-indigo-500/50 shadow-md hover:shadow-indigo-500/10 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 truncate">
+                  Surplus / Deficit
+                </span>
+                <div className="p-1 rounded-lg bg-indigo-500/10 text-indigo-400">
+                  <Receipt className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-1.5">
+                <span className={`text-2xl font-black tracking-tight font-mono tabular-nums leading-none ${
+                  isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
+                }`}>
+                  {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
+                </span>
+              </div>
             </div>
-            <div className="mt-1 flex items-baseline gap-1.5">
-              <span className={`text-xl lg:text-2xl font-black tracking-tight font-mono tabular-nums leading-none ${
-                isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
-              }`}>
-                {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
-              </span>
-            </div>
-            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-neutral-300">
-              <span className="font-mono tabular-nums font-bold text-white bg-indigo-500/20 border border-indigo-500/30 px-1.5 py-0.2 rounded text-[10px]">
+            <div className="mt-3 pt-2 border-t border-neutral-800/80 flex items-center gap-2 text-[11px] text-neutral-300">
+              <span className="font-mono tabular-nums font-bold text-white bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg text-[10px]">
                 {activeMonthSavingsRatePct}%
               </span>
-              <span className="truncate">savings rate ({formatMonthLabel(selectedBillingMonth)})</span>
+              <span className="text-neutral-400 truncate">savings rate ({formatMonthLabel(selectedBillingMonth)})</span>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       {/* Main Section: Expense Categories Breakdown & Cash Trajectory */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* 1. Category Expense Allocation */}
-        <div className="p-6 rounded-lg bg-neutral-900 border border-neutral-800 space-y-4 flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 shadow-xl space-y-4 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3.5">
               <div>
-                <h2 className="text-base font-semibold text-white">Top Expense Categories</h2>
+                <h2 className="text-base font-bold text-white">Top Expense Categories</h2>
                 <p className="text-xs text-neutral-400 mt-0.5">Distribution of {formatMonthLabel(selectedBillingMonth)} operational expenditure</p>
               </div>
-              <PieIcon className="w-4 h-4 text-neutral-400" />
+              <div className="p-2 rounded-xl bg-neutral-800/80 text-neutral-400">
+                <PieIcon className="w-4 h-4" />
+              </div>
             </div>
 
             {activeMonthTopExpenseCategories.length === 0 ? (
@@ -1589,17 +1778,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           style={{ backgroundColor: c.color }}
                           className="w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-sm"
                         />
-                        <span className="font-medium text-white">{c.categoryName}</span>
+                        <span className="font-semibold text-white">{c.categoryName}</span>
                       </div>
                       <div className="flex items-center gap-2 font-mono tabular-nums">
-                        <span className="text-white font-medium">{formatMoney(c.amount, currency)}</span>
+                        <span className="text-white font-bold">{formatMoney(c.amount, currency)}</span>
                         <span className="text-neutral-400 text-[11px] w-12 text-right">{c.percentage}%</span>
                       </div>
                     </div>
-                    <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-neutral-800/80 rounded-full overflow-hidden">
                       <div
                         style={{ width: `${c.percentage}%`, backgroundColor: c.color }}
-                        className="h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-full transition-all duration-500 shadow-xs"
                       />
                     </div>
                   </div>
@@ -1608,27 +1797,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </div>
 
-          <div className="pt-4 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
+          <div className="pt-4 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
             <span>Total Operational Spend ({formatMonthLabel(selectedBillingMonth)}):</span>
-            <span className="font-mono tabular-nums text-white font-semibold">
+            <span className="font-mono tabular-nums text-white font-bold text-sm">
               {formatMoney(activeMonthExpense, currency)}
             </span>
           </div>
         </div>
 
         {/* 2. Cash Trajectory */}
-        <div className="p-6 rounded-lg bg-neutral-900 border border-neutral-800 space-y-4 flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 shadow-xl space-y-4 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3.5">
               <div>
-                <h2 className="text-base font-semibold text-white">Cash Balance Trajectory</h2>
+                <h2 className="text-base font-bold text-white">Cash Balance Trajectory</h2>
                 <p className="text-xs text-neutral-400 mt-0.5">Multi-month cumulative cash balance accumulation in LKR</p>
               </div>
-              {isTrajectoryPositive ? (
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <TrendingDown className="w-4 h-4 text-rose-400" />
-              )}
+              <div className="p-2 rounded-xl bg-neutral-800/80">
+                {isTrajectoryPositive ? (
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <TrendingDown className="w-4 h-4 text-rose-400" />
+                )}
+              </div>
             </div>
 
             {/* Dynamic SVG Area Line Chart */}
@@ -1715,14 +1906,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {/* Interactive Floating Tooltip */}
                 {hoveredPointIdx !== null && trajPoints[hoveredPointIdx] && (
                   <div
-                    className="absolute z-20 bg-neutral-900 border border-neutral-700 text-white px-3 py-1.5 rounded shadow-xl text-xs font-mono pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 transition-all"
+                    className="absolute z-20 backdrop-blur-xl bg-neutral-950/90 border border-neutral-700 text-white px-3 py-1.5 rounded-xl shadow-2xl text-xs font-mono pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 transition-all"
                     style={{
                       left: `${(trajPoints[hoveredPointIdx].x / trajSvgWidth) * 100}%`,
                       top: `${Math.max(10, Math.min(80, (trajPoints[hoveredPointIdx].y / trajSvgHeight) * 100))}%`,
                     }}
                   >
                     <div className="text-[10px] text-neutral-400 font-sans">{trajPoints[hoveredPointIdx].month} Balance</div>
-                    <div className={`font-semibold ${trajPoints[hoveredPointIdx].value >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <div className={`font-bold ${trajPoints[hoveredPointIdx].value >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {formatMoney(trajPoints[hoveredPointIdx].value, currency)}
                     </div>
                   </div>
@@ -1731,7 +1922,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
+          <div className="pt-4 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
             <span>Overall Net Cash Reserve:</span>
             <span className={`font-mono tabular-nums font-bold text-sm ${
               netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -1743,28 +1934,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Lower Section: Monthly Cash Flow Trend + Recent Transactions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column: Monthly Cash Flow Trend (2 cols) */}
-        <div className="lg:col-span-2 p-6 rounded-lg bg-neutral-900 border border-neutral-800 flex flex-col justify-between">
+        <div className="lg:col-span-2 p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-neutral-800/80 pb-3.5">
               <div>
-                <h2 className="text-base font-semibold text-white">Monthly Cash Flow Trend</h2>
+                <h2 className="text-base font-bold text-white">Monthly Cash Flow Trend</h2>
                 <p className="text-xs text-neutral-400 mt-0.5">Historical comparison of incoming revenue vs operational expenses</p>
               </div>
-              <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-4 text-xs font-medium">
                 <span className="flex items-center gap-1.5 text-neutral-300">
-                  <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Income
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-sm" /> Income
                 </span>
                 <span className="flex items-center gap-1.5 text-neutral-300">
-                  <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Expense
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-sm" /> Expense
                 </span>
               </div>
             </div>
 
             {/* Custom Bar Comparison Chart */}
             <div className="mt-6 pt-2 relative">
-              <div className="h-44 flex items-end justify-between gap-4 border-b border-neutral-800 pb-2 relative">
+              <div className="h-44 flex items-end justify-between gap-4 border-b border-neutral-800/80 pb-2 relative">
                 {monthlyCashflowHistory.map((m, idx) => {
                   const incHeight = m.income > 0 ? Math.max(6, (m.income / maxFlow) * 100) : 0;
                   const expHeight = m.expense > 0 ? Math.max(6, (m.expense / maxFlow) * 100) : 0;
@@ -1780,7 +1971,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     >
                       {/* Floating Tooltip */}
                       {isHovered && (
-                        <div className="absolute -top-16 z-20 bg-neutral-950/95 border border-neutral-700 text-white px-2.5 py-1.5 rounded-lg shadow-xl text-[11px] font-mono pointer-events-none transform -translate-y-2 whitespace-nowrap">
+                        <div className="absolute -top-16 z-20 backdrop-blur-xl bg-neutral-950/95 border border-neutral-700 text-white px-3 py-2 rounded-xl shadow-2xl text-[11px] font-mono pointer-events-none transform -translate-y-2 whitespace-nowrap">
                           <p className="font-bold text-neutral-300 border-b border-neutral-800 pb-0.5 mb-1">{m.month}</p>
                           <div className="flex items-center justify-between gap-3 text-emerald-400">
                             <span>Income:</span>
@@ -1802,7 +1993,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         {incHeight > 0 ? (
                           <div
                             style={{ height: `${incHeight}%` }}
-                            className="w-full max-w-[16px] bg-emerald-500 hover:bg-emerald-400 rounded-t transition-all shadow-xs"
+                            className="w-full max-w-[16px] bg-emerald-500 hover:bg-emerald-400 rounded-t-lg transition-all shadow-xs"
                           />
                         ) : (
                           <div className="w-full max-w-[8px] h-1 bg-neutral-700/40 rounded-full" />
@@ -1812,7 +2003,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         {expHeight > 0 ? (
                           <div
                             style={{ height: `${expHeight}%` }}
-                            className="w-full max-w-[16px] bg-rose-500 hover:bg-rose-400 rounded-t transition-all shadow-xs"
+                            className="w-full max-w-[16px] bg-rose-500 hover:bg-rose-400 rounded-t-lg transition-all shadow-xs"
                           />
                         ) : (
                           <div className="w-full max-w-[8px] h-1 bg-neutral-700/40 rounded-full" />
@@ -1828,25 +2019,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400 mt-4">
+          <div className="pt-4 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400 mt-4">
             <span>6-Month Net Cashflow (Avg):</span>
-            <span className={`font-mono tabular-nums font-semibold ${isAvgNetPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <span className={`font-mono tabular-nums font-bold ${isAvgNetPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
               {isAvgNetPositive ? '+' : '-'}{formatMoney(Math.abs(avgNetCashflow), currency)} / mo
             </span>
           </div>
         </div>
 
         {/* Right Column: Recent Activity Feed (1 col) */}
-        <div className="p-6 rounded-lg bg-neutral-900 border border-neutral-800 flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h2 className="text-base font-semibold text-white">Recent Ledger Activity</h2>
+            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3.5">
+              <h2 className="text-base font-bold text-white">Recent Ledger Activity</h2>
               <button
                 onClick={() => onNavigateToTab('transactions')}
-                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium transition-colors"
+                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-bold transition-colors"
               >
                 <span>View All</span>
-                <ArrowRight className="w-3 h-3" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -1855,24 +2046,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 No recent activity. Click "Record Transaction" to add one.
               </div>
             ) : (
-              <div className="pt-3 divide-y divide-neutral-850">
+              <div className="pt-3 divide-y divide-neutral-800/70">
                 {recentIncomes.map((inc) => (
                   <div key={inc.id} className="py-2.5 flex items-center justify-between gap-3 text-xs group">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className="w-2 h-2 rounded-full shrink-0"
+                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
                         style={{ backgroundColor: inc.categoryColor || '#10B981' }}
                       />
                       <div className="min-w-0">
-                        <p className="font-medium text-white truncate group-hover:text-emerald-300 transition-colors">
+                        <p className="font-semibold text-white truncate group-hover:text-emerald-300 transition-colors">
                           {inc.description}
                         </p>
-                        <p className="text-[11px] text-neutral-500 font-mono">
+                        <p className="text-[11px] text-neutral-400 font-mono">
                           {inc.categoryName} · {inc.date}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 font-mono tabular-nums font-semibold text-emerald-400">
+                    <div className="text-right shrink-0 font-mono tabular-nums font-bold text-emerald-400">
                       +{formatMoney(inc.amount, currency)}
                     </div>
                   </div>
@@ -1882,19 +2073,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div key={exp.id} className="py-2.5 flex items-center justify-between gap-3 text-xs group">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className="w-2 h-2 rounded-full shrink-0"
+                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
                         style={{ backgroundColor: exp.categoryColor || '#F43F5E' }}
                       />
                       <div className="min-w-0">
-                        <p className="font-medium text-white truncate group-hover:text-rose-300 transition-colors">
+                        <p className="font-semibold text-white truncate group-hover:text-rose-300 transition-colors">
                           {exp.description}
                         </p>
-                        <p className="text-[11px] text-neutral-500 font-mono">
+                        <p className="text-[11px] text-neutral-400 font-mono">
                           {exp.categoryName} · {exp.date}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 font-mono tabular-nums font-semibold text-rose-400">
+                    <div className="text-right shrink-0 font-mono tabular-nums font-bold text-rose-400">
                       -{formatMoney(exp.amount, currency)}
                     </div>
                   </div>
@@ -1903,14 +2094,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </div>
 
-          <div className="pt-3 border-t border-neutral-800">
-            <button
+          <div className="pt-4 border-t border-neutral-800/80">
+            <motion.button
+              whileTap={{ scale: 0.96 }}
               onClick={onOpenRecordModal}
-              className="w-full py-2 px-3 text-xs font-medium text-neutral-300 hover:text-white bg-neutral-800/80 hover:bg-neutral-800 border border-neutral-700 rounded-md transition-colors flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 px-3.5 text-xs font-bold text-neutral-300 hover:text-white bg-neutral-800/80 hover:bg-neutral-800 border border-neutral-700/80 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
-              <Plus className="w-3.5 h-3.5 text-emerald-400" />
+              <Plus className="w-4 h-4 text-emerald-400" />
               <span>Add New Entry</span>
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
