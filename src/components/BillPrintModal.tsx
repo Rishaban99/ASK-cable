@@ -9,17 +9,17 @@ import {
   AlertTriangle,
   Tv,
   Bluetooth,
-  Smartphone,
   Loader2,
   HelpCircle,
-  ExternalLink,
   Check,
+  Info,
+  RefreshCw,
 } from 'lucide-react';
 import {
   generateEscPosReceipt,
   printViaWebBluetooth,
-  printViaRawBt,
-  isAndroidDevice,
+  getSavedPrinterInfo,
+  clearDefaultPrinter,
   ThermalPaperWidth,
 } from '../utils/thermalPrinter.js';
 
@@ -388,6 +388,9 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
     text: string;
   } | null>(null);
   const [showGuide, setShowGuide] = useState<boolean>(false);
+  const [savedPrinter, setSavedPrinter] = useState<{ id: string | null; name: string | null }>(
+    () => getSavedPrinterInfo()
+  );
 
   // Save paper size preference
   const handlePaperWidthChange = (width: ThermalPaperWidth) => {
@@ -399,9 +402,11 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
     }
   };
 
-  // Clear messages when modal opens/closes
+  // Refresh saved printer and clear messages when modal opens/closes
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setSavedPrinter(getSavedPrinterInfo());
+    } else {
       setBluetoothMessage(null);
       setBluetoothStatus('');
       setIsBluetoothPrinting(false);
@@ -422,11 +427,15 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
     return DEFAULT_SYSTEM_PROFILE;
   })();
 
-  // 1. Direct Web Bluetooth Print (1-Click)
-  const handleDirectBluetoothPrint = async () => {
+  // 1. Direct Web Bluetooth Print (Supports Silent Auto-Reconnection to saved printer!)
+  const handleDirectBluetoothPrint = async (forceNewPicker: boolean = false) => {
     setIsBluetoothPrinting(true);
     setBluetoothMessage(null);
-    setBluetoothStatus('Connecting to Bluetooth printer...');
+    setBluetoothStatus(
+      savedPrinter.name && !forceNewPicker
+        ? `Connecting to ${savedPrinter.name}...`
+        : 'Connecting to Bluetooth printer...'
+    );
 
     try {
       const escPosBytes = generateEscPosReceipt(
@@ -436,14 +445,19 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
         paperWidth
       );
 
-      const result = await printViaWebBluetooth(escPosBytes, (status) => {
-        setBluetoothStatus(status);
-      });
+      const result = await printViaWebBluetooth(
+        escPosBytes,
+        (status) => {
+          setBluetoothStatus(status);
+        },
+        forceNewPicker
+      );
 
       if (result.success) {
+        setSavedPrinter(getSavedPrinterInfo());
         setBluetoothMessage({
           type: 'success',
-          text: `Printed successfully to ${result.deviceName || 'Bluetooth Printer'}!`,
+          text: `Printed successfully to ${result.deviceName || savedPrinter.name || 'Bluetooth Printer'}!`,
         });
       } else {
         setBluetoothMessage({
@@ -462,32 +476,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
     }
   };
 
-  // 2. Direct RawBT Android App Print (1-Tap)
-  const handleRawBtPrint = () => {
-    if (!isAndroidDevice()) {
-      setBluetoothMessage({
-        type: 'info',
-        text: 'RawBT என்பது ஆண்ட்ராய்டு மொபைல் ஆப். கணினியில் (PC) பிரிண்ட் செய்ய "Direct Bluetooth" அல்லது "System Print" பயன்படுத்தவும்!',
-      });
-      return;
-    }
-
-    setBluetoothMessage({
-      type: 'info',
-      text: 'RawBT ஆப் திறக்கப்படுகிறது... (Opening RawBT Print Service...)',
-    });
-
-    const escPosBytes = generateEscPosReceipt(
-      billData,
-      currency,
-      activeProfile,
-      paperWidth
-    );
-
-    printViaRawBt(escPosBytes);
-  };
-
-  // 3. System Print (PDF / Desktop fallback)
+  // 2. System Print (PDF / Desktop fallback)
   const handleSystemPrint = () => {
     window.print();
   };
@@ -573,31 +562,19 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
             <div className="p-3 bg-sky-950/40 border-b border-sky-800/40 text-[11px] text-sky-200 space-y-1.5 animate-in fade-in duration-200">
               <div className="font-bold text-sky-100 flex items-center gap-1">
                 <Bluetooth className="w-3.5 h-3.5 text-sky-400" />
-                <span>புளூடூத் பிரிண்டர் இயக்கும் முறை (Mobile Instructions):</span>
+                <span>புளூடூத் பிரிண்டர் இயக்கும் முறை:</span>
               </div>
-              <ol className="list-decimal list-inside space-y-0.5 pl-1 text-[10.5px] text-neutral-300">
+              <ol className="list-decimal list-inside space-y-1 pl-1 text-[10.5px] text-neutral-300">
                 <li>
-                  பிரிண்டரை ஆன் செய்து மொபைலின் Bluetooth Settings-ல் Pair செய்யுங்கள் (PIN: <span className="font-mono font-bold text-white">0000</span> அல்லது <span className="font-mono font-bold text-white">1234</span>).
+                  பிரிண்டரை ஆன் செய்து உங்கள் சாதனம் (Mobile / PC)-ல் Bluetooth Settings சென்று Pair செய்யவும் (Default PIN: <span className="font-mono font-bold text-white">0000</span> அல்லது <span className="font-mono font-bold text-white">1234</span>).
                 </li>
                 <li>
-                  கீழே உள்ள <strong className="text-emerald-400">⚡ Direct Bluetooth</strong> பட்டனை அழுத்தி உங்கள் பிரிண்டரைத் தேர்ந்தெடுங்கள்.
+                  கீழே உள்ள <strong className="text-emerald-400">⚡ Direct Bluetooth Print</strong> பட்டனை அழுத்தி உங்கள் பிரிண்டரைத் தொடுங்கள் — பில் நேரடியாக அச்சிடப்படும்!
                 </li>
                 <li>
-                  பிரிண்டர் லிஸ்டில் வரவில்லையெனில், <strong className="text-sky-400">📲 Print via RawBT</strong> பட்டனை அழுத்துங்கள் — நொடியில் பில் வந்துவிடும்!
+                  அல்லது வழக்கமான பிரிண்டர் / PDF செய்ய <strong className="text-neutral-200">🖨️ System Print (PDF)</strong> பட்டனை அழுத்தவும்.
                 </li>
               </ol>
-              <div className="pt-1 flex items-center justify-between text-[10px]">
-                <span className="text-neutral-400">RawBT ஆப் இல்லையா?</span>
-                <a
-                  href="https://play.google.com/store/apps/details?id=ru.a402d.rawbtprinter"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
-                >
-                  <span>Install RawBT (Play Store)</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
             </div>
           )}
 
@@ -618,7 +595,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
                 ) : bluetoothMessage.type === 'error' ? (
                   <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                 ) : (
-                  <Smartphone className="w-4 h-4 text-sky-400 shrink-0" />
+                  <Info className="w-4 h-4 text-sky-400 shrink-0" />
                 )}
                 <span className="truncate">{bluetoothMessage.text}</span>
               </div>
@@ -657,12 +634,32 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
 
           {/* Action Toolbar / Print Buttons */}
           <div className="p-3 bg-neutral-950 border-t border-neutral-800 space-y-2">
-            {/* Primary Action Row: Direct Bluetooth & RawBT */}
+            {/* Saved Printer status indicator pill */}
+            {savedPrinter.name && (
+              <div className="flex items-center justify-between px-2.5 py-1 bg-neutral-900 border border-neutral-800 rounded-lg text-[10.5px]">
+                <div className="flex items-center gap-1.5 text-neutral-300 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+                  <span className="text-neutral-400 shrink-0">Default Printer:</span>
+                  <span className="font-bold text-white truncate">{savedPrinter.name}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDirectBluetoothPrint(true)}
+                  disabled={isBluetoothPrinting}
+                  className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 text-[10px] font-semibold cursor-pointer shrink-0 ml-2"
+                  title="Pair or select another Bluetooth printer"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Change</span>
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {/* Button 1: Direct Web Bluetooth Print */}
               <button
                 type="button"
-                onClick={handleDirectBluetoothPrint}
+                onClick={() => handleDirectBluetoothPrint(false)}
                 disabled={isBluetoothPrinting}
                 className="flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-neutral-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
@@ -674,39 +671,30 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
                 ) : (
                   <>
                     <Bluetooth className="w-4 h-4 text-neutral-950 shrink-0" />
-                    <span className="truncate">Direct Bluetooth Print</span>
+                    <span className="truncate">
+                      {savedPrinter.name ? `Direct Print (${savedPrinter.name})` : 'Direct Bluetooth Print'}
+                    </span>
                   </>
                 )}
               </button>
 
-              {/* Button 2: RawBT App Print */}
-              <button
-                type="button"
-                onClick={handleRawBtPrint}
-                disabled={isBluetoothPrinting}
-                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-sky-600 hover:bg-sky-500 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-600/20 transition-all cursor-pointer"
-                title="1-Tap print via RawBT Android App"
-              >
-                <Smartphone className="w-4 h-4 shrink-0" />
-                <span className="truncate">Print via RawBT App</span>
-              </button>
-            </div>
-
-            {/* Secondary Action Row: System Print (PDF) & Close */}
-            <div className="flex items-center justify-between gap-2 pt-0.5">
+              {/* Button 2: System Print (PDF) */}
               <button
                 type="button"
                 onClick={handleSystemPrint}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-neutral-700"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] text-neutral-100 text-xs font-semibold rounded-xl transition-colors cursor-pointer border border-neutral-700 shadow-sm"
               >
-                <Printer className="w-3.5 h-3.5" />
-                <span>System Print (PDF)</span>
+                <Printer className="w-4 h-4" />
+                <span className="truncate">System Print (PDF)</span>
               </button>
+            </div>
 
+            {/* Close action */}
+            <div className="flex justify-end pt-0.5">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
+                className="px-3 py-1 text-xs text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
               >
                 Close
               </button>

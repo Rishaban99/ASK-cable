@@ -1431,7 +1431,7 @@ export class RelationalDatabaseStore {
       email: 'support@askcable.lk',
       address: 'Main Street, Nanu Oya',
       receiptFooter: 'Thank you for subscribing to ASK Cable!',
-      receiptNotice: 'Computer Generated 80mm Receipt • System Validated',
+      receiptNotice: '• System Validated',
     };
     const val = await this.getSetting('system_profile');
     if (val) {

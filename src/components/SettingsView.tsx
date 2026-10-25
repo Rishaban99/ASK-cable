@@ -46,8 +46,20 @@ import {
   Clock,
   Copy,
   X,
-  XCircle
+  XCircle,
+  Printer,
+  Bluetooth,
+  Loader2,
 } from 'lucide-react';
+import {
+  pairAndSaveBluetoothPrinter,
+  getSavedPrinterInfo,
+  clearDefaultPrinter,
+  generateTestReceipt,
+  printViaWebBluetooth,
+  ThermalPaperWidth,
+  SavedPrinterInfo,
+} from '../utils/thermalPrinter.js';
 
 interface SettingsViewProps {
   currentUser: User;
@@ -151,7 +163,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
   // Active Tab in Settings Page
-  const [activeTab, setActiveTab] = useState<'privileges' | 'users' | 'system' | 'sms'>('privileges');
+  const [activeTab, setActiveTab] = useState<'privileges' | 'users' | 'system' | 'sms' | 'printer'>('privileges');
 
   // SMS Gateway State (Notify.lk Integration)
   const [smsSettings, setSmsSettings] = useState<SmsSettings>(() => {
@@ -187,6 +199,77 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [selectedLogForModal, setSelectedLogForModal] = useState<SmsLogEntry | null>(null);
   const [isClearingLogs, setIsClearingLogs] = useState(false);
   const [copiedLogId, setCopiedLogId] = useState<string | null>(null);
+
+  // Thermal Printer State (Bluetooth 1-Click One-Time Pairing)
+  const [savedPrinter, setSavedPrinter] = useState<SavedPrinterInfo>(() => getSavedPrinterInfo());
+  const [isPairingPrinter, setIsPairingPrinter] = useState(false);
+  const [isTestingPrinter, setIsTestingPrinter] = useState(false);
+  const [printerPaperSize, setPrinterPaperSize] = useState<ThermalPaperWidth>(() => {
+    try {
+      const saved = localStorage.getItem('ask_cable_thermal_paper_size');
+      if (saved === '80') return 80;
+    } catch {}
+    return 58;
+  });
+
+  const handlePairPrinter = async () => {
+    setIsPairingPrinter(true);
+    try {
+      const res = await pairAndSaveBluetoothPrinter();
+      if (res.success) {
+        const info = getSavedPrinterInfo();
+        setSavedPrinter(info);
+        toast.success(`Bluetooth printer "${res.deviceName}" paired & saved as default!`);
+      } else {
+        toast.error(res.error || 'Failed to pair Bluetooth printer.');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Bluetooth pairing failed.');
+    } finally {
+      setIsPairingPrinter(false);
+    }
+  };
+
+  const handleForgetPrinter = () => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'Unpair Default Printer',
+      message: `Are you sure you want to forget "${savedPrinter.name || 'Bluetooth Printer'}"? You will need to pair again to enable 1-click printing.`,
+      confirmText: 'Unpair Printer',
+      variant: 'danger',
+      onConfirm: () => {
+        clearDefaultPrinter();
+        setSavedPrinter(getSavedPrinterInfo());
+        toast.success('Default printer removed successfully.');
+      },
+    });
+  };
+
+  const handleTestPrint = async () => {
+    setIsTestingPrinter(true);
+    try {
+      const testBytes = generateTestReceipt(profile, printerPaperSize);
+      const res = await printViaWebBluetooth(testBytes, undefined, false);
+      if (res.success) {
+        setSavedPrinter(getSavedPrinterInfo());
+        toast.success(`Test slip printed successfully to ${res.deviceName || savedPrinter.name || 'Printer'}!`);
+      } else {
+        toast.error(res.error || 'Failed to print test slip.');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Test print failed.');
+    } finally {
+      setIsTestingPrinter(false);
+    }
+  };
+
+  const handlePrinterPaperSizeChange = (width: ThermalPaperWidth) => {
+    setPrinterPaperSize(width);
+    try {
+      localStorage.setItem('ask_cable_thermal_paper_size', String(width));
+      toast.success(`Default paper size set to ${width}mm.`);
+    } catch {}
+  };
 
   // Load Users & Privileges & System Profile & SMS Settings from DB
   const fetchUsers = async () => {
@@ -705,6 +788,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <MessageSquare className="w-3.5 h-3.5" />
             <span>SMS Gateway (Notify.lk)</span>
           </button>
+          <button
+            onClick={() => setActiveTab('printer')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === 'printer'
+                ? 'bg-emerald-500 text-neutral-950 shadow-sm'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Thermal Printer</span>
+          </button>
         </div>
       </div>
 
@@ -1180,7 +1274,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       type="text"
                       value={profile.receiptNotice || ''}
                       onChange={(e) => setProfile({ ...profile, receiptNotice: e.target.value })}
-                      placeholder="e.g. Computer Generated 80mm Receipt • System Validated"
+                      placeholder=" • System Validated"
                       className="w-full bg-neutral-950 border border-neutral-750 rounded-lg px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -1307,7 +1401,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </p>
                     <p>Please retain this slip for your records.</p>
                     <p className="text-[7.5px] text-neutral-500">
-                      {profile.receiptNotice || 'Computer Generated 80mm Receipt • System Validated'}
+                      {profile.receiptNotice || '• System Validated'}
                     </p>
                   </div>
                 </div>
@@ -2163,6 +2257,229 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 5: THERMAL PRINTER SETTINGS (ONE-TIME BLUETOOTH PAIRING & AUTO-PRINT) */}
+      {/* ========================================================================= */}
+      {activeTab === 'printer' && (
+        <div className="space-y-6">
+          {/* Top Banner Card: Bluetooth Thermal Printer Status */}
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-neutral-800/80 pb-5">
+              <div className="flex items-start gap-3.5">
+                <div className={`p-3 rounded-2xl border shrink-0 ${
+                  savedPrinter.name
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                    : 'bg-neutral-800 border-neutral-700 text-neutral-400'
+                }`}>
+                  <Printer className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                      Bluetooth Thermal Receipt Printer
+                    </h2>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                      savedPrinter.name
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                        : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${savedPrinter.name ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-500'}`} />
+                      {savedPrinter.name ? '1-Click Auto Reconnect Ready' : 'No Default Printer Paired'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+                    இங்கு உங்கள் புளூடூத் பிரிண்டரை ஒருமுறை Pair செய்துவிட்டால், ஒவ்வொரு முறையும் பில் போடும்போது பிரிண்டரைத் தேர்ந்தெடுக்கத் தேவையில்லை — பில் 1-கிளிக்கில் தானாகவே அச்சிடப்படும்!
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons Header */}
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                {savedPrinter.name ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleTestPrint}
+                      disabled={isTestingPrinter || isPairingPrinter}
+                      className="flex items-center gap-1.5 px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 border border-neutral-700 shadow-sm"
+                    >
+                      {isTestingPrinter ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                          <span>Printing Test...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Test Print Slip</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleForgetPrinter}
+                      className="flex items-center gap-1 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                      title="Unpair saved printer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Forget</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePairPrinter}
+                    disabled={isPairingPrinter}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
+                  >
+                    {isPairingPrinter ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-neutral-950" />
+                        <span>Pairing Printer...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Bluetooth className="w-4 h-4 text-neutral-950" />
+                        <span>Pair Bluetooth Printer</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Printer Details or Pair Callout Card */}
+            {savedPrinter.name ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-neutral-950 rounded-xl border border-neutral-800 space-y-1">
+                  <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-semibold">Paired Device</span>
+                  <p className="text-base font-bold text-white flex items-center gap-2">
+                    <span>{savedPrinter.name}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono">
+                      DEFAULT
+                    </span>
+                  </p>
+                  <p className="text-[10px] text-neutral-500 font-mono truncate">
+                    ID: {savedPrinter.id ? savedPrinter.id.substring(0, 24) + '...' : 'Browser Paired'}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-neutral-950 rounded-xl border border-neutral-800 space-y-1">
+                  <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-semibold">Paper Roll Width</span>
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => handlePrinterPaperSizeChange(58)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        printerPaperSize === 58
+                          ? 'bg-emerald-500 text-neutral-950 shadow-xs'
+                          : 'bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700'
+                      }`}
+                    >
+                      58mm (Mini)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePrinterPaperSizeChange(80)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        printerPaperSize === 80
+                          ? 'bg-emerald-500 text-neutral-950 shadow-xs'
+                          : 'bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700'
+                      }`}
+                    >
+                      80mm (POS)
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-neutral-500">
+                    {printerPaperSize === 58 ? 'Standard 2-inch mini portable roll' : 'Standard 3-inch counter POS roll'}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-neutral-950 rounded-xl border border-neutral-800 space-y-1">
+                  <span className="text-[11px] text-neutral-400 uppercase tracking-wider font-semibold">Change Printer</span>
+                  <p className="text-xs text-neutral-300">வேறு பிரிண்டரை இணைக்க வேண்டுமா?</p>
+                  <button
+                    type="button"
+                    onClick={handlePairPrinter}
+                    disabled={isPairingPrinter}
+                    className="mt-1 flex items-center gap-1.5 px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-emerald-400 text-xs font-semibold rounded-lg border border-neutral-700 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Re-Pair / Select Another</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 bg-neutral-950 rounded-2xl border border-neutral-800 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                  <Bluetooth className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">புளூடூத் பிரிண்டரை இணைக்கவும்</h3>
+                  <p className="text-xs text-neutral-400 max-w-md mx-auto mt-1">
+                    கீழே உள்ள பட்டனை அழுத்தி உங்கள் போர்ட்டபிள் தெர்மல் பிரிண்டரை ஒருமுறை Pair செய்யுங்கள். பின்னர் ஒவ்வொரு பில்லிலும் 1-கிளிக்கில் பிரிண்ட் செய்து கொள்ளலாம்.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePairPrinter}
+                  disabled={isPairingPrinter}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-neutral-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
+                >
+                  {isPairingPrinter ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-neutral-950" />
+                      <span>Scanning Bluetooth...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bluetooth className="w-4 h-4 text-neutral-950" />
+                      <span>Pair Bluetooth Printer Now (இணைக்கவும்)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Paper Size & How It Works Instructions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Step 1 */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 space-y-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                1
+              </div>
+              <h4 className="text-sm font-bold text-white">புளூடூத்தில் Pair செய்யுங்கள்</h4>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                உங்கள் பிரிண்டரை ஆன் செய்து மொபைல் / கணினியின் Bluetooth Settings-ல் இணைத்துக் கொள்ளுங்கள் (Default PIN: <code className="text-emerald-400 font-mono font-bold">0000</code> அல்லது <code className="text-emerald-400 font-mono font-bold">1234</code>).
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 space-y-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                2
+              </div>
+              <h4 className="text-sm font-bold text-white">செட்டிங்ஸில் ஒருமுறை இணைக்கவும்</h4>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                மேலே உள்ள <strong className="text-emerald-400">Pair Bluetooth Printer</strong> பட்டனை அழுத்தி பிரிண்டரைத் தேர்ந்தெடுங்கள். அது தானாகவே Default Printer-ஆக சேமிக்கப்படும்.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 space-y-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                3
+              </div>
+              <h4 className="text-sm font-bold text-white">1-கிளிக் நேரடி பிரிண்ட்</h4>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                இனி Customers அல்லது Monthly Payment பக்கத்தில் <strong className="text-white">Print Bill</strong> கொடுக்கும்போது, எந்த பாப்-அப் பட்டியலும் கேட்காமல் பில் நேரடியாக அச்சிடப்படும்!
+              </p>
+            </div>
           </div>
         </div>
       )}

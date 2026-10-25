@@ -303,12 +303,55 @@ export interface BluetoothPrintResult {
   error?: string;
 }
 
+export interface SavedPrinterInfo {
+  id: string | null;
+  name: string | null;
+  paperWidth: ThermalPaperWidth;
+}
+
 /**
- * Direct Web Bluetooth 1-Click Printing
- * Connects to paired/nearby Bluetooth thermal printer and streams ESC/POS byte commands directly.
+ * Retrieve saved default printer details from localStorage
  */
-export async function printViaWebBluetooth(
-  data: Uint8Array,
+export function getSavedPrinterInfo(): SavedPrinterInfo {
+  try {
+    const id = localStorage.getItem('ask_cable_default_printer_id');
+    const name = localStorage.getItem('ask_cable_default_printer_name');
+    const savedWidth = localStorage.getItem('ask_cable_thermal_paper_size');
+    const paperWidth: ThermalPaperWidth = savedWidth === '80' ? 80 : 58;
+    return { id, name, paperWidth };
+  } catch {
+    return { id: null, name: null, paperWidth: 58 };
+  }
+}
+
+/**
+ * Save default printer to localStorage for 1-click silent reconnection
+ */
+export function saveDefaultPrinter(id: string, name: string): void {
+  try {
+    localStorage.setItem('ask_cable_default_printer_id', id);
+    localStorage.setItem('ask_cable_default_printer_name', name);
+  } catch (e) {
+    console.error('Failed to save printer to localStorage', e);
+  }
+}
+
+/**
+ * Clear saved default printer from localStorage
+ */
+export function clearDefaultPrinter(): void {
+  try {
+    localStorage.removeItem('ask_cable_default_printer_id');
+    localStorage.removeItem('ask_cable_default_printer_name');
+  } catch (e) {
+    console.error('Failed to clear printer from localStorage', e);
+  }
+}
+
+/**
+ * Pair and save a Bluetooth printer (Triggered from Settings or Modal)
+ */
+export async function pairAndSaveBluetoothPrinter(
   onProgress?: (status: string) => void
 ): Promise<BluetoothPrintResult> {
   const nav = navigator as unknown as {
@@ -320,21 +363,154 @@ export async function printViaWebBluetooth(
   if (!nav.bluetooth) {
     return {
       success: false,
-      error:
-        'Web Bluetooth is not supported on this browser. Please use Chrome on Android or Desktop, or use the "Print via RawBT App" option.',
+      error: 'Web Bluetooth is not supported on this browser or requires a secure HTTPS connection.',
     };
   }
 
   try {
     onProgress?.('Searching for Bluetooth printers...');
-
-    // Request nearby Bluetooth devices with printer services
     const device = await nav.bluetooth.requestDevice({
       acceptAllDevices: true,
       optionalServices: COMMON_BLUETOOTH_PRINTER_SERVICES,
     });
 
     const deviceName = device.name || 'Bluetooth Printer';
+    const deviceId = device.id || '';
+    onProgress?.(`Connecting to test ${deviceName}...`);
+
+    if (device.gatt) {
+      try {
+        const server = await device.gatt.connect();
+        setTimeout(() => {
+          try {
+            server.disconnect();
+          } catch {}
+        }, 400);
+      } catch (err) {
+        console.warn('Initial GATT handshake check had a warning, still saving pairing:', err);
+      }
+    }
+
+    // Save as default
+    saveDefaultPrinter(deviceId, deviceName);
+    onProgress?.(`Saved "${deviceName}" as default printer!`);
+
+    return {
+      success: true,
+      deviceName,
+    };
+  } catch (err: any) {
+    if (err.name === 'NotFoundError' || err.message?.includes('User cancelled')) {
+      return {
+        success: false,
+        error: 'Printer selection was cancelled.',
+      };
+    }
+    return {
+      success: false,
+      error: err.message || 'Failed to pair Bluetooth printer.',
+    };
+  }
+}
+
+/**
+ * Generate a small test receipt slip to verify printer connection
+ */
+export function generateTestReceipt(
+  profile: SystemProfile,
+  paperWidth: ThermalPaperWidth = 58
+): Uint8Array {
+  const width = paperWidth === 58 ? 32 : 48;
+  const builder = new EscPosBuilder();
+
+  builder.raw(CMD_INIT);
+  builder.raw(CMD_ALIGN_CENTER);
+  builder.bold(true);
+  builder.line(profile.companyName || 'ASK CABLE TV NETWORK');
+  builder.normal();
+  builder.raw(CMD_ALIGN_CENTER);
+  builder.line('*** THERMAL PRINTER TEST ***');
+  builder.divider('-', width);
+  builder.twoColumn('Status:', 'CONNECTED [OK]', width);
+  builder.twoColumn('Paper Width:', `${paperWidth}mm`, width);
+  builder.twoColumn('Date:', new Date().toLocaleDateString(), width);
+  builder.twoColumn('Time:', new Date().toLocaleTimeString(), width);
+  builder.divider('=', width);
+  builder.raw(CMD_ALIGN_CENTER);
+  builder.bold(true);
+  builder.line('[ ONE-TIME PAIR SUCCESSFUL ]');
+  builder.normal();
+  builder.divider('=', width);
+  builder.raw(CMD_ALIGN_CENTER);
+  builder.line('Ready for instant 1-click printing!');
+  builder.feed(2);
+  builder.cut();
+
+  return builder.toBytes();
+}
+
+/**
+ * Direct Web Bluetooth Printing with Silent Reconnection
+ * If a printer was previously paired and permitted, automatically reconnects without showing the device picker!
+ */
+export async function printViaWebBluetooth(
+  data: Uint8Array,
+  onProgress?: (status: string) => void,
+  forceNewPicker: boolean = false
+): Promise<BluetoothPrintResult> {
+  const nav = navigator as unknown as {
+    bluetooth?: {
+      requestDevice: (options: unknown) => Promise<any>;
+      getDevices?: () => Promise<any[]>;
+    };
+  };
+
+  if (!nav.bluetooth) {
+    return {
+      success: false,
+      error:
+        'Web Bluetooth is not supported on this browser. Please ensure you are using Chrome on Android or Desktop over HTTPS.',
+    };
+  }
+
+  try {
+    let device: any = null;
+    const savedInfo = getSavedPrinterInfo();
+
+    // 1. Silent Auto-Reconnection: If not forcing a new picker, check previously permitted devices
+    if (!forceNewPicker && typeof nav.bluetooth.getDevices === 'function') {
+      try {
+        onProgress?.('Checking saved Bluetooth printer...');
+        const permittedDevices = await nav.bluetooth.getDevices();
+        if (permittedDevices && permittedDevices.length > 0) {
+          if (savedInfo.id) {
+            device = permittedDevices.find((d) => d.id === savedInfo.id);
+          }
+          // If no exact ID match or ID wasn't saved, but exactly 1 device is permitted for this site
+          if (!device && permittedDevices.length === 1) {
+            device = permittedDevices[0];
+          }
+        }
+      } catch (e) {
+        console.warn('Silent getDevices check failed, will open picker:', e);
+      }
+    }
+
+    // 2. If no previously permitted device found or picker forced, prompt user
+    if (!device) {
+      onProgress?.('Searching for Bluetooth printers...');
+      device = await nav.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: COMMON_BLUETOOTH_PRINTER_SERVICES,
+      });
+
+      // Automatically save as default printer for future silent prints!
+      if (device.id && device.name) {
+        saveDefaultPrinter(device.id, device.name);
+      }
+    }
+
+    const deviceName = device.name || savedInfo.name || 'Bluetooth Printer';
     onProgress?.(`Connecting to ${deviceName}...`);
 
     if (!device.gatt) {
@@ -388,7 +564,7 @@ export async function printViaWebBluetooth(
 
     if (!writeCharacteristic) {
       throw new Error(
-        `Connected to "${deviceName}", but could not find a writable ESC/POS channel. If this printer uses Bluetooth Classic SPP, please use the "Print via RawBT App" button.`
+        `Connected to "${deviceName}", but could not find a writable ESC/POS channel.`
       );
     }
 

@@ -45,7 +45,7 @@ export const DEFAULT_SYSTEM_PROFILE: SystemProfile = {
   email: 'support@askcable.lk',
   address: 'Main Street, Nanu Oya',
   receiptFooter: 'Thank you for subscribing to ASK Cable!',
-  receiptNotice: 'Computer Generated 80mm Receipt • System Validated',
+  receiptNotice: '• System Validated',
 };
 
 export interface SmsSettings {
