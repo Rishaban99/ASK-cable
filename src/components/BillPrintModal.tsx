@@ -1,8 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { formatMoney } from '../api/client.js';
 import { SupportedCurrency, SystemProfile, DEFAULT_SYSTEM_PROFILE } from '../types/finance.js';
-import { Printer, X, CheckCircle, AlertTriangle, Tv } from 'lucide-react';
+import {
+  Printer,
+  X,
+  CheckCircle,
+  AlertTriangle,
+  Tv,
+  Bluetooth,
+  Smartphone,
+  Loader2,
+  HelpCircle,
+  ExternalLink,
+  Check,
+} from 'lucide-react';
+import {
+  generateEscPosReceipt,
+  printViaWebBluetooth,
+  printViaRawBt,
+  ThermalPaperWidth,
+} from '../utils/thermalPrinter.js';
 
 export interface BillLineItem {
   description: string;
@@ -47,22 +65,27 @@ const formatMonthDisplay = (mStr?: string) => {
   return date.toLocaleString('default', { month: 'long', year: 'numeric' });
 };
 
-// Reusable single 80mm thermal receipt slip content
+// Reusable thermal receipt slip component (adapts to 58mm or 80mm)
 const ThermalReceiptSlip: React.FC<{
   billData: BillData;
   currency: SupportedCurrency;
   profile: SystemProfile;
+  paperWidth: ThermalPaperWidth;
   isPrintOnly?: boolean;
-}> = ({ billData, currency, profile, isPrintOnly = false }) => {
+}> = ({ billData, currency, profile, paperWidth, isPrintOnly = false }) => {
   const getBadgeLabel = () => {
     if (billData.type === 'TOTAL') return 'TOTAL BILL STATEMENT';
     if (billData.type === 'MONTHLY') return 'MONTHLY BILL RECEIPT';
     return 'CUSTOMER RECEIPT';
   };
 
+  const is58mm = paperWidth === 58;
+
   return (
     <div
-      className="bg-white text-black font-mono text-[11px] leading-tight select-text"
+      className={`bg-white text-black font-mono leading-tight select-text ${
+        is58mm ? 'text-[10px]' : 'text-[11px]'
+      }`}
       style={{
         backgroundColor: '#ffffff',
         color: '#000000',
@@ -72,33 +95,38 @@ const ThermalReceiptSlip: React.FC<{
       {/* Header: Brand and Contact */}
       <div className="text-center pb-1.5">
         <div className="flex items-center justify-center gap-1.5 mb-0.5">
-          <Tv className="w-4 h-4 text-black shrink-0" />
-          <h1 className="text-sm font-black tracking-tight uppercase text-black">
+          <Tv className="w-3.5 h-3.5 text-black shrink-0" />
+          <h1
+            className={`font-black tracking-tight uppercase text-black ${
+              is58mm ? 'text-xs' : 'text-sm'
+            }`}
+          >
             {profile.companyName || 'ASK CABLE TV NETWORK'}
           </h1>
         </div>
-        <p className="text-[10px] font-semibold text-neutral-800">
+        <p className="text-[9.5px] font-semibold text-neutral-800">
           {profile.tagline || 'Cable TV Subscriptions & Services'}
         </p>
-        <p className="text-[9px] text-neutral-700">
-          Tel: {profile.phone || '+94 77 123 4567'} | {profile.email || 'support@askcable.lk'}
+        <p className="text-[8.5px] text-neutral-700">
+          Tel: {profile.phone || '+94 77 123 4567'}
+          {!is58mm && profile.email && ` | ${profile.email}`}
         </p>
       </div>
 
       {/* Dashed Divider */}
-      <div className="border-t border-dashed border-neutral-400 my-1.5" />
+      <div className="border-t border-dashed border-neutral-400 my-1" />
 
       {/* Receipt Type & Meta */}
       <div className="text-center my-1">
         <span
-          className="inline-block px-2.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase rounded-xs"
+          className="inline-block px-2 py-0.5 text-[9px] font-black tracking-wider uppercase rounded-xs"
           style={{ backgroundColor: '#000000', color: '#ffffff' }}
         >
           *** {getBadgeLabel()} ***
         </span>
       </div>
 
-      <div className="space-y-0.5 pt-1 text-[10px] text-neutral-800">
+      <div className="space-y-0.5 pt-0.5 text-[9.5px] text-neutral-800">
         <div className="flex justify-between items-center">
           <span>Bill #:</span>
           <span className="font-extrabold text-black font-mono">{billData.billNo}</span>
@@ -123,25 +151,29 @@ const ThermalReceiptSlip: React.FC<{
       </div>
 
       {/* Dashed Divider */}
-      <div className="border-t border-dashed border-neutral-400 my-1.5" />
+      <div className="border-t border-dashed border-neutral-400 my-1" />
 
       {/* Subscriber & Connection Info */}
-      <div className="space-y-1 text-[10px]">
+      <div className="space-y-0.5 text-[9.5px]">
         <div className="flex justify-between items-start">
-          <span className="text-[9px] font-bold text-neutral-600 uppercase shrink-0 pt-0.5">
+          <span className="text-[8.5px] font-bold text-neutral-600 uppercase shrink-0 pt-0.5">
             Customer:
           </span>
-          <span className="font-extrabold text-[11.5px] text-black text-right max-w-[190px] break-words">
+          <span
+            className={`font-extrabold text-black text-right break-words ${
+              is58mm ? 'max-w-[150px] text-[10px]' : 'max-w-[190px] text-[11px]'
+            }`}
+          >
             {billData.customerName}
           </span>
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-[9px] font-bold text-neutral-600 uppercase">
+          <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
             Box Number:
           </span>
           <span
-            className="font-extrabold text-[11.5px] text-black px-1.5 py-0.5 rounded border border-neutral-400"
+            className="font-extrabold text-[10.5px] text-black px-1.5 py-0.2 rounded border border-neutral-400"
             style={{ backgroundColor: '#f3f4f6' }}
           >
             BOX #{billData.boxNo}
@@ -150,7 +182,7 @@ const ThermalReceiptSlip: React.FC<{
 
         {billData.month && (
           <div className="flex justify-between items-center">
-            <span className="text-[9px] font-bold text-neutral-600 uppercase">
+            <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
               Month:
             </span>
             <span className="font-extrabold text-black">
@@ -161,7 +193,7 @@ const ThermalReceiptSlip: React.FC<{
 
         {billData.phoneNo && (
           <div className="flex justify-between items-center">
-            <span className="text-[9px] font-bold text-neutral-600 uppercase">
+            <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
               Phone:
             </span>
             <span className="font-semibold text-black">{billData.phoneNo}</span>
@@ -170,7 +202,7 @@ const ThermalReceiptSlip: React.FC<{
 
         {billData.nicNo && (
           <div className="flex justify-between items-center">
-            <span className="text-[9px] font-bold text-neutral-600 uppercase">
+            <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
               NIC:
             </span>
             <span className="font-semibold text-black">{billData.nicNo}</span>
@@ -179,10 +211,14 @@ const ThermalReceiptSlip: React.FC<{
 
         {billData.address && (
           <div className="flex justify-between items-start pt-0.5">
-            <span className="text-[9px] font-bold text-neutral-600 uppercase shrink-0 pt-0.5">
+            <span className="text-[8.5px] font-bold text-neutral-600 uppercase shrink-0 pt-0.5">
               Address:
             </span>
-            <span className="text-right text-[9.5px] text-neutral-800 max-w-[190px] break-words leading-tight">
+            <span
+              className={`text-right text-[8.5px] text-neutral-800 break-words leading-tight ${
+                is58mm ? 'max-w-[150px]' : 'max-w-[190px]'
+              }`}
+            >
               {billData.address}
             </span>
           </div>
@@ -190,20 +226,20 @@ const ThermalReceiptSlip: React.FC<{
       </div>
 
       {/* Dashed Divider */}
-      <div className="border-t border-dashed border-neutral-400 my-1.5" />
+      <div className="border-t border-dashed border-neutral-400 my-1" />
 
       {/* Dues / Charges Breakdown */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-[9px] font-bold text-neutral-700 uppercase border-b border-dashed border-neutral-300 pb-0.5">
+      <div className="space-y-1">
+        <div className="flex justify-between text-[8.5px] font-bold text-neutral-700 uppercase border-b border-dashed border-neutral-300 pb-0.5">
           <span>Description</span>
           <span>Amount ({currency})</span>
         </div>
 
         {billData.items && billData.items.length > 0 ? (
           billData.items.map((item, idx) => (
-            <div key={idx} className="space-y-0.5 text-[10px]">
+            <div key={idx} className="space-y-0.5 text-[9.5px]">
               <div className="flex justify-between items-start font-bold text-black">
-                <span className="max-w-[180px] break-words">
+                <span className={`break-words ${is58mm ? 'max-w-[140px]' : 'max-w-[180px]'}`}>
                   {idx + 1}. {item.description}
                 </span>
                 <span className="font-mono text-right shrink-0">
@@ -211,25 +247,25 @@ const ThermalReceiptSlip: React.FC<{
                 </span>
               </div>
               {item.dateOrPeriod && (
-                <div className="text-[9px] text-neutral-600 pl-2">
+                <div className="text-[8.5px] text-neutral-600 pl-1.5">
                   Period: {item.dateOrPeriod}
                 </div>
               )}
-              <div className="flex justify-between text-[9px] text-neutral-700 pl-2">
+              <div className="flex justify-between text-[8.5px] text-neutral-700 pl-1.5">
                 <span>Paid: {formatMoney(item.paidAmount, currency)}</span>
                 <span>Bal: {formatMoney(item.balanceAmount, currency)}</span>
               </div>
             </div>
           ))
         ) : (
-          <div className="space-y-1 text-[10px]">
-            <div className="font-bold text-black text-[10.5px]">
+          <div className="space-y-0.5 text-[9.5px]">
+            <div className="font-bold text-black text-[10px]">
               {billData.type === 'MONTHLY'
                 ? `Monthly Fee (${formatMonthDisplay(billData.month)})`
                 : 'Cable Subscription Dues'}
             </div>
-            <div className="text-[9px] text-neutral-600">
-              Box No: {billData.boxNo} | {billData.paymentDate ? `Paid: ${billData.paymentDate}` : `Date: ${billData.date}`}
+            <div className="text-[8.5px] text-neutral-600">
+              Box: #{billData.boxNo} | {billData.paymentDate ? `Paid: ${billData.paymentDate}` : `Date: ${billData.date}`}
             </div>
             <div className="pt-0.5 space-y-0.5">
               <div className="flex justify-between text-neutral-800">
@@ -250,10 +286,10 @@ const ThermalReceiptSlip: React.FC<{
       </div>
 
       {/* Dashed Divider */}
-      <div className="border-t border-dashed border-neutral-400 my-1.5" />
+      <div className="border-t border-dashed border-neutral-400 my-1" />
 
       {/* Financial Totals */}
-      <div className="space-y-0.5 text-[10.5px]">
+      <div className="space-y-0.5 text-[10px]">
         <div className="flex justify-between font-bold text-neutral-900">
           <span>TOTAL BILLED:</span>
           <span className="font-mono text-right">
@@ -268,20 +304,20 @@ const ThermalReceiptSlip: React.FC<{
         </div>
 
         {/* High-Contrast Balance Due Banner */}
-        <div className="border-t-2 border-b-2 border-black py-1 my-1 flex justify-between items-center text-black">
-          <span className="text-[11px] font-black uppercase tracking-tight">
+        <div className="border-t-2 border-b-2 border-black py-0.5 my-1 flex justify-between items-center text-black">
+          <span className="text-[10px] font-black uppercase tracking-tight">
             BALANCE DUE:
           </span>
-          <span className="text-sm font-black font-mono">
+          <span className={`font-black font-mono ${is58mm ? 'text-xs' : 'text-sm'}`}>
             {formatMoney(billData.balanceAmount, currency)}
           </span>
         </div>
       </div>
 
       {/* Payment Status Stamp */}
-      <div className="my-2 text-center">
+      <div className="my-1.5 text-center">
         <div
-          className="inline-flex items-center justify-center gap-1.5 w-full py-0.5 px-2 border-2 border-dashed font-extrabold text-[10.5px] uppercase tracking-wider"
+          className="inline-flex items-center justify-center gap-1.5 w-full py-0.5 px-1.5 border border-dashed font-extrabold text-[9.5px] uppercase tracking-wider"
           style={{
             borderColor: '#000000',
             backgroundColor: '#f3f4f6',
@@ -290,12 +326,12 @@ const ThermalReceiptSlip: React.FC<{
         >
           {billData.balanceAmount === 0 ? (
             <>
-              <CheckCircle className="w-3.5 h-3.5 shrink-0 text-black" />
+              <CheckCircle className="w-3 h-3 shrink-0 text-black" />
               <span>*** PAID IN FULL ***</span>
             </>
           ) : (
             <>
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-black" />
+              <AlertTriangle className="w-3 h-3 shrink-0 text-black" />
               <span>*** BALANCE PENDING ***</span>
             </>
           )}
@@ -303,23 +339,23 @@ const ThermalReceiptSlip: React.FC<{
       </div>
 
       {/* Cashier / Signature Line */}
-      <div className="pt-2 pb-0.5 text-center">
-        <div className="border-b border-dotted border-neutral-500 w-32 mx-auto mb-1"></div>
-        <p className="text-[8.5px] text-neutral-700 font-semibold uppercase tracking-wider">
+      <div className="pt-1.5 pb-0.5 text-center">
+        <div className="border-b border-dotted border-neutral-500 w-28 mx-auto mb-1"></div>
+        <p className="text-[8px] text-neutral-700 font-semibold uppercase tracking-wider">
           Authorized Cashier / Stamp
         </p>
       </div>
 
       {/* Receipt Footer */}
-      <div className="text-center pt-1.5 text-[8.5px] text-neutral-700 space-y-0.5 border-t border-dashed border-neutral-300">
+      <div className="text-center pt-1 text-[8px] text-neutral-700 space-y-0.5 border-t border-dashed border-neutral-300">
         <p className="font-bold text-black">
           {profile.receiptFooter || 'Thank you for subscribing to ASK Cable!'}
         </p>
         <p>Please retain this slip for your records.</p>
-        <p className="text-[8px] text-neutral-500">
-          {profile.receiptNotice || 'Computer Generated 80mm Receipt • System Validated'}
+        <p className="text-[7.5px] text-neutral-500">
+          {profile.receiptNotice ||
+            `Computer Generated ${paperWidth}mm Thermal Slip`}
         </p>
-        {/* Paper feed gap before tear-off cutter (only rendered in print) */}
         {isPrintOnly && <div className="h-6" />}
       </div>
     </div>
@@ -333,9 +369,47 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
   currency = 'LKR',
   systemProfile,
 }) => {
+  // Paper size: default to 58mm (standard mini portable Bluetooth printer) or 80mm
+  const [paperWidth, setPaperWidth] = useState<ThermalPaperWidth>(() => {
+    try {
+      const saved = localStorage.getItem('ask_cable_thermal_paper_size');
+      if (saved === '80') return 80;
+    } catch {
+      // ignore
+    }
+    return 58;
+  });
+
+  const [isBluetoothPrinting, setIsBluetoothPrinting] = useState<boolean>(false);
+  const [bluetoothStatus, setBluetoothStatus] = useState<string>('');
+  const [bluetoothMessage, setBluetoothMessage] = useState<{
+    type: 'success' | 'error' | 'info';
+    text: string;
+  } | null>(null);
+  const [showGuide, setShowGuide] = useState<boolean>(false);
+
+  // Save paper size preference
+  const handlePaperWidthChange = (width: ThermalPaperWidth) => {
+    setPaperWidth(width);
+    try {
+      localStorage.setItem('ask_cable_thermal_paper_size', String(width));
+    } catch {
+      // ignore
+    }
+  };
+
+  // Clear messages when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setBluetoothMessage(null);
+      setBluetoothStatus('');
+      setIsBluetoothPrinting(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen || !billData) return null;
 
-  // Resolve active profile from prop or localStorage or fallback to defaults
+  // Resolve active profile
   const activeProfile: SystemProfile = (() => {
     if (systemProfile) return systemProfile;
     try {
@@ -347,7 +421,65 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
     return DEFAULT_SYSTEM_PROFILE;
   })();
 
-  const handlePrint = () => {
+  // 1. Direct Web Bluetooth Print (1-Click)
+  const handleDirectBluetoothPrint = async () => {
+    setIsBluetoothPrinting(true);
+    setBluetoothMessage(null);
+    setBluetoothStatus('Connecting to Bluetooth printer...');
+
+    try {
+      const escPosBytes = generateEscPosReceipt(
+        billData,
+        currency,
+        activeProfile,
+        paperWidth
+      );
+
+      const result = await printViaWebBluetooth(escPosBytes, (status) => {
+        setBluetoothStatus(status);
+      });
+
+      if (result.success) {
+        setBluetoothMessage({
+          type: 'success',
+          text: `Printed successfully to ${result.deviceName || 'Bluetooth Printer'}!`,
+        });
+      } else {
+        setBluetoothMessage({
+          type: 'error',
+          text: result.error || 'Failed to print via Bluetooth.',
+        });
+      }
+    } catch (err: any) {
+      setBluetoothMessage({
+        type: 'error',
+        text: err?.message || 'Bluetooth connection failed.',
+      });
+    } finally {
+      setIsBluetoothPrinting(false);
+      setBluetoothStatus('');
+    }
+  };
+
+  // 2. Direct RawBT Android App Print (1-Tap)
+  const handleRawBtPrint = () => {
+    setBluetoothMessage({
+      type: 'info',
+      text: 'Opening RawBT Android Print Service...',
+    });
+
+    const escPosBytes = generateEscPosReceipt(
+      billData,
+      currency,
+      activeProfile,
+      paperWidth
+    );
+
+    printViaRawBt(escPosBytes);
+  };
+
+  // 3. System Print (PDF / Desktop fallback)
+  const handleSystemPrint = () => {
     window.print();
   };
 
@@ -358,49 +490,215 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
           ========================================================================= */}
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto print:hidden">
         {/* Container Card */}
-        <div className="w-full max-w-sm bg-neutral-900 border border-neutral-750 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
+        <div className="w-full max-w-md bg-neutral-900 border border-neutral-750 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
           {/* Modal Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 bg-neutral-950">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                 <Printer className="w-4 h-4 shrink-0" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-white truncate leading-tight">
-                  80mm Thermal Receipt
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-white truncate leading-tight flex items-center gap-1.5">
+                  <span>Thermal Bill Printer</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    {paperWidth}mm
+                  </span>
                 </h3>
-                <p className="text-[10px] text-neutral-400 font-mono">
-                  1-Sheet POS Slip • {billData.billNo}
+                <p className="text-[10.5px] text-neutral-400 font-mono truncate">
+                  POS Slip • {billData.billNo}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+
+            <button
+              onClick={onClose}
+              className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer"
+              title="Close modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Paper Size & Quick Control Bar */}
+          <div className="px-4 py-2.5 bg-neutral-900/90 border-b border-neutral-800 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-neutral-300 font-medium">
+              <span>Paper Roll:</span>
+              <div className="inline-flex rounded-lg bg-neutral-950 p-0.5 border border-neutral-750">
+                <button
+                  type="button"
+                  onClick={() => handlePaperWidthChange(58)}
+                  className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                    paperWidth === 58
+                      ? 'bg-emerald-500 text-neutral-950 shadow-xs'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  58mm (Mini)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePaperWidthChange(80)}
+                  className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                    paperWidth === 80
+                      ? 'bg-emerald-500 text-neutral-950 shadow-xs'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  80mm (POS)
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowGuide(!showGuide)}
+              className="text-[11px] text-sky-400 hover:text-sky-300 flex items-center gap-1 cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>{showGuide ? 'Hide Help' : 'Printer Help'}</span>
+            </button>
+          </div>
+
+          {/* Quick Help Guide Banner (Collapsible) */}
+          {showGuide && (
+            <div className="p-3 bg-sky-950/40 border-b border-sky-800/40 text-[11px] text-sky-200 space-y-1.5 animate-in fade-in duration-200">
+              <div className="font-bold text-sky-100 flex items-center gap-1">
+                <Bluetooth className="w-3.5 h-3.5 text-sky-400" />
+                <span>புளூடூத் பிரிண்டர் இயக்கும் முறை (Mobile Instructions):</span>
+              </div>
+              <ol className="list-decimal list-inside space-y-0.5 pl-1 text-[10.5px] text-neutral-300">
+                <li>
+                  பிரிண்டரை ஆன் செய்து மொபைலின் Bluetooth Settings-ல் Pair செய்யுங்கள் (PIN: <span className="font-mono font-bold text-white">0000</span> அல்லது <span className="font-mono font-bold text-white">1234</span>).
+                </li>
+                <li>
+                  கீழே உள்ள <strong className="text-emerald-400">⚡ Direct Bluetooth</strong> பட்டனை அழுத்தி உங்கள் பிரிண்டரைத் தேர்ந்தெடுங்கள்.
+                </li>
+                <li>
+                  பிரிண்டர் லிஸ்டில் வரவில்லையெனில், <strong className="text-sky-400">📲 Print via RawBT</strong> பட்டனை அழுத்துங்கள் — நொடியில் பில் வந்துவிடும்!
+                </li>
+              </ol>
+              <div className="pt-1 flex items-center justify-between text-[10px]">
+                <span className="text-neutral-400">RawBT ஆப் இல்லையா?</span>
+                <a
+                  href="https://play.google.com/store/apps/details?id=ru.a402d.rawbtprinter"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
+                >
+                  <span>Install RawBT (Play Store)</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Status / Feedback Alert Banner */}
+          {bluetoothMessage && (
+            <div
+              className={`px-4 py-2 text-xs flex items-center justify-between gap-2 border-b ${
+                bluetoothMessage.type === 'success'
+                  ? 'bg-emerald-950/60 border-emerald-800/60 text-emerald-200'
+                  : bluetoothMessage.type === 'error'
+                  ? 'bg-rose-950/60 border-rose-800/60 text-rose-200'
+                  : 'bg-neutral-800 border-neutral-700 text-neutral-200'
+              }`}
+            >
+              <div className="flex items-center gap-2 truncate">
+                {bluetoothMessage.type === 'success' ? (
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                )}
+                <span className="truncate">{bluetoothMessage.text}</span>
+              </div>
               <button
-                onClick={handlePrint}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-400 hover:bg-emerald-300 text-neutral-950 text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
+                type="button"
+                onClick={() => setBluetoothMessage(null)}
+                className="text-neutral-400 hover:text-white p-1"
               >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Bill</span>
+                <X className="w-3 h-3" />
               </button>
-              <button
-                onClick={onClose}
-                className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            </div>
+          )}
+
+          {/* Paper Slip Preview Area */}
+          <div className="p-3 sm:p-4 bg-neutral-950 overflow-y-auto flex flex-col items-center flex-1 max-h-[50vh]">
+            {/* Helper label */}
+            <div className="text-[10px] text-neutral-400 font-mono mb-2 flex items-center gap-1.5">
+              <span>🧾 POS Thermal Slip Preview ({paperWidth}mm Roll)</span>
+            </div>
+
+            {/* Paper Preview Slip (matches exact roll size) */}
+            <div
+              className={`bg-white p-3 rounded-xs shadow-2xl border border-neutral-300 transition-all ${
+                paperWidth === 58 ? 'w-[230px] max-w-[230px]' : 'w-[290px] max-w-[290px]'
+              }`}
+            >
+              <ThermalReceiptSlip
+                billData={billData}
+                currency={currency}
+                profile={activeProfile}
+                paperWidth={paperWidth}
+                isPrintOnly={false}
+              />
             </div>
           </div>
 
-          {/* Paper Slip Preview Area */}
-          <div className="p-3 sm:p-4 bg-neutral-950 overflow-y-auto flex flex-col items-center">
-            {/* Helper hint */}
-            <div className="text-[10.5px] text-neutral-400 font-mono mb-2 flex items-center gap-1">
-              <span>🖨️ 80mm POS Slip Preview (Single Sheet)</span>
+          {/* Action Toolbar / Print Buttons */}
+          <div className="p-3 bg-neutral-950 border-t border-neutral-800 space-y-2">
+            {/* Primary Action Row: Direct Bluetooth & RawBT */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Button 1: Direct Web Bluetooth Print */}
+              <button
+                type="button"
+                onClick={handleDirectBluetoothPrint}
+                disabled={isBluetoothPrinting}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-neutral-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isBluetoothPrinting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-neutral-950" />
+                    <span className="truncate">{bluetoothStatus || 'Printing...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Bluetooth className="w-4 h-4 text-neutral-950 shrink-0" />
+                    <span className="truncate">Direct Bluetooth Print</span>
+                  </>
+                )}
+              </button>
+
+              {/* Button 2: RawBT App Print */}
+              <button
+                type="button"
+                onClick={handleRawBtPrint}
+                disabled={isBluetoothPrinting}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-sky-600 hover:bg-sky-500 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-600/20 transition-all cursor-pointer"
+                title="1-Tap print via RawBT Android App"
+              >
+                <Smartphone className="w-4 h-4 shrink-0" />
+                <span className="truncate">Print via RawBT App</span>
+              </button>
             </div>
 
-            {/* Paper Preview Slip */}
-            <div className="w-[300px] max-w-[300px] bg-white p-3.5 rounded-sm shadow-2xl border border-neutral-300">
-              <ThermalReceiptSlip billData={billData} currency={currency} profile={activeProfile} isPrintOnly={false} />
+            {/* Secondary Action Row: System Print (PDF) & Close */}
+            <div className="flex items-center justify-between gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={handleSystemPrint}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-neutral-700"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>System Print (PDF)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -412,13 +710,19 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
           ========================================================================= */}
       {createPortal(
         <div id="thermal-receipt-print-portal" aria-hidden="true">
-          <ThermalReceiptSlip billData={billData} currency={currency} profile={activeProfile} isPrintOnly={true} />
+          <ThermalReceiptSlip
+            billData={billData}
+            currency={currency}
+            profile={activeProfile}
+            paperWidth={paperWidth}
+            isPrintOnly={true}
+          />
         </div>,
         document.body
       )}
 
       {/* =========================================================================
-          STRICT 80MM SINGLE-SHEET PRINT CSS
+          STRICT SINGLE-SHEET THERMAL PRINT CSS (Supports 58mm & 80mm)
           ========================================================================= */}
       <style>{`
         /* Hide print portal on interactive screen */
@@ -428,12 +732,12 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
 
         @media print {
           @page {
-            size: 80mm auto;
+            size: ${paperWidth}mm auto;
             margin: 0mm !important;
           }
 
           html, body {
-            width: 80mm !important;
+            width: ${paperWidth}mm !important;
             height: auto !important;
             min-height: 0 !important;
             max-height: 100% !important;
@@ -448,7 +752,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
 
           /* 
            * COMPLETELY ELIMINATE #root FROM PRINT LAYOUT:
-           * Removes the 1500px app page height, fixed modal backdrops, and black background
+           * Removes the app layout, fixed modal backdrops, and background
            */
           #root {
             display: none !important;
@@ -460,16 +764,16 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
 
           /*
            * DISPLAY ONLY THE PRINT PORTAL:
-           * Guaranteed single sheet, strictly 74mm-78mm printable width, no page break duplicates
+           * Guaranteed single sheet, strictly matching selected roll width
            */
           #thermal-receipt-print-portal {
             display: block !important;
             visibility: visible !important;
             position: static !important;
-            width: 74mm !important;
-            max-width: 80mm !important;
+            width: ${paperWidth === 58 ? '52mm' : '74mm'} !important;
+            max-width: ${paperWidth}mm !important;
             margin: 0 auto !important;
-            padding: 2mm 2.5mm 4mm 2.5mm !important;
+            padding: 1.5mm 2mm 3mm 2mm !important;
             background-color: #ffffff !important;
             color: #000000 !important;
             box-shadow: none !important;
