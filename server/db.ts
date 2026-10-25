@@ -49,7 +49,7 @@ export class RelationalDatabaseStore {
     const cats = await dbClient.findMany({
       orderBy: { createdAt: 'asc' }
     });
-    return cats.map((c) => ({
+    return cats.map((c: any) => ({
       id: c.id,
       name: c.name,
       type: c.type as 'INCOME' | 'EXPENSE',

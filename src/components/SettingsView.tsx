@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { User, StaffPrivileges, DEFAULT_STAFF_PRIVILEGES, SystemProfile, DEFAULT_SYSTEM_PROFILE, SmsSettings, DEFAULT_SMS_SETTINGS, SmsLogEntry, SmsBalanceResponse } from '../types/finance.js';
 import { api } from '../api/client.js';
 import { useToast } from './Toast.js';
@@ -115,6 +116,19 @@ const PAGE_DEFINITIONS: {
     description: 'Rapid payment collection form, subscriber dues settlement, and quick receipt generation.',
     icon: Banknote,
   },
+];
+
+const SETTINGS_TABS: {
+  id: 'privileges' | 'users' | 'system' | 'sms' | 'printer';
+  label: string;
+  shortLabel: string;
+  icon: React.ElementType;
+}[] = [
+  { id: 'privileges', label: 'Staff Privileges', shortLabel: 'Privileges', icon: ShieldCheck },
+  { id: 'users', label: 'User Accounts', shortLabel: 'Users', icon: Users },
+  { id: 'system', label: 'System Profile', shortLabel: 'Profile', icon: Tv },
+  { id: 'sms', label: 'SMS Gateway', shortLabel: 'SMS', icon: MessageSquare },
+  { id: 'printer', label: 'Thermal Printer', shortLabel: 'Printer', icon: Printer },
 ];
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -727,78 +741,56 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-800 pb-5">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <Settings className="w-5 h-5" />
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Admin System Settings</h1>
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-6 space-y-5">
+      {/* Header & Mobile-Responsive Tab Bar */}
+      <div className="space-y-4 border-b border-neutral-800 pb-4">
+        {/* Title and Description */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
+            <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-            Manage Staff page privileges, system user credentials, and security controls.
-          </p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
+              Admin System Settings
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 line-clamp-1 sm:line-clamp-none">
+              Manage Staff privileges, user accounts, system profile, SMS & thermal printer.
+            </p>
+          </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex flex-wrap items-center gap-1 bg-neutral-900 p-1 rounded-lg border border-neutral-800 self-start sm:self-auto">
-          <button
-            onClick={() => setActiveTab('privileges')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-              activeTab === 'privileges'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Staff Privileges</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-              activeTab === 'users'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>User Accounts</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('system')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-              activeTab === 'system'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            <Tv className="w-3.5 h-3.5" />
-            <span>System Profile</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('sms')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-              activeTab === 'sms'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>SMS Gateway (Notify.lk)</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('printer')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-              activeTab === 'printer'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Thermal Printer</span>
-          </button>
+        {/* Tab Switcher - 100% Mobile Responsive Horizontal Scrollable Ribbon with Active Animated Pill */}
+        <div className="-mx-3 sm:mx-0 px-3 sm:px-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto py-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {SETTINGS_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? 'text-neutral-950 font-bold'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800/60 bg-neutral-900/60 border border-neutral-800'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="settings-active-tab-indicator"
+                      className="absolute inset-0 bg-emerald-500 rounded-xl shadow-md shadow-emerald-500/20 border border-emerald-400"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.shortLabel}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -2298,14 +2290,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
 
               {/* Action Buttons Header */}
-              <div className="flex items-center gap-2 self-start sm:self-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 {savedPrinter.name ? (
                   <>
                     <button
                       type="button"
                       onClick={handleTestPrint}
                       disabled={isTestingPrinter || isPairingPrinter}
-                      className="flex items-center gap-1.5 px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 border border-neutral-700 shadow-sm"
+                      className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 border border-neutral-700 shadow-sm"
                     >
                       {isTestingPrinter ? (
                         <>
@@ -2322,7 +2314,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={handleForgetPrinter}
-                      className="flex items-center gap-1 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                      className="flex items-center justify-center gap-1 px-3 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                       title="Unpair saved printer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -2334,7 +2326,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={handlePairPrinter}
                     disabled={isPairingPrinter}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 rounded-xl text-xs font-bold transition-all shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
                   >
                     {isPairingPrinter ? (
                       <>
