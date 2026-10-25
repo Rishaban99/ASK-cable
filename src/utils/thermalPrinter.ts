@@ -440,33 +440,53 @@ export async function printViaWebBluetooth(
 }
 
 /**
+ * Device helpers
+ */
+export const isAndroidDevice = (): boolean => {
+  return typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+};
+
+export const isMobileDevice = (): boolean => {
+  return (
+    typeof navigator !== 'undefined' &&
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  );
+};
+
+/**
  * 1-Tap Print via RawBT Android App
- * Uses the rawbt: custom URL scheme to instantly pass ESC/POS Base64 data to RawBT
+ * Uses the official Android intent and rawbt: scheme to pass ESC/POS Base64 data to RawBT
  */
 export function printViaRawBt(escPosBytes: Uint8Array): void {
   const base64 = uint8ArrayToBase64(escPosBytes);
-  const rawBtUrl = `rawbt:data:base64,${base64}`;
 
-  // Try opening via hidden iframe first to avoid leaving current page
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = rawBtUrl;
-  document.body.appendChild(iframe);
+  // 1. Android Intent format (Primary for Chrome / Firefox on Android)
+  const intentUrl = `intent:base64,${base64}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+  
+  // 2. Direct scheme format (Secondary fallback)
+  const rawbtSchemeUrl = `rawbt:base64,${base64}`;
+
+  // Trigger via anchor click for best mobile browser compatibility
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = intentUrl;
+  document.body.appendChild(a);
+  a.click();
 
   setTimeout(() => {
     try {
-      document.body.removeChild(iframe);
+      document.body.removeChild(a);
     } catch {
       // ignore
     }
-  }, 2000);
+  }, 1000);
 
-  // Fallback for Android Chrome which may require direct navigation
+  // Fallback to direct rawbt: scheme
   setTimeout(() => {
     try {
-      window.location.href = rawBtUrl;
+      window.location.href = rawbtSchemeUrl;
     } catch {
       // ignore
     }
-  }, 100);
+  }, 250);
 }

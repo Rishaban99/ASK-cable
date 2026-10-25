@@ -19,6 +19,7 @@ import {
   generateEscPosReceipt,
   printViaWebBluetooth,
   printViaRawBt,
+  isAndroidDevice,
   ThermalPaperWidth,
 } from '../utils/thermalPrinter.js';
 
@@ -463,9 +464,17 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
 
   // 2. Direct RawBT Android App Print (1-Tap)
   const handleRawBtPrint = () => {
+    if (!isAndroidDevice()) {
+      setBluetoothMessage({
+        type: 'info',
+        text: 'RawBT என்பது ஆண்ட்ராய்டு மொபைல் ஆப். கணினியில் (PC) பிரிண்ட் செய்ய "Direct Bluetooth" அல்லது "System Print" பயன்படுத்தவும்!',
+      });
+      return;
+    }
+
     setBluetoothMessage({
       type: 'info',
-      text: 'Opening RawBT Android Print Service...',
+      text: 'RawBT ஆப் திறக்கப்படுகிறது... (Opening RawBT Print Service...)',
     });
 
     const escPosBytes = generateEscPosReceipt(
@@ -600,21 +609,23 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
                   ? 'bg-emerald-950/60 border-emerald-800/60 text-emerald-200'
                   : bluetoothMessage.type === 'error'
                   ? 'bg-rose-950/60 border-rose-800/60 text-rose-200'
-                  : 'bg-neutral-800 border-neutral-700 text-neutral-200'
+                  : 'bg-sky-950/60 border-sky-800/60 text-sky-200'
               }`}
             >
               <div className="flex items-center gap-2 truncate">
                 {bluetoothMessage.type === 'success' ? (
                   <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                ) : (
+                ) : bluetoothMessage.type === 'error' ? (
                   <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                ) : (
+                  <Smartphone className="w-4 h-4 text-sky-400 shrink-0" />
                 )}
                 <span className="truncate">{bluetoothMessage.text}</span>
               </div>
               <button
                 type="button"
                 onClick={() => setBluetoothMessage(null)}
-                className="text-neutral-400 hover:text-white p-1"
+                className="text-neutral-400 hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-3 h-3" />
               </button>
