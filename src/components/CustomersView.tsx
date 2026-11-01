@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Customer, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
@@ -6,6 +6,13 @@ import { BillPrintModal, BillData } from './BillPrintModal.js';
 import { SuccessModal, SuccessData } from './SuccessModal.js';
 import { ConfirmModal } from './ConfirmModal.js';
 import { useToast } from './Toast.js';
+import {
+  getCablePackages,
+  setCustomerPackage,
+  getCustomerPackage,
+  getPackageById,
+  CablePackage,
+} from '../utils/packageManager.js';
 import {
   UserPlus,
   Users,
@@ -25,7 +32,9 @@ import {
   History,
   ShieldCheck,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Tv,
+  Crown
 } from 'lucide-react';
 
 interface CustomersViewProps {
@@ -62,6 +71,13 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 
   // Filter States
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED'>('ALL');
+
+  // Cable TV Package States
+  const cablePackages = useMemo(() => getCablePackages(), []);
+  const [selectedPackageId, setSelectedPackageId] = useState<string>('STANDARD');
+  const [monthlyRental, setMonthlyRental] = useState<string>('1200');
+  const [editPackageId, setEditPackageId] = useState<string>('STANDARD');
+  const [editMonthlyRental, setEditMonthlyRental] = useState<string>('1200');
 
   // Fixed Date (cannot be changed)
   const todayStr = new Date().toISOString().split('T')[0];
@@ -100,6 +116,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const [isBillModalOpen, setIsBillModalOpen] = useState(false);
 
   const handlePrintCustomerBill = (cust: Customer) => {
+    const custPkg = getCustomerPackage(cust.id || cust.boxNo);
     setActiveBillData({
       type: 'CUSTOMER',
       billNo: `CUST-${cust.boxNo}-${todayStr.replace(/-/g, '')}`,
@@ -109,6 +126,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       phoneNo: cust.phoneNo,
       address: cust.address,
       boxNo: cust.boxNo,
+      packageName: custPkg.packageName,
       totalOrFeeAmount: cust.totalAmount,
       paidAmount: cust.paidAmount,
       balanceAmount: cust.balanceAmount,
@@ -195,6 +213,17 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         status: status,
       });
 
+      // Save customer package association
+      const selectedPkg = getPackageById(selectedPackageId);
+      await setCustomerPackage(
+        { id: createdCust.id, boxNo: createdCust.boxNo },
+        {
+          packageId: selectedPackageId,
+          packageName: selectedPkg.name,
+          monthlyFee: selectedPkg.monthlyFee || 1200,
+        }
+      );
+
       // Clear Form
       setName('');
       setNicNo('');
@@ -204,6 +233,8 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       setTotalAmount('');
       setPaidAmount('');
       setStatus('ACTIVE');
+      setSelectedPackageId('STANDARD');
+      setMonthlyRental('1200');
 
       // Trigger Success Screen Modal
       setSuccessModalData({
@@ -265,6 +296,10 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     setEditTotalAmount(cust.totalAmount.toString());
     setEditPaidAmount(cust.paidAmount.toString());
     setEditStatus(cust.status || 'ACTIVE');
+
+    const currentPkg = getCustomerPackage(cust.id || cust.boxNo);
+    setEditPackageId(currentPkg.packageId);
+    setEditMonthlyRental(currentPkg.monthlyFee.toString());
   };
 
   // Save Edit
@@ -283,6 +318,17 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         paidAmount: parsedEditPaid,
         status: editStatus,
       });
+
+      // Update package association
+      const editPkg = getPackageById(editPackageId);
+      await setCustomerPackage(
+        { id: editingCustomer.id, boxNo: editBoxNo.trim() || editingCustomer.boxNo },
+        {
+          packageId: editPackageId,
+          packageName: editPkg.name,
+          monthlyFee: editPkg.monthlyFee || 1200,
+        }
+      );
 
       toast.success(`Customer "${editName.trim()}" updated successfully!`);
       setEditingCustomer(null);
@@ -339,12 +385,14 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
+    const pkg = getCustomerPackage(c.id || c.boxNo);
     return (
       c.name.toLowerCase().includes(q) ||
       c.nicNo.toLowerCase().includes(q) ||
       c.phoneNo.toLowerCase().includes(q) ||
       c.boxNo.toLowerCase().includes(q) ||
-      c.address.toLowerCase().includes(q)
+      c.address.toLowerCase().includes(q) ||
+      pkg.packageName.toLowerCase().includes(q)
     );
   });
 
@@ -513,6 +561,70 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
               </div>
             </div>
 
+            {/* Cable TV Package Selection */}
+            <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-neutral-800">
+              <div className="flex items-center justify-between">
+                <label className="text-slate-700 dark:text-neutral-300 font-semibold flex items-center gap-1.5">
+                  <Tv className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                  <span>Cable TV Package *</span>
+                </label>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                  Auto-fills monthly rental
+                </span>
+              </div>
+
+              {/* 3 Package Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {cablePackages.map((pkg) => {
+                  const isSelected = selectedPackageId === pkg.id;
+                  const isPremium = pkg.id === 'PREMIUM_HD';
+                  const isBasic = pkg.id === 'BASIC';
+                  return (
+                    <button
+                      type="button"
+                      key={pkg.id}
+                      onClick={() => {
+                        setSelectedPackageId(pkg.id);
+                        setMonthlyRental(pkg.monthlyFee.toString());
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all relative cursor-pointer ${
+                        isSelected
+                          ? isPremium
+                            ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/30 dark:bg-amber-500/15'
+                            : isBasic
+                            ? 'bg-sky-500/10 border-sky-500 ring-2 ring-sky-500/30 dark:bg-sky-500/15'
+                            : 'bg-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/30 dark:bg-emerald-500/15'
+                          : 'bg-slate-50 dark:bg-neutral-950 border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className={`text-[11px] font-bold truncate flex items-center gap-1 ${
+                          isSelected
+                            ? isPremium ? 'text-amber-600 dark:text-amber-400' : isBasic ? 'text-sky-600 dark:text-sky-400' : 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-slate-900 dark:text-white'
+                        }`}>
+                          {isPremium && <Crown className="w-3 h-3 text-amber-500" />}
+                          {pkg.name}
+                        </span>
+                        {isSelected && (
+                          <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${
+                            isPremium ? 'text-amber-500' : isBasic ? 'text-sky-500' : 'text-emerald-500'
+                          }`} />
+                        )}
+                      </div>
+                      <div className="text-xs font-mono font-black text-slate-900 dark:text-white">
+                        {formatMoney(pkg.monthlyFee, currency)}
+                        <span className="text-[10px] font-normal text-slate-500 dark:text-neutral-400 font-sans">/mo</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-neutral-400 truncate mt-0.5">
+                        {pkg.channelsCount}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Financials: Total Amount & Paid Amount */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -664,6 +776,26 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               }`} />
                               {cust.status || 'ACTIVE'}
                             </span>
+
+                            {/* Cable TV Package Badge */}
+                            {(() => {
+                              const custPkg = getCustomerPackage(cust.id || cust.boxNo);
+                              const isPrem = custPkg.packageId === 'PREMIUM_HD';
+                              const isBasic = custPkg.packageId === 'BASIC';
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
+                                  isPrem
+                                    ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
+                                    : isBasic
+                                    ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                                }`}>
+                                  {isPrem ? <Crown className="w-2.5 h-2.5 text-amber-500" /> : <Tv className="w-2.5 h-2.5 text-emerald-500" />}
+                                  <span>{custPkg.packageName}</span>
+                                  <span className="font-mono text-[9px] opacity-80 font-bold">({formatMoney(custPkg.monthlyFee, currency)}/mo)</span>
+                                </span>
+                              );
+                            })()}
                           </div>
 
                           {/* Clean Address Badge */}
@@ -726,6 +858,15 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               <div className="flex items-center justify-between text-slate-600 dark:text-neutral-400">
                                 <span className="font-medium">Subscriber Status:</span>
                                 <span className="font-bold text-slate-900 dark:text-white">{cust.status || 'ACTIVE'}</span>
+                              </div>
+                              <div className="flex items-center justify-between text-slate-600 dark:text-neutral-400">
+                                <span className="font-medium">Assigned Package:</span>
+                                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                                  {getCustomerPackage(cust.id || cust.boxNo).packageName}
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">
+                                    ({formatMoney(getCustomerPackage(cust.id || cust.boxNo).monthlyFee, currency)}/mo)
+                                  </span>
+                                </span>
                               </div>
                               {cust.createdAt && (
                                 <div className="flex items-center justify-between text-slate-600 dark:text-neutral-400">
@@ -880,6 +1021,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       <th className="px-3.5 py-3">Customer</th>
                       <th className="px-3 py-3">NIC &amp; Phone</th>
                       <th className="px-3 py-3">Box No</th>
+                      <th className="px-3 py-3 text-center">Package</th>
                       <th className="px-3 py-3 text-center">Status</th>
                       <th className="px-3 py-3 text-right">Total</th>
                       <th className="px-3 py-3 text-right">Paid</th>
@@ -890,7 +1032,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                   <tbody className="divide-y divide-slate-100 dark:divide-neutral-800/80">
                     {filteredCustomers.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-3 py-10 text-center text-slate-400 dark:text-neutral-500">
+                        <td colSpan={9} className="px-3 py-10 text-center text-slate-400 dark:text-neutral-500">
                           No customer records found matching the criteria.
                         </td>
                       </tr>
@@ -918,6 +1060,28 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                               <Box className="w-3 h-3 text-slate-500 dark:text-neutral-400" />
                               <span>{cust.boxNo || '-'}</span>
                             </span>
+                          </td>
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                            {(() => {
+                              const custPkg = getCustomerPackage(cust.id || cust.boxNo);
+                              const isPrem = custPkg.packageId === 'PREMIUM_HD';
+                              const isBasic = custPkg.packageId === 'BASIC';
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10.5px] font-bold rounded-full border ${
+                                  isPrem
+                                    ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
+                                    : isBasic
+                                    ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                                }`}>
+                                  {isPrem && <Crown className="w-2.5 h-2.5 text-amber-500" />}
+                                  <span>{custPkg.packageName}</span>
+                                  <span className="font-mono text-[9px] opacity-75">
+                                    {formatMoney(custPkg.monthlyFee, currency)}
+                                  </span>
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td className="px-3 py-3 text-center font-mono whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
@@ -1123,6 +1287,61 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       <option value="INACTIVE">INACTIVE (Suspended)</option>
                       <option value="DISCONNECTED">DISCONNECTED (Cut)</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Cable Package Selection in Edit Modal */}
+                <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-neutral-800">
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-600 dark:text-neutral-400 font-medium flex items-center gap-1.5 text-xs">
+                      <Tv className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                      <span>Cable TV Package</span>
+                    </label>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                      Auto-sets monthly rental
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {cablePackages.map((pkg) => {
+                      const isSelected = editPackageId === pkg.id;
+                      const isPremium = pkg.id === 'PREMIUM_HD';
+                      const isBasic = pkg.id === 'BASIC';
+                      return (
+                        <button
+                          type="button"
+                          key={pkg.id}
+                          onClick={() => {
+                            setEditPackageId(pkg.id);
+                            setEditMonthlyRental(pkg.monthlyFee.toString());
+                          }}
+                          className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? isPremium
+                                ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/30'
+                                : isBasic
+                                ? 'bg-sky-500/10 border-sky-500 ring-2 ring-sky-500/30'
+                                : 'bg-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/30'
+                              : 'bg-slate-50 dark:bg-neutral-950 border-slate-200 dark:border-neutral-800 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className="text-[10.5px] font-bold truncate flex items-center gap-1 text-slate-900 dark:text-white">
+                              {isPremium && <Crown className="w-2.5 h-2.5 text-amber-500" />}
+                              {pkg.name.replace(' Package', '')}
+                            </span>
+                            {isSelected && (
+                              <CheckCircle2 className={`w-3 h-3 shrink-0 ${
+                                isPremium ? 'text-amber-500' : isBasic ? 'text-sky-500' : 'text-emerald-500'
+                              }`} />
+                            )}
+                          </div>
+                          <div className="text-[11px] font-mono font-bold text-slate-900 dark:text-white">
+                            {formatMoney(pkg.monthlyFee, currency)}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

@@ -1368,7 +1368,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* ==========================================================================
-          MODAL: SKIPPED CUSTOMERS REASONS & BREAKDOWN
+          MODAL: SKIPPED CUSTOMERS REASONS & BREAKDOWN (v18 Color UI)
           ========================================================================== */}
       <AnimatePresence>
         {isSkippedModalOpen && (
@@ -1379,26 +1379,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-y-auto"
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0, y: 24 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ type: 'spring', damping: 26, stiffness: 350 }}
-              className="backdrop-blur-2xl bg-neutral-900/95 border border-neutral-800/90 rounded-t-3xl sm:rounded-3xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[88vh]"
+              exit={{ scale: 0.95, opacity: 0, y: 24 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+              className="w-full max-w-4xl max-h-[92vh] sm:max-h-[88vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-2xl bg-white/95 dark:bg-neutral-900/95 border border-slate-200/90 dark:border-neutral-800/90 text-slate-900 dark:text-neutral-100 transition-colors"
             >
+              {/* Mobile Drag Indicator Pill */}
+              <div className="w-12 h-1.5 bg-slate-300 dark:bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden shrink-0" />
+
               {/* Modal Header */}
-              <div className="p-4 sm:p-5 border-b border-neutral-800/80 flex items-center justify-between bg-neutral-900/90">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
-                    <UserX className="w-5 h-5" />
+              <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-200/80 dark:border-neutral-800/80 flex items-center justify-between bg-white/80 dark:bg-neutral-900/80">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/25 shrink-0">
+                    <UserX className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                      <span>Skipped Customers — {formatMonthLabel(selectedBillingMonth)}</span>
-                      <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h3 className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white">
+                        Skipped Customers — {formatMonthLabel(selectedBillingMonth)}
+                      </h3>
+                      <span className="text-xs font-mono font-extrabold px-3 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-300/80 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30 shadow-xs">
                         {totalSkippedCount} Total
                       </span>
-                    </h3>
-                    <p className="text-xs text-neutral-400 mt-0.5">
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5 font-medium line-clamp-1 sm:line-clamp-none">
                       Accurate, database-driven reasons why these customer accounts are bypassed during bulk bill generation.
                     </p>
                   </div>
@@ -1407,24 +1412,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   whileTap={{ scale: 0.9 }}
                   type="button"
                   onClick={() => setIsSkippedModalOpen(false)}
-                  className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition-colors"
+                  className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800/80 dark:hover:bg-neutral-800 text-slate-600 hover:text-slate-900 dark:text-neutral-300 dark:hover:text-white transition-colors cursor-pointer shrink-0 ml-2"
+                  title="Close modal"
                 >
                   <X className="w-5 h-5" />
                 </motion.button>
               </div>
 
-              {/* Filter Tabs & Search Bar */}
-              <div className="p-4 border-b border-neutral-800/80 bg-neutral-900/60 space-y-3">
+              {/* Filter Tabs & Search Ribbon */}
+              <div className="px-5 py-4 border-b border-slate-200/80 dark:border-neutral-800/80 bg-slate-50/80 dark:bg-neutral-950/60 space-y-3.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   {/* Reason Category Filter Tabs */}
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     <button
                       type="button"
                       onClick={() => setSkippedFilterTab('ALL')}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl border transition-all shrink-0 cursor-pointer ${
                         skippedFilterTab === 'ALL'
-                          ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/20'
-                          : 'bg-neutral-800/80 text-neutral-300 border-neutral-700/80 hover:bg-neutral-750'
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500 shadow-md shadow-purple-600/30'
+                          : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 dark:bg-neutral-850 dark:hover:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-750'
                       }`}
                     >
                       All ({totalSkippedCount})
@@ -1432,53 +1438,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setSkippedFilterTab('NEW_REGISTRATION')}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl border transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                         skippedFilterTab === 'NEW_REGISTRATION'
-                          ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/20'
-                          : 'bg-neutral-800/80 text-neutral-300 border-neutral-700/80 hover:bg-neutral-750'
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500 shadow-md shadow-purple-600/30'
+                          : 'bg-white hover:bg-slate-100 text-purple-700 dark:text-purple-300 border-slate-200 dark:bg-neutral-850 dark:hover:bg-neutral-800 dark:border-neutral-750'
                       }`}
                     >
-                      New Registration ({skippedNewRegCount})
+                      <span>⚡ New Reg ({skippedNewRegCount})</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setSkippedFilterTab('INACTIVE_STATUS')}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl border transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                         skippedFilterTab === 'INACTIVE_STATUS'
-                          ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/20'
-                          : 'bg-neutral-800/80 text-neutral-300 border-neutral-700/80 hover:bg-neutral-750'
+                          ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white border-rose-500 shadow-md shadow-rose-600/30'
+                          : 'bg-white hover:bg-slate-100 text-rose-700 dark:text-rose-300 border-slate-200 dark:bg-neutral-850 dark:hover:bg-neutral-800 dark:border-neutral-750'
                       }`}
                     >
-                      Inactive / Disconnected ({skippedInactiveCount})
+                      <span>⛔ Inactive ({skippedInactiveCount})</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setSkippedFilterTab('ALREADY_BILLED')}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl border transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                         skippedFilterTab === 'ALREADY_BILLED'
-                          ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/20'
-                          : 'bg-neutral-800/80 text-neutral-300 border-neutral-700/80 hover:bg-neutral-750'
+                          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-blue-500 shadow-md shadow-blue-600/30'
+                          : 'bg-white hover:bg-slate-100 text-blue-700 dark:text-blue-300 border-slate-200 dark:bg-neutral-850 dark:hover:bg-neutral-800 dark:border-neutral-750'
                       }`}
                     >
-                      Already Billed ({skippedAlreadyBilledCount})
+                      <span>✓ Billed ({skippedAlreadyBilledCount})</span>
                     </button>
                   </div>
 
-                  {/* Search */}
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  {/* Search Bar */}
+                  <div className="relative w-full sm:w-64 shrink-0">
+                    <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-neutral-400 pointer-events-none" />
                     <input
                       type="text"
                       value={skippedSearchTerm}
                       onChange={(e) => setSkippedSearchTerm(e.target.value)}
                       placeholder="Search Box No, Name, Phone..."
-                      className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-neutral-700/80 bg-neutral-950/70 text-white placeholder-neutral-400 focus:outline-none focus:border-purple-400 font-mono"
+                      className="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-300 dark:border-neutral-700/80 bg-white dark:bg-neutral-900 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 font-mono transition-all shadow-inner"
                     />
                     {skippedSearchTerm && (
                       <button
                         type="button"
                         onClick={() => setSkippedSearchTerm('')}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-neutral-400 dark:hover:text-white p-0.5"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -1486,104 +1492,129 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </div>
                 </div>
 
-                {/* Informational Rule Alert */}
-                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-200">
-                  <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                  <p>
-                    <strong className="text-white">Business Rule:</strong> Customers registering in month <span className="font-mono font-bold text-purple-300">{selectedBillingMonth}</span> are excluded from billing for their registration month and earlier months. Billing begins in the subsequent month.
-                  </p>
+                {/* Informational Rule Alert (v18 Callout Card) */}
+                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-purple-500/5 border border-purple-200/90 dark:border-purple-500/30 text-xs shadow-xs">
+                  <div className="p-1.5 rounded-xl bg-purple-200/80 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 shrink-0 mt-0.5">
+                    <Info className="w-4 h-4" />
+                  </div>
+                  <div className="leading-relaxed">
+                    <span className="font-extrabold text-purple-900 dark:text-white uppercase tracking-wider text-[10px] mr-1.5 inline-block">
+                      Business Rule:
+                    </span>
+                    <span className="text-purple-950 dark:text-purple-200 font-medium">
+                      Customers registering in month{' '}
+                      <strong className="font-mono font-black text-purple-900 dark:text-white underline decoration-purple-400 decoration-2 underline-offset-2">
+                        {selectedBillingMonth}
+                      </strong>{' '}
+                      are excluded from billing for their registration month and earlier months. Billing begins in the subsequent month.
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Modal Body / Customer Table */}
-              <div className="flex-1 overflow-y-auto p-4 divide-y divide-neutral-800/80">
+              {/* Modal Body / Customer List */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 bg-slate-100/70 dark:bg-neutral-950/80 space-y-3">
                 {filteredSkippedList.length === 0 ? (
-                  <div className="py-16 text-center text-xs text-neutral-400">
-                    No skipped customers found matching current filters.
+                  <div className="py-20 text-center space-y-2">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-200/80 dark:bg-neutral-800 text-slate-400 dark:text-neutral-500 flex items-center justify-center mx-auto">
+                      <Search className="w-6 h-6" />
+                    </div>
+                    <div className="text-sm font-bold text-slate-700 dark:text-neutral-300">No Customers Found</div>
+                    <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-sm mx-auto">
+                      No skipped accounts match your selected filter or search keyword.
+                    </p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {filteredSkippedList.map((item) => {
-                      const { customer, category, reason } = item;
-                      return (
-                        <div
-                          key={customer.id}
-                          className="p-3.5 rounded-2xl bg-neutral-950/50 border border-neutral-800/80 hover:border-neutral-700/80 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
-                        >
-                          {/* Customer Identification */}
-                          <div className="space-y-1 min-w-[220px]">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-white bg-neutral-800 px-2.5 py-0.5 rounded-lg border border-neutral-700">
-                                Box #{customer.boxNo}
-                              </span>
-                              <span className="font-bold text-white text-sm truncate">
-                                {customer.name}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] text-neutral-400 font-mono">
-                              <span>Phone: {customer.phoneNo || 'N/A'}</span>
-                              {customer.nicNo && <span>· NIC: {customer.nicNo}</span>}
-                            </div>
-                          </div>
-
-                          {/* Customer Status & Reg Date */}
-                          <div className="flex items-center gap-2 min-w-[160px] text-[11px] font-mono">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-lg font-semibold border ${
-                                customer.status === 'ACTIVE'
-                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                              }`}
-                            >
-                              {customer.status || 'ACTIVE'}
+                  filteredSkippedList.map((item) => {
+                    const { customer, category, reason } = item;
+                    return (
+                      <div
+                        key={customer.id}
+                        className="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200/90 dark:border-neutral-800 shadow-xs hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+                      >
+                        {/* Customer Identification */}
+                        <div className="space-y-1.5 min-w-[220px]">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 px-2.5 py-0.5 rounded-lg shadow-xs text-xs">
+                              Box #{customer.boxNo}
                             </span>
-                            <span className="text-neutral-400">
-                              Reg: {customer.createdAt ? customer.createdAt.slice(0, 10) : (item.regMonth || 'N/A')}
+                            <span className="font-extrabold text-slate-900 dark:text-white text-sm truncate">
+                              {customer.name}
                             </span>
                           </div>
-
-                          {/* Skipped Reason Callout */}
-                          <div className="flex-1 min-w-[260px]">
-                            <div
-                              className={`p-3 rounded-xl border text-[11px] leading-relaxed ${
-                                category === 'NEW_REGISTRATION'
-                                  ? 'bg-purple-500/10 text-purple-200 border-purple-500/25'
-                                  : category === 'INACTIVE_STATUS'
-                                  ? 'bg-rose-500/10 text-rose-200 border-rose-500/25'
-                                  : 'bg-blue-500/10 text-blue-200 border-blue-500/25'
-                              }`}
-                            >
-                              <span
-                                className={`font-bold uppercase tracking-wider block text-[10px] mb-0.5 ${
-                                  category === 'NEW_REGISTRATION'
-                                    ? 'text-purple-300'
-                                    : category === 'INACTIVE_STATUS'
-                                    ? 'text-rose-300'
-                                    : 'text-blue-300'
-                                }`}
-                              >
-                                {category === 'NEW_REGISTRATION' && '⚡ New Registration (Starts Next Month)'}
-                                {category === 'INACTIVE_STATUS' && '⛔ Inactive Account Status'}
-                                {category === 'ALREADY_BILLED' && '✓ Bill Already Created (No Duplicates)'}
+                          <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-neutral-400 font-mono flex-wrap">
+                            <span className="bg-slate-100 dark:bg-neutral-800 px-2 py-0.5 rounded-md font-semibold text-slate-700 dark:text-neutral-300">
+                              Phone: {customer.phoneNo || 'N/A'}
+                            </span>
+                            {customer.nicNo && (
+                              <span className="bg-slate-100 dark:bg-neutral-800 px-2 py-0.5 rounded-md font-semibold text-slate-700 dark:text-neutral-300">
+                                NIC: {customer.nicNo}
                               </span>
-                              {reason}
-                            </div>
+                            )}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        {/* Customer Status & Reg Date */}
+                        <div className="flex items-center gap-2 min-w-[160px] text-[11px] font-mono">
+                          <span
+                            className={`px-2.5 py-1 rounded-xl font-extrabold border ${
+                              customer.status === 'ACTIVE'
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300/80 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                                : 'bg-rose-100 text-rose-800 border-rose-300/80 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30'
+                            }`}
+                          >
+                            {customer.status || 'ACTIVE'}
+                          </span>
+                          <span className="text-slate-600 dark:text-neutral-400 bg-slate-100 dark:bg-neutral-800/80 px-2.5 py-1 rounded-xl font-medium border border-slate-200 dark:border-neutral-700/60">
+                            Reg: {customer.createdAt ? customer.createdAt.slice(0, 10) : (item.regMonth || 'N/A')}
+                          </span>
+                        </div>
+
+                        {/* Skipped Reason Callout Container */}
+                        <div className="flex-1 min-w-[260px]">
+                          <div
+                            className={`p-3 rounded-2xl border text-[11px] leading-relaxed ${
+                              category === 'NEW_REGISTRATION'
+                                ? 'bg-purple-50/90 dark:bg-purple-950/30 text-purple-950 dark:text-purple-200 border-purple-200 dark:border-purple-500/30'
+                                : category === 'INACTIVE_STATUS'
+                                ? 'bg-rose-50/90 dark:bg-rose-950/30 text-rose-950 dark:text-rose-200 border-rose-200 dark:border-rose-500/30'
+                                : 'bg-blue-50/90 dark:bg-blue-950/30 text-blue-950 dark:text-blue-200 border-blue-200 dark:border-blue-500/30'
+                            }`}
+                          >
+                            <span
+                              className={`font-black uppercase tracking-wider block text-[10px] mb-0.5 ${
+                                category === 'NEW_REGISTRATION'
+                                  ? 'text-purple-700 dark:text-purple-300'
+                                  : category === 'INACTIVE_STATUS'
+                                  ? 'text-rose-700 dark:text-rose-300'
+                                  : 'text-blue-700 dark:text-blue-300'
+                              }`}
+                            >
+                              {category === 'NEW_REGISTRATION' && '⚡ New Registration (Starts Next Month)'}
+                              {category === 'INACTIVE_STATUS' && '⛔ Inactive Account Status'}
+                              {category === 'ALREADY_BILLED' && '✓ Bill Already Created (No Duplicates)'}
+                            </span>
+                            <span className="font-semibold text-slate-800 dark:text-neutral-200">
+                              {reason}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-neutral-800/80 bg-neutral-900/90 flex items-center justify-between text-xs text-neutral-400">
-                <span>Showing {filteredSkippedList.length} of {totalSkippedCount} skipped customers</span>
+              <div className="px-5 py-4 sm:px-6 border-t border-slate-200/80 dark:border-neutral-800/80 bg-white/90 dark:bg-neutral-900/90 flex items-center justify-between text-xs">
+                <span className="text-slate-600 dark:text-neutral-400 font-semibold font-mono">
+                  Showing {filteredSkippedList.length} of {totalSkippedCount} skipped customers
+                </span>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   type="button"
                   onClick={() => setIsSkippedModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold rounded-xl bg-neutral-800 hover:bg-neutral-750 text-white border border-neutral-700/80 transition-colors"
+                  className="px-5 py-2.5 text-xs font-extrabold rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-neutral-800 dark:hover:bg-neutral-750 dark:text-white border border-slate-800 dark:border-neutral-700 shadow-md cursor-pointer transition-all active:scale-95"
                 >
                   Close
                 </motion.button>

@@ -703,6 +703,7 @@ export class RelationalDatabaseStore {
   public async bulkCreateMonthlyPayments(dto: {
     month: string;
     defaultFee?: number;
+    packageMap?: Record<string, any>;
   }): Promise<{
     month: string;
     totalActiveCustomers: number;
@@ -745,6 +746,13 @@ export class RelationalDatabaseStore {
     const todayStr = new Date().toISOString().split('T')[0];
     const defaultFee = dto.defaultFee && dto.defaultFee > 0 ? dto.defaultFee : 1200;
 
+    // Fetch package assignments from dedicated customer_packages collection
+    let packageMap: Record<string, any> = dto.packageMap && typeof dto.packageMap === 'object' ? { ...dto.packageMap } : {};
+    try {
+      const dbCustPackages = await this.getCustomerPackages();
+      packageMap = { ...dbCustPackages, ...packageMap };
+    } catch {}
+
     for (const cust of activeCustomers) {
       // 1. Skip customers who registered in target month or later (monthly billing begins after registration month)
       const regMonth = this.getCustomerRegistrationMonth(cust.createdAt, cust.id);
@@ -768,21 +776,26 @@ export class RelationalDatabaseStore {
         continue;
       }
 
+      const custKeyId = (cust.id || '').toLowerCase();
+      const custKeyBox = (cust.boxNo || '').toLowerCase();
+      const assignedPkg = packageMap[custKeyId] || packageMap[custKeyBox];
+      const customerFee = assignedPkg && Number(assignedPkg.monthlyFee) > 0 ? Number(assignedPkg.monthlyFee) : defaultFee;
+
       await dbClient.create({
         data: {
           customerId: cust.id,
           customerName: cust.name,
           boxNo: cust.boxNo,
           month: dto.month,
-          monthlyFee: defaultFee,
+          monthlyFee: customerFee,
           paidAmount: 0,
           paymentDate: todayStr,
         },
       });
 
       createdCount++;
-      totalBilledAmount += defaultFee;
-      createdCustomerNames.push(`${cust.name} (Box: ${cust.boxNo})`);
+      totalBilledAmount += customerFee;
+      createdCustomerNames.push(`${cust.name} (Box: ${cust.boxNo}) [${assignedPkg?.packageName || 'Standard'}: LKR ${customerFee}]`);
     }
 
     return {
@@ -1389,6 +1402,227 @@ export class RelationalDatabaseStore {
       });
     } catch (e: any) {
       console.error(`Failed to save setting key "${key}":`, e?.message);
+    }
+  }
+
+  public async deleteSetting(key: string): Promise<void> {
+    try {
+      const client = this.getSettingClient();
+      if (!client) return;
+      await client.deleteMany({ where: { key } });
+    } catch (e: any) {
+      console.warn(`Failed to delete setting key "${key}":`, e?.message);
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // DEDICATED TV PACKAGES COLLECTION (MongoDB 'packages' table)
+  // -------------------------------------------------------------------
+  public async getCablePackages(): Promise<any[]> {
+    // Clean up legacy settings table key if present
+    this.deleteSetting('cable_packages').catch(() => {});
+
+    try {
+      const res: any = await (prisma as any).$runCommandRaw({
+        find: 'packages',
+        filter: {},
+        sort: { monthlyFee: 1 },
+      });
+
+      if (res?.cursor?.firstBatch && res.cursor.firstBatch.length > 0) {
+        return res.cursor.firstBatch.map((doc: any) => ({
+          id: doc.packageId || doc._id?.$oid || doc._id,
+          packageId: doc.packageId,
+          name: doc.name,
+          shortName: doc.shortName || doc.name,
+          monthlyFee: Number(doc.monthlyFee) || 0,
+          channelsCount: doc.channelsCount || '',
+          color: doc.color || 'from-blue-500 to-indigo-600',
+          badgeBg: doc.badgeBg || 'bg-blue-500/15',
+          badgeBorder: doc.badgeBorder || 'border-blue-500/30',
+          badgeText: doc.badgeText || 'text-blue-400',
+          description: doc.description || '',
+        }));
+      }
+    } catch (e: any) {
+      console.warn('Raw query on packages collection failed:', e?.message);
+    }
+
+    // Seed default packages if empty
+    const defaults = [
+      {
+        packageId: 'BASIC',
+        name: 'Basic Package',
+        shortName: 'Basic',
+        monthlyFee: 600,
+        channelsCount: '45+ SD Channels',
+        color: 'from-emerald-500 to-teal-600',
+        badgeBg: 'bg-emerald-500/15',
+        badgeBorder: 'border-emerald-500/30',
+        badgeText: 'text-emerald-400',
+        description: 'Essential local, news & entertainment channels (LKR 600/mo).',
+      },
+      {
+        packageId: 'STANDARD',
+        name: 'Standard Package',
+        shortName: 'Standard',
+        monthlyFee: 1200,
+        channelsCount: '90+ SD & HD Channels',
+        color: 'from-blue-500 to-indigo-600',
+        badgeBg: 'bg-blue-500/15',
+        badgeBorder: 'border-blue-500/30',
+        badgeText: 'text-blue-400',
+        description: 'Most popular family package with movies, sports, music & news (LKR 1,200/mo).',
+      },
+      {
+        packageId: 'PREMIUM_HD',
+        name: 'Premium HD Package',
+        shortName: 'Premium HD',
+        monthlyFee: 1800,
+        channelsCount: '140+ Full HD & 4K Channels',
+        color: 'from-purple-500 to-pink-600',
+        badgeBg: 'bg-purple-500/15',
+        badgeBorder: 'border-purple-500/30',
+        badgeText: 'text-purple-400',
+        description: 'Complete sports, international movies, kids, documentary & HD channels (LKR 1,800/mo).',
+      },
+    ];
+
+    try {
+      await (prisma as any).$runCommandRaw({
+        insert: 'packages',
+        documents: defaults.map((d) => ({
+          ...d,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })),
+      });
+    } catch (err: any) {
+      console.warn('Failed to seed default packages to packages collection:', err?.message);
+    }
+
+    return defaults.map((d) => ({ ...d, id: d.packageId }));
+  }
+
+  public async upsertCablePackage(pkg: any): Promise<any> {
+    const pkgId = pkg.id || pkg.packageId;
+    const doc = {
+      packageId: pkgId,
+      name: pkg.name,
+      shortName: pkg.shortName || pkg.name,
+      monthlyFee: Number(pkg.monthlyFee) || 0,
+      channelsCount: pkg.channelsCount || '',
+      color: pkg.color || 'from-blue-500 to-indigo-600',
+      badgeBg: pkg.badgeBg || 'bg-blue-500/15',
+      badgeBorder: pkg.badgeBorder || 'border-blue-500/30',
+      badgeText: pkg.badgeText || 'text-blue-400',
+      description: pkg.description || '',
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      await (prisma as any).$runCommandRaw({
+        update: 'packages',
+        updates: [
+          {
+            q: { packageId: pkgId },
+            u: { $set: doc },
+            upsert: true,
+          },
+        ],
+      });
+    } catch (e: any) {
+      console.error('Failed to upsert package to packages collection:', e?.message);
+    }
+    return { ...doc, id: pkgId };
+  }
+
+  public async deleteCablePackage(packageId: string): Promise<boolean> {
+    try {
+      await (prisma as any).$runCommandRaw({
+        delete: 'packages',
+        deletes: [{ q: { packageId }, limit: 1 }],
+      });
+      return true;
+    } catch (e: any) {
+      console.error('Failed to delete package from packages collection:', e?.message);
+      return false;
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // DEDICATED CUSTOMER PACKAGES COLLECTION (MongoDB 'customer_packages')
+  // -------------------------------------------------------------------
+  public async getCustomerPackages(): Promise<Record<string, any>> {
+    // Clean up legacy setting key if present
+    this.deleteSetting('customer_packages').catch(() => {});
+
+    const map: Record<string, any> = {};
+    try {
+      const res: any = await (prisma as any).$runCommandRaw({
+        find: 'customer_packages',
+        filter: {},
+      });
+
+      if (res?.cursor?.firstBatch) {
+        for (const doc of res.cursor.firstBatch) {
+          if (doc.targetKey) {
+            map[doc.targetKey] = {
+              packageId: doc.packageId,
+              packageName: doc.packageName,
+              monthlyFee: Number(doc.monthlyFee) || 0,
+              updatedAt: doc.updatedAt,
+            };
+          }
+        }
+      }
+    } catch (e: any) {
+      console.warn('Failed to query customer_packages collection:', e?.message);
+    }
+    return map;
+  }
+
+  public async setCustomerPackage(
+    customerIdentifier: { id?: string; boxNo?: string },
+    assignment: { packageId: string; packageName: string; monthlyFee: number }
+  ): Promise<void> {
+    // Clean up legacy setting key if present
+    this.deleteSetting('customer_packages').catch(() => {});
+
+    const stamp = new Date().toISOString();
+    const docData = {
+      packageId: assignment.packageId,
+      packageName: assignment.packageName,
+      monthlyFee: Number(assignment.monthlyFee) || 0,
+      updatedAt: stamp,
+    };
+
+    const keys: string[] = [];
+    if (customerIdentifier.id) keys.push(customerIdentifier.id.trim().toLowerCase());
+    if (customerIdentifier.boxNo) keys.push(customerIdentifier.boxNo.trim().toLowerCase());
+
+    for (const key of keys) {
+      try {
+        await (prisma as any).$runCommandRaw({
+          update: 'customer_packages',
+          updates: [
+            {
+              q: { targetKey: key },
+              u: {
+                $set: {
+                  targetKey: key,
+                  customerId: customerIdentifier.id || null,
+                  boxNo: customerIdentifier.boxNo || null,
+                  ...docData,
+                },
+              },
+              upsert: true,
+            },
+          ],
+        });
+      } catch (e: any) {
+        console.error('Failed to upsert customer_package:', e?.message);
+      }
     }
   }
 

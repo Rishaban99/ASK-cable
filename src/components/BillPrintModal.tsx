@@ -41,6 +41,7 @@ export interface BillData {
   address?: string;
   boxNo: string;
   month?: string; // YYYY-MM
+  packageName?: string;
   totalOrFeeAmount: number;
   paidAmount: number;
   balanceAmount: number;
@@ -207,6 +208,15 @@ const ThermalReceiptSlip: React.FC<{
               NIC:
             </span>
             <span className="font-semibold text-black">{billData.nicNo}</span>
+          </div>
+        )}
+
+        {billData.packageName && (
+          <div className="flex justify-between items-center">
+            <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
+              Package:
+            </span>
+            <span className="font-bold text-black">{billData.packageName}</span>
           </div>
         )}
 

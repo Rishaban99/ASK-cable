@@ -99,6 +99,12 @@ const PAGE_DEFINITIONS: {
     icon: Users,
   },
   {
+    id: 'packages',
+    label: 'TV Packages',
+    description: 'Configure Cable TV subscription packages, channel tiers, monthly rental rates, and subscriber allocations.',
+    icon: Tv,
+  },
+  {
     id: 'monthly-payment',
     label: 'Monthly Payment',
     description: 'Subscriber monthly billing ledger, bulk payment collection, and monthly status.',

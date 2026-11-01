@@ -28,8 +28,15 @@ import {
   ChevronDown,
   ChevronUp,
   CopyCheck,
-  Lock
+  Lock,
+  Tv,
+  Crown
 } from 'lucide-react';
+import {
+  getCustomerPackage,
+  getPackageById,
+  getAllCustomerPackageAssignments
+} from '../utils/packageManager.js';
 
 interface MonthlyPaymentViewProps {
   monthlyPayments: MonthlyPayment[];
@@ -140,16 +147,28 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
     }
   }, [selectedCustomerId, selectedCustomerRegMonth, minEligibleMonth]);
 
+  // Keep monthly fee locked to customer's assigned package
+  useEffect(() => {
+    if (selectedCustomer) {
+      const custPkg = getCustomerPackage(selectedCustomer.id || selectedCustomer.boxNo);
+      setMonthlyFee(custPkg.monthlyFee.toString());
+    }
+  }, [selectedCustomerId, selectedCustomer]);
+
   const handleCustomerSelect = (custId: string) => {
     setSelectedCustomerId(custId);
     setErrorMsg('');
     const cust = customers.find((c) => c.id === custId);
-    if (cust?.createdAt) {
-      const regM = getRegistrationMonth(cust.createdAt);
-      if (regM) {
-        const nextEligible = getNextBillingMonth(regM);
-        if (month <= regM && nextEligible) {
-          setMonth(nextEligible);
+    if (cust) {
+      const custPkg = getCustomerPackage(cust.id || cust.boxNo);
+      setMonthlyFee(custPkg.monthlyFee.toString());
+      if (cust.createdAt) {
+        const regM = getRegistrationMonth(cust.createdAt);
+        if (regM) {
+          const nextEligible = getNextBillingMonth(regM);
+          if (month <= regM && nextEligible) {
+            setMonth(nextEligible);
+          }
         }
       }
     }
@@ -206,6 +225,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
   const handlePrintMonthlyBill = (pmt: MonthlyPayment) => {
     const cust = customers.find((c) => c.id === pmt.customerId);
+    const custPkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
     setActiveBillData({
       type: 'MONTHLY',
       billNo: `BILL-${pmt.boxNo}-${pmt.month.replace('-', '')}`,
@@ -216,6 +236,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
       address: cust?.address,
       boxNo: pmt.boxNo,
       month: pmt.month,
+      packageName: custPkg.packageName,
       totalOrFeeAmount: pmt.monthlyFee,
       paidAmount: pmt.paidAmount,
       balanceAmount: pmt.balanceAmount,
@@ -231,7 +252,6 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
   // Bulk Monthly Generator States (Admin Only)
   const [bulkMonth, setBulkMonth] = useState(() => new Date().toISOString().substring(0, 7));
-  const [bulkDefaultFee, setBulkDefaultFee] = useState('1200');
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [bulkResultCard, setBulkResultCard] = useState<{
     month: string;
@@ -261,10 +281,20 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
         (p.customerId === c.id || (p.boxNo && p.boxNo.toLowerCase() === c.boxNo.toLowerCase()))
     );
   });
-  const bulkEstimatedEligibleCount = Math.max(
-    0,
-    activeSubscribersList.length - bulkExcludedNewSubscribers.length - bulkAlreadyBilledSubscribers.length
-  );
+  const bulkEligibleSubscribers = activeSubscribersList.filter((c) => {
+    const regM = getRegistrationMonth(c.createdAt, c.id);
+    if (regM && bulkMonth <= regM) return false;
+    return !monthlyPayments.some(
+      (p) =>
+        p.month === bulkMonth &&
+        (p.customerId === c.id || (p.boxNo && p.boxNo.toLowerCase() === c.boxNo.toLowerCase()))
+    );
+  });
+  const bulkEstimatedEligibleCount = bulkEligibleSubscribers.length;
+  const bulkProjectedRevenue = bulkEligibleSubscribers.reduce((sum, c) => {
+    const pkg = getCustomerPackage(c.id || c.boxNo);
+    return sum + (pkg.monthlyFee || 1200);
+  }, 0);
 
   // Confirm Modal State
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
@@ -287,30 +317,31 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
       toast.error('Please select a target month for bulk creation.');
       return;
     }
-    const feeNum = parseFloat(bulkDefaultFee) || 1200;
 
     setConfirmModalConfig({
       isOpen: true,
       title: `Bulk Create Monthly Bills (${bulkMonth})`,
-      message: `Generate monthly dues for eligible active subscribers for ${formatYearMonthDisplay(bulkMonth)} (${bulkMonth}) at ${formatMoney(feeNum, currency)} each?
+      message: `Generate monthly dues for ${bulkEstimatedEligibleCount} eligible active subscriber(s) for ${formatYearMonthDisplay(bulkMonth)} (${bulkMonth}) based on each subscriber's assigned TV Package rate?
 
 • Estimated to create: ${bulkEstimatedEligibleCount} bill(s)
+• Projected monthly revenue: ${formatMoney(bulkProjectedRevenue, currency)}
+• Rate structure: Automatic per subscriber's TV package (e.g. Basic: 600, Standard: 1,200, Premium HD: 1,800)
 • Excluded (Registered in ${bulkMonth} or later): ${bulkExcludedNewSubscribers.length} new subscriber(s)
 • Already billed for ${bulkMonth}: ${bulkAlreadyBilledSubscribers.length} subscriber(s)
 
 Monthly bills or payment records are not created for new subscribers during their registration month or any months before their registration month.`,
       confirmText: 'Generate Monthly Dues',
-      variant: 'emerald',
+      variant: 'indigo',
       onConfirm: async () => {
         setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
         setIsBulkSubmitting(true);
         try {
           const res = await api.bulkCreateMonthlyPayments({
             month: bulkMonth,
-            defaultFee: feeNum,
+            packageMap: getAllCustomerPackageAssignments(),
           });
           setBulkResultCard(res);
-          toast.success(`Bulk monthly dues generated for ${res.createdCount} active subscribers!`);
+          toast.success(`Bulk monthly dues generated for ${res.createdCount} active subscribers based on TV packages!`);
           onRefreshData();
         } catch (err: any) {
           const msg = err.message || 'Failed to bulk generate monthly payments';
@@ -799,6 +830,32 @@ Monthly bills or payment records are not created for new subscribers during thei
                       </span>
                     </div>
                   )}
+
+                  {/* Assigned Cable Package Display */}
+                  <div className="flex items-center justify-between text-[11px] border-t border-slate-200 dark:border-neutral-850 pt-1.5 text-slate-500 dark:text-neutral-400">
+                    <span className="flex items-center gap-1 font-medium">
+                      <Tv className="w-3 h-3 text-emerald-500" />
+                      <span>Assigned TV Package:</span>
+                    </span>
+                    {(() => {
+                      const pkg = getCustomerPackage(selectedCustomer.id || selectedCustomer.boxNo);
+                      const isPrem = pkg.packageId === 'PREMIUM_HD';
+                      const isBasic = pkg.packageId === 'BASIC';
+                      return (
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                          isPrem
+                            ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
+                            : isBasic
+                            ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                        }`}>
+                          {isPrem && <Crown className="w-2.5 h-2.5 text-amber-500" />}
+                          <span>{pkg.packageName}</span>
+                          <span className="font-mono text-[9px] opacity-80 font-bold">({formatMoney(pkg.monthlyFee, currency)}/mo)</span>
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
 
@@ -915,16 +972,21 @@ Monthly bills or payment records are not created for new subscribers during thei
               {/* Financial Dues */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">Monthly Fee (LKR) *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 dark:text-neutral-300 font-semibold">Monthly Fee ({currency}) *</label>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 px-1.5 py-0.5 rounded-md shadow-xs">
+                      <Lock className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Locked (Package)</span>
+                    </span>
+                  </div>
                   <input
                     type="number"
                     step="0.01"
-                    min="0.01"
-                    required
-                    placeholder="1000.00"
+                    readOnly
+                    disabled
                     value={monthlyFee}
-                    onChange={(e) => setMonthlyFee(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-100 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-600 dark:text-neutral-400 font-mono cursor-not-allowed select-none opacity-85"
+                    title="Monthly fee is fixed by the customer's TV package and cannot be edited"
                   />
                 </div>
 
@@ -1016,8 +1078,8 @@ Monthly bills or payment records are not created for new subscribers during thei
               </p>
 
               <form onSubmit={handleBulkCreateMonthlyPayments} className="space-y-4 text-xs">
-                {/* Target Month & Fee */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Target Month & Auto Package Pricing */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">Target Month *</label>
                     <input
@@ -1029,16 +1091,17 @@ Monthly bills or payment records are not created for new subscribers during thei
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">Fee Per Subscriber (LKR)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="1"
-                      required
-                      value={bulkDefaultFee}
-                      onChange={(e) => setBulkDefaultFee(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-indigo-500"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-slate-700 dark:text-neutral-300 font-semibold">Package-Based Billing</label>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 px-1.5 py-0.5 rounded-md shadow-xs">
+                        <Tv className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />
+                        <span>Auto-Package Rates</span>
+                      </span>
+                    </div>
+                    <div className="w-full px-3 py-2 bg-slate-100 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-700 dark:text-neutral-300 text-xs flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-neutral-400 font-medium">Applied Fee:</span>
+                      <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono text-[11px]">By Assigned TV Package</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1062,6 +1125,16 @@ Monthly bills or payment records are not created for new subscribers during thei
                       <span className="font-bold text-amber-800 dark:text-amber-400 font-mono">{bulkExcludedNewSubscribers.length}</span>
                     </div>
                   </div>
+
+                  {bulkEstimatedEligibleCount > 0 && (
+                    <div className="pt-1.5 border-t border-slate-200 dark:border-neutral-850 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500 dark:text-neutral-400 font-medium">Projected Monthly Revenue:</span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        {formatMoney(bulkProjectedRevenue, currency)}
+                      </span>
+                    </div>
+                  )}
+
                   {bulkExcludedNewSubscribers.length > 0 && (
                     <div className="pt-1 text-[11px] text-amber-800 dark:text-amber-300 font-sans flex items-start gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -1251,12 +1324,30 @@ Monthly bills or payment records are not created for new subscribers during thei
                             </span>
                           </div>
 
-                          {/* Month Pill Badge */}
+                          {/* Month & Package Pill Badges */}
                           <div className="flex items-center flex-wrap gap-2 pt-0.5">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 text-xs font-mono font-semibold shadow-2xs">
                               <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400 shrink-0" />
                               <span>Billing Month: {pmt.month}</span>
                             </span>
+
+                            {(() => {
+                              const pkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
+                              const isPrem = pkg.packageId === 'PREMIUM_HD';
+                              const isBasic = pkg.packageId === 'BASIC';
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border shadow-2xs ${
+                                  isPrem
+                                    ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
+                                    : isBasic
+                                    ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                                }`}>
+                                  {isPrem ? <Crown className="w-3 h-3 text-amber-500" /> : <Tv className="w-3 h-3 text-emerald-500" />}
+                                  <span>{pkg.packageName}</span>
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -1445,6 +1536,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                       <th className="px-3.5 py-3">Customer</th>
                       <th className="px-3 py-3">Box No</th>
                       <th className="px-3 py-3">Month</th>
+                      <th className="px-3 py-3 text-center">Package</th>
                       <th className="px-3 py-3 text-right">Fee</th>
                       <th className="px-3 py-3 text-right">Paid</th>
                       <th className="px-3 py-3 text-right">Balance</th>
@@ -1455,7 +1547,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                   <tbody className="divide-y divide-slate-100 dark:divide-neutral-800/80">
                     {filteredPayments.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-3 py-10 text-center text-slate-400 dark:text-neutral-500">
+                        <td colSpan={9} className="px-3 py-10 text-center text-slate-400 dark:text-neutral-500">
                           No monthly payment records match the current filters.
                         </td>
                       </tr>
@@ -1475,6 +1567,25 @@ Monthly bills or payment records are not created for new subscribers during thei
                             <span className="inline-block px-2.5 py-0.5 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-md text-xs font-bold text-slate-700 dark:text-neutral-300 shadow-2xs">
                               {pmt.month}
                             </span>
+                          </td>
+                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                            {(() => {
+                              const pkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
+                              const isPrem = pkg.packageId === 'PREMIUM_HD';
+                              const isBasic = pkg.packageId === 'BASIC';
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
+                                  isPrem
+                                    ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
+                                    : isBasic
+                                    ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                                }`}>
+                                  {isPrem && <Crown className="w-2.5 h-2.5 text-amber-500" />}
+                                  <span>{pkg.packageName}</span>
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td className="px-3 py-3 text-right font-mono text-slate-900 dark:text-neutral-100 font-bold whitespace-nowrap text-xs">
                             {formatMoney(pmt.monthlyFee, currency)}
@@ -1673,14 +1784,21 @@ Monthly bills or payment records are not created for new subscribers during thei
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-600 dark:text-neutral-400 font-medium mb-1">Monthly Fee (LKR)</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-slate-600 dark:text-neutral-400 font-medium">Monthly Fee ({currency})</label>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-neutral-400 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 px-1.5 py-0.5 rounded shadow-xs">
+                        <Lock className="w-2.5 h-2.5 text-slate-500" />
+                        <span>Fixed (Package)</span>
+                      </span>
+                    </div>
                     <input
                       type="number"
                       step="0.01"
-                      min="0"
+                      readOnly
+                      disabled
                       value={editMonthlyFee}
-                      onChange={(e) => setEditMonthlyFee(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-slate-100 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-600 dark:text-neutral-400 font-mono cursor-not-allowed select-none opacity-85"
+                      title="Monthly fee is fixed by the customer's TV package and cannot be edited"
                     />
                   </div>
 

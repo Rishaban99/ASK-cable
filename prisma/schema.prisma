@@ -93,3 +93,35 @@ model Setting {
 
   @@map("settings")
 }
+
+model CablePackage {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  packageId     String   @unique
+  name          String
+  shortName     String
+  monthlyFee    Float
+  channelsCount String
+  color         String   @default("from-blue-500 to-indigo-600")
+  badgeBg       String   @default("bg-blue-500/15")
+  badgeBorder   String   @default("border-blue-500/30")
+  badgeText     String   @default("text-blue-400")
+  description   String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@map("packages")
+}
+
+model CustomerPackage {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  targetKey   String   @unique
+  customerId  String?
+  boxNo       String?
+  packageId   String
+  packageName String
+  monthlyFee  Float
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@map("customer_packages")
+}
+

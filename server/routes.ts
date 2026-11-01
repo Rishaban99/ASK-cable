@@ -341,7 +341,7 @@ router.post('/monthly-payments', async (req, res) => {
 
 router.post('/monthly-payments/bulk', async (req, res) => {
   try {
-    const { month, defaultFee } = req.body;
+    const { month, defaultFee, packageMap } = req.body;
     if (!month) {
       return res.status(400).json({ error: 'Month (YYYY-MM) is required for bulk creation' });
     }
@@ -349,6 +349,7 @@ router.post('/monthly-payments/bulk', async (req, res) => {
     const result = await db.bulkCreateMonthlyPayments({
       month,
       defaultFee: defaultFee ? Number(defaultFee) : 1200,
+      packageMap: packageMap && typeof packageMap === 'object' ? packageMap : undefined,
     });
 
     res.status(201).json(result);
@@ -917,3 +918,56 @@ router.post('/settings', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+
+// ==========================================
+// 8. DEDICATED PACKAGES & CUSTOMER PACKAGES ROUTES
+// ==========================================
+router.get('/packages', async (_req, res) => {
+  try {
+    const packages = await db.getCablePackages();
+    res.json({ packages });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch packages' });
+  }
+});
+
+router.post('/packages', async (req, res) => {
+  try {
+    const pkg = await db.upsertCablePackage(req.body);
+    res.json({ package: pkg, message: 'Package saved to packages table' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to save package' });
+  }
+});
+
+router.delete('/packages/:id', async (req, res) => {
+  try {
+    const success = await db.deleteCablePackage(req.params.id);
+    res.json({ success, message: 'Package deleted from packages table' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to delete package' });
+  }
+});
+
+router.get('/customer-packages', async (_req, res) => {
+  try {
+    const assignments = await db.getCustomerPackages();
+    res.json({ assignments });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch customer packages' });
+  }
+});
+
+router.post('/customer-packages', async (req, res) => {
+  try {
+    const { identifier, assignment } = req.body;
+    if (!identifier || !assignment) {
+      return res.status(400).json({ error: 'identifier and assignment are required' });
+    }
+    await db.setCustomerPackage(identifier, assignment);
+    res.json({ success: true, message: 'Customer package saved to customer_packages table' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || 'Failed to save customer package' });
+  }
+});
+

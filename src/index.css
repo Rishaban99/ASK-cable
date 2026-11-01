@@ -153,6 +153,7 @@ td {
 
 /* Light mode primary card container backgrounds & sharp shadows */
 .theme-light .bg-neutral-900,
+.theme-light .bg-neutral-900\/95,
 .theme-light .bg-neutral-900\/90,
 .theme-light .bg-neutral-900\/80,
 .theme-light .bg-neutral-900\/70,
@@ -340,8 +341,9 @@ td {
 }
 
 .theme-light .text-rose-400,
-.theme-light .text-rose-300 {
-  color: #e11d48 !important;
+.theme-light .text-rose-300,
+.theme-light .text-rose-200 {
+  color: #be123c !important;
 }
 
 /* Light mode gradient stat cards & badge color rules */
@@ -353,7 +355,8 @@ td {
 }
 
 .theme-light .text-cyan-400,
-.theme-light .text-cyan-300 {
+.theme-light .text-cyan-300,
+.theme-light .text-cyan-200 {
   color: #0891b2 !important;
 }
 
@@ -365,8 +368,9 @@ td {
 }
 
 .theme-light .text-blue-400,
-.theme-light .text-blue-300 {
-  color: #2563eb !important;
+.theme-light .text-blue-300,
+.theme-light .text-blue-200 {
+  color: #1d4ed8 !important;
 }
 
 .theme-light .bg-purple-500\/10,
@@ -377,8 +381,9 @@ td {
 }
 
 .theme-light .text-purple-400,
-.theme-light .text-purple-300 {
-  color: #7c3aed !important;
+.theme-light .text-purple-300,
+.theme-light .text-purple-200 {
+  color: #6b21a8 !important;
 }
 
 .theme-light .bg-sky-500\/10,

@@ -31,8 +31,10 @@ import {
   ChevronDown,
   ChevronUp,
   Layers,
-  RotateCcw
+  RotateCcw,
+  Crown
 } from 'lucide-react';
+import { getCustomerPackage } from '../utils/packageManager.js';
 
 interface PaymentCollectionViewProps {
   customers: Customer[];
@@ -362,6 +364,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
             address: cust?.address,
             boxNo: pmt.boxNo,
             month: pmt.month,
+            packageName: getCustomerPackage(pmt.customerId || pmt.boxNo).packageName,
             totalOrFeeAmount: pmt.monthlyFee,
             paidAmount: pmt.paidAmount,
             balanceAmount: pmt.balanceAmount,
@@ -421,6 +424,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
           address: currentCustomer.address,
           boxNo: selectedMonthlyPmt.boxNo,
           month: selectedMonthlyPmt.month,
+          packageName: getCustomerPackage(currentCustomer.id || currentCustomer.boxNo).packageName,
           totalOrFeeAmount: selectedMonthlyPmt.monthlyFee,
           paidAmount: newPaidAmount,
           balanceAmount: newBalance,
@@ -447,6 +451,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
           phoneNo: currentCustomer.phoneNo,
           address: currentCustomer.address,
           boxNo: currentCustomer.boxNo,
+          packageName: getCustomerPackage(currentCustomer.id || currentCustomer.boxNo).packageName,
           totalOrFeeAmount: currentCustomer.totalAmount,
           paidAmount: newPaidAmount,
           balanceAmount: newBalance,
@@ -783,6 +788,20 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-neutral-800 border border-neutral-700 text-emerald-400 shrink-0">
                               Box: {cust.boxNo}
                             </span>
+                            {(() => {
+                              const pkg = getCustomerPackage(cust.id || cust.boxNo);
+                              const isPrem = pkg.packageId === 'PREMIUM_HD';
+                              return (
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 flex items-center gap-1 ${
+                                  isPrem
+                                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                }`}>
+                                  {isPrem ? <Crown className="w-2.5 h-2.5 text-amber-400" /> : <Tv className="w-2.5 h-2.5 text-emerald-400" />}
+                                  <span>{pkg.packageName}</span>
+                                </span>
+                              );
+                            })()}
                             <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
                               (cust.status || 'ACTIVE') === 'ACTIVE'
                                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'

@@ -199,6 +199,9 @@ export function generateEscPosReceipt(
   if (billData.month) {
     builder.twoColumn('Month:', formatMonthDisplay(billData.month), width);
   }
+  if (billData.packageName) {
+    builder.twoColumn('Package:', billData.packageName, width);
+  }
   if (billData.phoneNo) {
     builder.twoColumn('Phone:', billData.phoneNo, width);
   }

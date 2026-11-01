@@ -14,6 +14,7 @@ import {
   DEFAULT_SYSTEM_PROFILE
 } from './types/finance.js';
 import { api } from './api/client.js';
+import { getCustomerPackage, syncCustomerPackagesFromDb, syncCablePackagesFromDb } from './utils/packageManager.js';
 import { Sidebar, NavTab } from './components/Sidebar.js';
 import { DashboardView } from './components/DashboardView.js';
 import { TransactionsView } from './components/TransactionsView.js';
@@ -22,6 +23,7 @@ import { CustomersView } from './components/CustomersView.js';
 import { MonthlyPaymentView } from './components/MonthlyPaymentView.js';
 import { CustomerHistoryView } from './components/CustomerHistoryView.js';
 import { PaymentCollectionView } from './components/PaymentCollectionView.js';
+import { PackagesView } from './components/PackagesView.js';
 import { SettingsView } from './components/SettingsView.js';
 import { LoginView } from './components/LoginView.js';
 import { RecordModal } from './components/RecordModal.js';
@@ -164,11 +166,27 @@ export default function App() {
         api.getSystemProfile().catch(() => null),
       ]);
 
+      // Sync packages and customer assignments from DB
+      await Promise.all([
+        syncCablePackagesFromDb().catch(() => {}),
+        syncCustomerPackagesFromDb().catch(() => {}),
+      ]);
+
+      const enrichedCusts = (custs || []).map((c) => {
+        const pkg = getCustomerPackage(c.id || c.boxNo);
+        return {
+          ...c,
+          packageId: pkg.packageId,
+          packageName: pkg.packageName,
+          monthlyFee: pkg.monthlyFee,
+        };
+      });
+
       setAnalytics(analyticsData);
       setIncomes(incs);
       setExpenses(exps);
       setCategories(cats);
-      setCustomers(custs);
+      setCustomers(enrichedCusts);
       setMonthlyPayments(pmts);
       if (dbPrivs) {
         setStaffPrivileges(dbPrivs);
@@ -261,6 +279,19 @@ export default function App() {
             onRefreshData={loadData}
             currentUser={currentUser}
             onViewHistory={(custId) => {
+              setSelectedHistoryCustomerId(custId);
+              setCurrentTab('customer-history');
+            }}
+          />
+        )}
+
+        {currentTab === 'packages' && (
+          <PackagesView
+            customers={customers}
+            currency={currency}
+            onRefreshData={loadData}
+            currentUser={currentUser}
+            onSelectCustomerHistory={(custId) => {
               setSelectedHistoryCustomerId(custId);
               setCurrentTab('customer-history');
             }}

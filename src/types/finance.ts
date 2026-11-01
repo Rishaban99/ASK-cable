@@ -13,6 +13,7 @@ export interface StaffPrivileges {
   transactions: boolean;
   summary: boolean;
   customers: boolean;
+  packages?: boolean;
   'monthly-payment': boolean;
   'customer-history': boolean;
   'payment-collection': boolean;
@@ -23,6 +24,7 @@ export const DEFAULT_STAFF_PRIVILEGES: StaffPrivileges = {
   transactions: true,
   summary: false,
   customers: true,
+  packages: true,
   'monthly-payment': true,
   'customer-history': true,
   'payment-collection': true,
@@ -138,6 +140,9 @@ export interface Customer {
   balanceAmount: number;
   status: 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED';
   createdAt: string;
+  packageId?: string;
+  packageName?: string;
+  monthlyFee?: number;
 }
 
 export interface MonthlyPayment {

@@ -260,6 +260,7 @@ class ApiClient {
   async bulkCreateMonthlyPayments(data: {
     month: string;
     defaultFee?: number;
+    packageMap?: Record<string, any>;
   }): Promise<{
     month: string;
     totalActiveCustomers: number;
@@ -576,6 +577,51 @@ class ApiClient {
         message: err?.message || 'Failed to clear SMS logs',
       };
     }
+  }
+
+  // -------------------------------------------------------------------
+  // DEDICATED PACKAGES & CUSTOMER PACKAGES APIS
+  // -------------------------------------------------------------------
+  async getCablePackages(): Promise<any[]> {
+    try {
+      const res = await this.request<{ packages: any[] }>('/packages');
+      return res.packages || [];
+    } catch (err) {
+      console.warn('Failed to fetch packages from /packages:', err);
+      return [];
+    }
+  }
+
+  async saveCablePackage(pkg: any): Promise<any> {
+    const res = await this.request<{ package: any }>('/packages', {
+      method: 'POST',
+      body: JSON.stringify(pkg),
+    });
+    return res.package;
+  }
+
+  async deleteCablePackage(id: string): Promise<void> {
+    await this.request(`/packages/${id}`, { method: 'DELETE' });
+  }
+
+  async getCustomerPackages(): Promise<Record<string, any>> {
+    try {
+      const res = await this.request<{ assignments: Record<string, any> }>('/customer-packages');
+      return res.assignments || {};
+    } catch (err) {
+      console.warn('Failed to fetch customer packages from /customer-packages:', err);
+      return {};
+    }
+  }
+
+  async setCustomerPackage(
+    identifier: { id?: string; boxNo?: string },
+    assignment: { packageId: string; packageName: string; monthlyFee: number }
+  ): Promise<void> {
+    await this.request('/customer-packages', {
+      method: 'POST',
+      body: JSON.stringify({ identifier, assignment }),
+    });
   }
 }
 
