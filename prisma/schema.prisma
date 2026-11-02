@@ -29,6 +29,8 @@ model Income {
   tags          String[]
   createdAt     DateTime @default(now())
 
+  @@index([date])
+  @@index([categoryId])
   @@map("incomes")
 }
 
@@ -42,6 +44,8 @@ model Expense {
   tags          String[]
   createdAt     DateTime @default(now())
 
+  @@index([date])
+  @@index([categoryId])
   @@map("expenses")
 }
 
@@ -60,6 +64,10 @@ model Customer {
   monthlyFee  Float?   
   createdAt   DateTime @default(now())
 
+  @@index([boxNo])
+  @@index([phoneNo])
+  @@index([status])
+  @@index([createdAt])
   @@map("customers")
 }
 
@@ -69,11 +77,16 @@ model MonthlyPayment {
   customerName  String
   boxNo         String
   month         String
+  packageId     String?
+  packageName   String?
   monthlyFee    Float
   paidAmount    Float
   paymentDate   String
   createdAt     DateTime @default(now())
 
+  @@index([month])
+  @@index([customerId])
+  @@index([boxNo])
   @@map("monthly_payments")
 }
 

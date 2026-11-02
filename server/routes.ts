@@ -325,7 +325,7 @@ router.get('/monthly-payments', async (req, res) => {
 
 router.post('/monthly-payments', async (req, res) => {
   try {
-    const { customerId, month, monthlyFee, paidAmount, paymentDate } = req.body;
+    const { customerId, month, monthlyFee, paidAmount, paymentDate, packageId, packageName } = req.body;
     if (!customerId || !month || monthlyFee === undefined) {
       return res.status(400).json({ error: 'Customer, Month, and Monthly Fee are required' });
     }
@@ -335,6 +335,8 @@ router.post('/monthly-payments', async (req, res) => {
       monthlyFee: Number(monthlyFee),
       paidAmount: Number(paidAmount || 0),
       paymentDate,
+      packageId,
+      packageName,
     });
     res.status(201).json({ payment });
   } catch (error: any) {

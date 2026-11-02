@@ -202,6 +202,30 @@ export async function setCustomerPackage(
 }
 
 /**
+ * Populate package assignments in-memory directly from customer records (no API call needed)
+ */
+export function populateAssignmentsFromCustomers(customers: any[]): Record<string, CustomerPackageAssignment> {
+  const updated = { ...cachedAssignments };
+  for (const c of (customers || [])) {
+    if (c.packageId || c.packageName) {
+      const pkgData: CustomerPackageAssignment = {
+        packageId: c.packageId || 'STANDARD',
+        packageName: c.packageName || 'Standard Package',
+        monthlyFee: c.monthlyFee !== undefined && c.monthlyFee !== null ? Number(c.monthlyFee) : 1200,
+        updatedAt: c.createdAt || new Date().toISOString(),
+      };
+      if (c.id) updated[String(c.id).trim().toLowerCase()] = pkgData;
+      if (c.boxNo) updated[String(c.boxNo).trim().toLowerCase()] = pkgData;
+    }
+  }
+  cachedAssignments = updated;
+  try {
+    localStorage.setItem(STORAGE_KEY_ASSIGNMENTS, JSON.stringify(updated));
+  } catch {}
+  return updated;
+}
+
+/**
  * Sync customer package assignments from customer_packages table
  */
 export async function syncCustomerPackagesFromDb(): Promise<Record<string, CustomerPackageAssignment>> {

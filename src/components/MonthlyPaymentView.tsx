@@ -236,7 +236,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
       address: cust?.address,
       boxNo: pmt.boxNo,
       month: pmt.month,
-      packageName: custPkg.packageName,
+      packageName: pmt.packageName || custPkg.packageName,
       totalOrFeeAmount: pmt.monthlyFee,
       paidAmount: pmt.paidAmount,
       balanceAmount: pmt.balanceAmount,
@@ -385,19 +385,22 @@ Monthly bills or payment records are not created for new subscribers during thei
       toast.error(msg);
       return;
     }
-    if (parsedFee <= 0) {
-      setErrorMsg('Monthly fee must be greater than 0.');
+    if (parsedFee < 0) {
+      setErrorMsg('Monthly fee cannot be negative.');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const custPkg = selectedCustomer ? getCustomerPackage(selectedCustomer) : null;
       const createdPmt = await api.createMonthlyPayment({
         customerId: selectedCustomerId,
         month,
         monthlyFee: parsedFee,
         paidAmount: parsedPaid,
         paymentDate: paymentDate || todayStr,
+        packageId: custPkg?.packageId,
+        packageName: custPkg?.packageName,
       });
 
       // Reset form fields
@@ -898,56 +901,10 @@ Monthly bills or payment records are not created for new subscribers during thei
                       <p className="text-[11px] text-slate-600 dark:text-neutral-300 leading-normal">
                         A monthly bill for <strong className="text-slate-900 dark:text-white font-semibold">{selectedCustomer?.name}</strong> (Box {selectedCustomer?.boxNo}) is already recorded for this month. Creating duplicate bills for the same month is not allowed.
                       </p>
-                      <div className="mt-2 grid grid-cols-2 gap-2 p-2 bg-white/80 dark:bg-neutral-900/80 rounded-lg border border-rose-200 dark:border-neutral-800 text-[11px]">
-                        <div>
-                          <span className="text-slate-500 dark:text-neutral-400">Total Fee: </span>
-                          <span className="font-mono text-slate-900 dark:text-white font-semibold">{formatMoney(existingDuplicatePayment.monthlyFee, currency)}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-neutral-400">Paid: </span>
-                          <span className="font-mono text-emerald-700 dark:text-emerald-400 font-semibold">{formatMoney(existingDuplicatePayment.paidAmount, currency)}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-neutral-400">Balance: </span>
-                          <span className={`font-mono font-bold ${existingDuplicatePayment.balanceAmount > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                            {formatMoney(existingDuplicatePayment.balanceAmount, currency)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-neutral-400">Status: </span>
-                          <span className={`px-1.5 py-0.2 rounded font-bold text-[10px] ${
-                            existingDuplicatePayment.status === 'PAID'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
-                              : existingDuplicatePayment.status === 'PARTIAL'
-                              ? 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30'
-                          }`}>
-                            {existingDuplicatePayment.status}
-                          </span>
-                        </div>
-                      </div>
+                      
                     </div>
                   </div>
-                  <div className="pt-1 flex items-center justify-end gap-2 border-t border-rose-200/80 dark:border-neutral-800/80">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEdit(existingDuplicatePayment)}
-                      className="px-2.5 py-1 text-[11px] font-semibold bg-white dark:bg-neutral-800 hover:bg-slate-50 dark:hover:bg-neutral-700 text-slate-700 dark:text-neutral-200 border border-slate-200 dark:border-neutral-700 rounded-lg transition flex items-center gap-1 cursor-pointer"
-                    >
-                      <Edit2 className="w-3 h-3 text-slate-500 dark:text-neutral-400" />
-                      <span>Edit Bill</span>
-                    </button>
-                    {existingDuplicatePayment.balanceAmount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenPayBalance(existingDuplicatePayment)}
-                        className="px-3 py-1 text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition flex items-center gap-1.5 shadow cursor-pointer active:scale-95"
-                      >
-                        <CreditCard className="w-3 h-3" />
-                        <span>Pay Due ({formatMoney(existingDuplicatePayment.balanceAmount, currency)})</span>
-                      </button>
-                    )}
-                  </div>
+                  
                 </div>
               )}
 
@@ -1333,19 +1290,24 @@ Monthly bills or payment records are not created for new subscribers during thei
                             </span>
 
                             {(() => {
-                              const pkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
-                              const isPrem = pkg.packageId === 'PREMIUM_HD';
-                              const isBasic = pkg.packageId === 'BASIC';
+                              const fallbackPkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
+                              const pkgName = pmt.packageName || fallbackPkg.packageName;
+                              const pkgId = pmt.packageId || fallbackPkg.packageId;
+                              const isPrem = pkgId === 'PREMIUM_HD';
+                              const isBasic = pkgId === 'BASIC';
+                              const isFree = pkgId === 'FREE' || pmt.monthlyFee === 0;
                               return (
                                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border shadow-2xs ${
                                   isPrem
                                     ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
                                     : isBasic
                                     ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
+                                    : isFree
+                                    ? 'bg-cyan-50 text-cyan-700 border-cyan-300 dark:bg-cyan-500/15 dark:text-cyan-400 dark:border-cyan-500/30'
                                     : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
                                 }`}>
                                   {isPrem ? <Crown className="w-3 h-3 text-amber-500" /> : <Tv className="w-3 h-3 text-emerald-500" />}
-                                  <span>{pkg.packageName}</span>
+                                  <span>{pkgName}</span>
                                 </span>
                               );
                             })()}
@@ -1571,19 +1533,24 @@ Monthly bills or payment records are not created for new subscribers during thei
                           </td>
                           <td className="px-3 py-3 text-center whitespace-nowrap">
                             {(() => {
-                              const pkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
-                              const isPrem = pkg.packageId === 'PREMIUM_HD';
-                              const isBasic = pkg.packageId === 'BASIC';
+                              const fallbackPkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
+                              const pkgName = pmt.packageName || fallbackPkg.packageName;
+                              const pkgId = pmt.packageId || fallbackPkg.packageId;
+                              const isPrem = pkgId === 'PREMIUM_HD';
+                              const isBasic = pkgId === 'BASIC';
+                              const isFree = pkgId === 'FREE' || pmt.monthlyFee === 0;
                               return (
                                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
                                   isPrem
                                     ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
                                     : isBasic
                                     ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
+                                    : isFree
+                                    ? 'bg-cyan-50 text-cyan-700 border-cyan-300 dark:bg-cyan-500/15 dark:text-cyan-400 dark:border-cyan-500/30'
                                     : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
                                 }`}>
                                   {isPrem && <Crown className="w-2.5 h-2.5 text-amber-500" />}
-                                  <span>{pkg.packageName}</span>
+                                  <span>{pkgName}</span>
                                 </span>
                               );
                             })()}

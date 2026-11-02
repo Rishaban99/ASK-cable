@@ -252,6 +252,8 @@ class ApiClient {
     monthlyFee: number;
     paidAmount: number;
     paymentDate?: string;
+    packageId?: string;
+    packageName?: string;
   }): Promise<MonthlyPayment> {
     const res = await this.request<{ payment: MonthlyPayment }>('/monthly-payments', {
       method: 'POST',

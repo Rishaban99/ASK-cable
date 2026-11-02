@@ -14,7 +14,7 @@ import {
   DEFAULT_SYSTEM_PROFILE
 } from './types/finance.js';
 import { api } from './api/client.js';
-import { getCustomerPackage, syncCustomerPackagesFromDb, syncCablePackagesFromDb } from './utils/packageManager.js';
+import { getCustomerPackage, syncCablePackagesFromDb, populateAssignmentsFromCustomers } from './utils/packageManager.js';
 import { Sidebar, NavTab } from './components/Sidebar.js';
 import { DashboardView } from './components/DashboardView.js';
 import { TransactionsView } from './components/TransactionsView.js';
@@ -164,13 +164,13 @@ export default function App() {
         api.getMonthlyPayments(),
         api.getStaffPrivileges().catch(() => null),
         api.getSystemProfile().catch(() => null),
+        syncCablePackagesFromDb().catch(() => []),
       ]);
 
-      // Sync packages and customer assignments from DB
-      await Promise.all([
-        syncCablePackagesFromDb().catch(() => {}),
-        syncCustomerPackagesFromDb().catch(() => {}),
-      ]);
+      // Instantly populate customer package assignments in memory (eliminates redundant DB roundtrip)
+      if (custs && custs.length > 0) {
+        populateAssignmentsFromCustomers(custs);
+      }
 
       const enrichedCusts = (custs || []).map((c) => {
         const pkg = getCustomerPackage(c.id || c.boxNo);

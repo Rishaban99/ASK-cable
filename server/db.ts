@@ -39,17 +39,28 @@ export class RelationalDatabaseStore {
   private get monthlyPaymentDb() { return this.getModelDb('monthlyPayment'); }
   private get userDb() { return this.getModelDb('user'); }
 
+  // High-Speed In-Memory Caches (Eliminates repeated network round-trips to MongoDB Atlas)
+  private categoriesCache: { data: Category[]; expiresAt: number } | null = null;
+  private packagesCache: { data: any[]; expiresAt: number } | null = null;
+  private settingsCache = new Map<string, { value: string | null; expiresAt: number }>();
+  private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5-minute cache TTL
+
   // -------------------------------------------------------------------
   // CATEGORIES
   // -------------------------------------------------------------------
   public async getCategories(): Promise<Category[]> {
+    const now = Date.now();
+    if (this.categoriesCache && now < this.categoriesCache.expiresAt) {
+      return this.categoriesCache.data;
+    }
+
     const dbClient = this.categoryDb;
     if (!dbClient) return [];
 
     const cats = await dbClient.findMany({
       orderBy: { createdAt: 'asc' }
     });
-    return cats.map((c: any) => ({
+    const result = cats.map((c: any) => ({
       id: c.id,
       name: c.name,
       type: c.type as 'INCOME' | 'EXPENSE',
@@ -58,9 +69,16 @@ export class RelationalDatabaseStore {
       isDefault: c.isDefault,
       createdAt: c.createdAt.toISOString(),
     }));
+
+    this.categoriesCache = {
+      data: result,
+      expiresAt: now + this.CACHE_TTL_MS,
+    };
+    return result;
   }
 
   public async createCategory(dto: { name: string; type: 'INCOME' | 'EXPENSE'; icon?: string; color?: string }): Promise<Category> {
+    this.categoriesCache = null; // Invalidate cache
     const cat = await prisma.category.create({
       data: {
         name: dto.name,
@@ -82,6 +100,7 @@ export class RelationalDatabaseStore {
   }
 
   public async updateCategory(id: string, dto: Partial<Category>): Promise<Category> {
+    this.categoriesCache = null; // Invalidate cache
     const dataToUpdate: any = {};
     if (dto.name !== undefined) dataToUpdate.name = dto.name;
     if (dto.type !== undefined) dataToUpdate.type = dto.type;
@@ -104,6 +123,7 @@ export class RelationalDatabaseStore {
   }
 
   public async deleteCategory(id: string): Promise<boolean> {
+    this.categoriesCache = null; // Invalidate cache
     await prisma.category.delete({ where: { id } });
     return true;
   }
@@ -388,6 +408,7 @@ export class RelationalDatabaseStore {
           isDefault: true,
         }
       });
+      this.categoriesCache = null;
     }
     return cat.id;
   }
@@ -582,6 +603,8 @@ export class RelationalDatabaseStore {
         customerName: r.customerName,
         boxNo: r.boxNo,
         month: r.month,
+        packageId: r.packageId || null,
+        packageName: r.packageName || null,
         monthlyFee: r.monthlyFee,
         paidAmount: r.paidAmount,
         balanceAmount: balance,
@@ -626,6 +649,8 @@ export class RelationalDatabaseStore {
     monthlyFee: number;
     paidAmount: number;
     paymentDate?: string;
+    packageId?: string;
+    packageName?: string;
   }): Promise<MonthlyPayment> {
     const custClient = this.customerDb || prisma.customer;
     const cust = await custClient.findUnique({ where: { id: dto.customerId } });
@@ -669,6 +694,8 @@ export class RelationalDatabaseStore {
     const fee = Math.abs(dto.monthlyFee || 0);
     const paid = Math.abs(dto.paidAmount || 0);
     const todayStr = dto.paymentDate || new Date().toISOString().split('T')[0];
+    const packageId = dto.packageId || cust.packageId || 'STANDARD';
+    const packageName = dto.packageName || cust.packageName || 'Standard Package';
 
     const rec = await pmtClient.create({
       data: {
@@ -676,6 +703,8 @@ export class RelationalDatabaseStore {
         customerName: cust.name,
         boxNo: cust.boxNo,
         month: dto.month,
+        packageId,
+        packageName,
         monthlyFee: fee,
         paidAmount: paid,
         paymentDate: todayStr,
@@ -712,6 +741,8 @@ export class RelationalDatabaseStore {
       customerName: rec.customerName,
       boxNo: rec.boxNo,
       month: rec.month,
+      packageId: rec.packageId || null,
+      packageName: rec.packageName || null,
       monthlyFee: rec.monthlyFee,
       paidAmount: rec.paidAmount,
       balanceAmount: balance,
@@ -805,7 +836,8 @@ export class RelationalDatabaseStore {
         : (assignedPkg && assignedPkg.monthlyFee !== undefined && assignedPkg.monthlyFee !== null && Number(assignedPkg.monthlyFee) >= 0 
             ? Number(assignedPkg.monthlyFee) 
             : defaultFee);
-      const pkgName = cust.packageName || assignedPkg?.packageName || 'Standard';
+      const pkgId = cust.packageId || assignedPkg?.packageId || 'STANDARD';
+      const pkgName = cust.packageName || assignedPkg?.packageName || 'Standard Package';
 
       await dbClient.create({
         data: {
@@ -813,6 +845,8 @@ export class RelationalDatabaseStore {
           customerName: cust.name,
           boxNo: cust.boxNo,
           month: dto.month,
+          packageId: pkgId,
+          packageName: pkgName,
           monthlyFee: customerFee,
           paidAmount: 0,
           paymentDate: todayStr,
@@ -844,6 +878,8 @@ export class RelationalDatabaseStore {
       monthlyFee: number;
       paidAmount: number;
       paymentDate: string;
+      packageId: string;
+      packageName: string;
     }>
   ): Promise<MonthlyPayment> {
     const pmtClient = this.monthlyPaymentDb || prisma.monthlyPayment;
@@ -886,6 +922,8 @@ export class RelationalDatabaseStore {
     const dataToUpdate: any = {};
     if (dto.month !== undefined) dataToUpdate.month = dto.month;
     if (dto.monthlyFee !== undefined) dataToUpdate.monthlyFee = Math.abs(dto.monthlyFee);
+    if (dto.packageId !== undefined) dataToUpdate.packageId = dto.packageId;
+    if (dto.packageName !== undefined) dataToUpdate.packageName = dto.packageName;
     if (dto.paidAmount !== undefined) {
       dataToUpdate.paidAmount = Math.abs(dto.paidAmount);
       // Automatically pick current date for payment updates if not explicitly specified
@@ -933,6 +971,8 @@ export class RelationalDatabaseStore {
       customerName: rec.customerName,
       boxNo: rec.boxNo,
       month: rec.month,
+      packageId: rec.packageId || null,
+      packageName: rec.packageName || null,
       monthlyFee: rec.monthlyFee,
       paidAmount: rec.paidAmount,
       balanceAmount: balance,
@@ -1406,11 +1446,19 @@ export class RelationalDatabaseStore {
   }
 
   public async getSetting(key: string): Promise<string | null> {
+    const now = Date.now();
+    const cached = this.settingsCache.get(key);
+    if (cached && now < cached.expiresAt) {
+      return cached.value;
+    }
+
     try {
       const client = this.getSettingClient();
       if (!client) return null;
       const rec = await client.findUnique({ where: { key } });
-      return rec ? rec.value : null;
+      const val = rec ? rec.value : null;
+      this.settingsCache.set(key, { value: val, expiresAt: now + this.CACHE_TTL_MS });
+      return val;
     } catch (e: any) {
       console.warn(`Failed to fetch setting key "${key}":`, e?.message);
       return null;
@@ -1418,6 +1466,7 @@ export class RelationalDatabaseStore {
   }
 
   public async setSetting(key: string, value: string): Promise<void> {
+    this.settingsCache.set(key, { value, expiresAt: Date.now() + this.CACHE_TTL_MS });
     try {
       const client = this.getSettingClient();
       if (!client) return;
@@ -1427,11 +1476,13 @@ export class RelationalDatabaseStore {
         create: { key, value },
       });
     } catch (e: any) {
+      this.settingsCache.delete(key);
       console.error(`Failed to save setting key "${key}":`, e?.message);
     }
   }
 
   public async deleteSetting(key: string): Promise<void> {
+    this.settingsCache.delete(key);
     try {
       const client = this.getSettingClient();
       if (!client) return;
@@ -1445,6 +1496,11 @@ export class RelationalDatabaseStore {
   // DEDICATED TV PACKAGES COLLECTION (MongoDB 'packages' table)
   // -------------------------------------------------------------------
   public async getCablePackages(): Promise<any[]> {
+    const now = Date.now();
+    if (this.packagesCache && now < this.packagesCache.expiresAt) {
+      return this.packagesCache.data;
+    }
+
     // Clean up legacy settings table key if present
     this.deleteSetting('cable_packages').catch(() => {});
 
@@ -1456,7 +1512,7 @@ export class RelationalDatabaseStore {
       });
 
       if (res?.cursor?.firstBatch && res.cursor.firstBatch.length > 0) {
-        return res.cursor.firstBatch.map((doc: any) => ({
+        const pkgs = res.cursor.firstBatch.map((doc: any) => ({
           id: doc.packageId || doc._id?.$oid || doc._id,
           packageId: doc.packageId,
           name: doc.name,
@@ -1469,6 +1525,11 @@ export class RelationalDatabaseStore {
           badgeText: doc.badgeText || 'text-blue-400',
           description: doc.description || '',
         }));
+        this.packagesCache = {
+          data: pkgs,
+          expiresAt: now + this.CACHE_TTL_MS,
+        };
+        return pkgs;
       }
     } catch (e: any) {
       console.warn('Raw query on packages collection failed:', e?.message);
@@ -1527,10 +1588,16 @@ export class RelationalDatabaseStore {
       console.warn('Failed to seed default packages to packages collection:', err?.message);
     }
 
-    return defaults.map((d) => ({ ...d, id: d.packageId }));
+    const result = defaults.map((d) => ({ ...d, id: d.packageId }));
+    this.packagesCache = {
+      data: result,
+      expiresAt: now + this.CACHE_TTL_MS,
+    };
+    return result;
   }
 
   public async upsertCablePackage(pkg: any): Promise<any> {
+    this.packagesCache = null; // Invalidate cache
     const pkgId = pkg.id || pkg.packageId;
     const doc = {
       packageId: pkgId,
@@ -1564,6 +1631,7 @@ export class RelationalDatabaseStore {
   }
 
   public async deleteCablePackage(packageId: string): Promise<boolean> {
+    this.packagesCache = null; // Invalidate cache
     try {
       await (prisma as any).$runCommandRaw({
         delete: 'packages',

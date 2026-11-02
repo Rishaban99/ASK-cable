@@ -151,6 +151,8 @@ export interface MonthlyPayment {
   customerName: string;
   boxNo: string;
   month: string;
+  packageId?: string;
+  packageName?: string;
   monthlyFee: number;
   paidAmount: number;
   balanceAmount: number;

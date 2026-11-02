@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import path from 'path';
 import dotenv from 'dotenv';
 import { prisma } from './server/db.js';
@@ -10,6 +11,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Enable Gzip/Brotli compression for all JSON & API responses
+app.use(compression());
 app.use(express.json());
 
 // Connect & Verify Prisma Database Connection
