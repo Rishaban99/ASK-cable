@@ -261,7 +261,7 @@ router.get('/customers', async (req, res) => {
 
 router.post('/customers', async (req, res) => {
   try {
-    const { name, nicNo, phoneNo, address, boxNo, totalAmount, paidAmount } = req.body;
+    const { name, nicNo, phoneNo, address, boxNo, totalAmount, paidAmount, packageId, packageName, monthlyFee } = req.body;
     if (!name || !nicNo || !phoneNo || !boxNo) {
       return res.status(400).json({ error: 'Customer Name, NIC No, Phone No, and Box No are required' });
     }
@@ -273,6 +273,9 @@ router.post('/customers', async (req, res) => {
       boxNo,
       totalAmount: Number(totalAmount || 0),
       paidAmount: Number(paidAmount || 0),
+      packageId: packageId || undefined,
+      packageName: packageName || undefined,
+      monthlyFee: monthlyFee !== undefined ? Number(monthlyFee) : undefined,
     });
     res.status(201).json({ customer });
   } catch (error: any) {

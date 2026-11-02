@@ -205,6 +205,9 @@ class ApiClient {
     totalAmount: number;
     paidAmount: number;
     status?: 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED';
+    packageId?: string;
+    packageName?: string;
+    monthlyFee?: number;
   }): Promise<Customer> {
     const res = await this.request<{ customer: Customer }>('/customers', {
       method: 'POST',

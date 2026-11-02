@@ -293,7 +293,8 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   const bulkEstimatedEligibleCount = bulkEligibleSubscribers.length;
   const bulkProjectedRevenue = bulkEligibleSubscribers.reduce((sum, c) => {
     const pkg = getCustomerPackage(c.id || c.boxNo);
-    return sum + (pkg.monthlyFee || 1200);
+    const fee = pkg.monthlyFee !== undefined && pkg.monthlyFee !== null ? Number(pkg.monthlyFee) : 1200;
+    return sum + fee;
   }, 0);
 
   // Confirm Modal State

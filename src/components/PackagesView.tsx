@@ -237,7 +237,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
     }
 
     const feeNum = parseFloat(modalMonthlyFee);
-    if (isNaN(feeNum) || feeNum <= 0) {
+    if (isNaN(feeNum) || feeNum < 0) {
       toast.error('Monthly fee must be a valid positive amount.');
       return;
     }
@@ -921,7 +921,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                     <input
                       type="number"
                       step="0.01"
-                      min="0"
+                      min="-1"
                       required
                       placeholder="1200"
                       value={modalMonthlyFee}

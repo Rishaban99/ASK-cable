@@ -126,10 +126,10 @@ export async function syncCablePackagesFromDb(): Promise<CablePackage[]> {
 }
 
 /**
- * Get package assignment for a given customer ID or Box No
+ * Get package assignment for a given customer object, customer ID, or Box No
  */
-export function getCustomerPackage(customerIdOrBox?: string | null): CustomerPackageAssignment {
-  if (!customerIdOrBox) {
+export function getCustomerPackage(customerOrKey?: any): CustomerPackageAssignment {
+  if (!customerOrKey) {
     const std = cachedPackages.find((p) => p.id === 'STANDARD') || cachedPackages[1] || cachedPackages[0];
     return {
       packageId: std.id,
@@ -138,9 +138,24 @@ export function getCustomerPackage(customerIdOrBox?: string | null): CustomerPac
     };
   }
 
-  const cleanKey = customerIdOrBox.trim().toLowerCase();
-  if (cachedAssignments[cleanKey]) {
-    return cachedAssignments[cleanKey];
+  // If customer object was passed
+  if (typeof customerOrKey === 'object') {
+    if (customerOrKey.packageId && customerOrKey.packageName) {
+      return {
+        packageId: customerOrKey.packageId,
+        packageName: customerOrKey.packageName,
+        monthlyFee: customerOrKey.monthlyFee !== undefined && customerOrKey.monthlyFee !== null ? Number(customerOrKey.monthlyFee) : 1200,
+      };
+    }
+    const key = (customerOrKey.id || customerOrKey.boxNo || '').trim().toLowerCase();
+    if (key && cachedAssignments[key]) {
+      return cachedAssignments[key];
+    }
+  } else if (typeof customerOrKey === 'string') {
+    const cleanKey = customerOrKey.trim().toLowerCase();
+    if (cachedAssignments[cleanKey]) {
+      return cachedAssignments[cleanKey];
+    }
   }
 
   // Fallback to Standard Package (LKR 1,200)
@@ -161,7 +176,10 @@ export async function setCustomerPackage(
 ): Promise<void> {
   const updated = { ...cachedAssignments };
   const stamp = new Date().toISOString();
-  const cleanAssignment = { ...assignment, updatedAt: stamp };
+  const fee = assignment.monthlyFee !== undefined && assignment.monthlyFee !== null && !isNaN(Number(assignment.monthlyFee))
+    ? Number(assignment.monthlyFee)
+    : 1200;
+  const cleanAssignment = { ...assignment, monthlyFee: fee, updatedAt: stamp };
 
   if (customerIdentifier.id) {
     updated[customerIdentifier.id.trim().toLowerCase()] = cleanAssignment;

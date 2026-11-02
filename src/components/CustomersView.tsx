@@ -202,6 +202,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 
     setIsSubmitting(true);
     try {
+      const selectedPkg = getPackageById(selectedPackageId);
       const createdCust = await api.createCustomer({
         name: name.trim(),
         nicNo: nicNo.trim(),
@@ -211,16 +212,19 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         totalAmount: parsedTotal,
         paidAmount: parsedPaid,
         status: status,
+        packageId: selectedPackageId,
+        packageName: selectedPkg.name,
+        monthlyFee: selectedPkg.monthlyFee,
       });
 
-      // Save customer package association
-      const selectedPkg = getPackageById(selectedPackageId);
+      // Update local package manager cache
+      const fee = selectedPkg.monthlyFee !== undefined && selectedPkg.monthlyFee !== null ? Number(selectedPkg.monthlyFee) : 1200;
       await setCustomerPackage(
         { id: createdCust.id, boxNo: createdCust.boxNo },
         {
           packageId: selectedPackageId,
           packageName: selectedPkg.name,
-          monthlyFee: selectedPkg.monthlyFee || 1200,
+          monthlyFee: fee,
         }
       );
 
@@ -308,6 +312,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     if (!editingCustomer || !editName.trim() || !editNicNo.trim() || !editPhoneNo.trim() || !editBoxNo.trim()) return;
 
     try {
+      const editPkg = getPackageById(editPackageId);
       await api.updateCustomer(editingCustomer.id, {
         name: editName.trim(),
         nicNo: editNicNo.trim(),
@@ -317,16 +322,19 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         totalAmount: parsedEditTotal,
         paidAmount: parsedEditPaid,
         status: editStatus,
+        packageId: editPackageId,
+        packageName: editPkg.name,
+        monthlyFee: editPkg.monthlyFee,
       });
 
-      // Update package association
-      const editPkg = getPackageById(editPackageId);
+      // Update local cache
+      const editFee = editPkg.monthlyFee !== undefined && editPkg.monthlyFee !== null ? Number(editPkg.monthlyFee) : 1200;
       await setCustomerPackage(
         { id: editingCustomer.id, boxNo: editBoxNo.trim() || editingCustomer.boxNo },
         {
           packageId: editPackageId,
           packageName: editPkg.name,
-          monthlyFee: editPkg.monthlyFee || 1200,
+          monthlyFee: editFee,
         }
       );
 

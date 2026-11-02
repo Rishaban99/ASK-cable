@@ -360,6 +360,9 @@ export class RelationalDatabaseStore {
       balanceAmount: c.totalAmount - c.paidAmount,
       status: (c.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED',
       createdAt: c.createdAt ? new Date(c.createdAt).toISOString() : new Date().toISOString(),
+      packageId: c.packageId || 'STANDARD',
+      packageName: c.packageName || 'Standard Package',
+      monthlyFee: (c.monthlyFee !== undefined && c.monthlyFee !== null) ? Number(c.monthlyFee) : 1200,
     }));
   }
 
@@ -398,6 +401,9 @@ export class RelationalDatabaseStore {
     totalAmount: number;
     paidAmount: number;
     status?: string;
+    packageId?: string;
+    packageName?: string;
+    monthlyFee?: number;
   }): Promise<Customer> {
     const initialPaid = Math.abs(dto.paidAmount || 0);
     const cust = await this.customerDb.create({
@@ -410,6 +416,9 @@ export class RelationalDatabaseStore {
         totalAmount: Math.abs(dto.totalAmount || 0),
         paidAmount: initialPaid,
         status: dto.status || 'ACTIVE',
+        packageId: dto.packageId || 'STANDARD',
+        packageName: dto.packageName || 'Standard Package',
+        monthlyFee: (dto.monthlyFee !== undefined && dto.monthlyFee !== null) ? Number(dto.monthlyFee) : 1200,
       },
     });
 
@@ -445,6 +454,9 @@ export class RelationalDatabaseStore {
       balanceAmount: cust.totalAmount - cust.paidAmount,
       status: (cust.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED',
       createdAt: cust.createdAt.toISOString(),
+      packageId: cust.packageId || 'STANDARD',
+      packageName: cust.packageName || 'Standard Package',
+      monthlyFee: (cust.monthlyFee !== undefined && cust.monthlyFee !== null) ? Number(cust.monthlyFee) : 1200,
     };
   }
 
@@ -457,6 +469,9 @@ export class RelationalDatabaseStore {
     totalAmount: number;
     paidAmount: number;
     status: string;
+    packageId?: string;
+    packageName?: string;
+    monthlyFee?: number;
   }>): Promise<Customer> {
     const oldCust = await this.customerDb.findUnique({ where: { id } });
 
@@ -469,6 +484,9 @@ export class RelationalDatabaseStore {
     if (dto.totalAmount !== undefined) dataToUpdate.totalAmount = Math.abs(dto.totalAmount);
     if (dto.paidAmount !== undefined) dataToUpdate.paidAmount = Math.abs(dto.paidAmount);
     if (dto.status !== undefined) dataToUpdate.status = dto.status;
+    if (dto.packageId !== undefined) dataToUpdate.packageId = dto.packageId;
+    if (dto.packageName !== undefined) dataToUpdate.packageName = dto.packageName;
+    if (dto.monthlyFee !== undefined) dataToUpdate.monthlyFee = Number(dto.monthlyFee);
 
     const cust = await this.customerDb.update({
       where: { id },
@@ -510,6 +528,9 @@ export class RelationalDatabaseStore {
       balanceAmount: cust.totalAmount - cust.paidAmount,
       status: (cust.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED',
       createdAt: cust.createdAt.toISOString(),
+      packageId: cust.packageId || 'STANDARD',
+      packageName: cust.packageName || 'Standard Package',
+      monthlyFee: (cust.monthlyFee !== undefined && cust.monthlyFee !== null) ? Number(cust.monthlyFee) : 1200,
     };
   }
 
@@ -779,7 +800,12 @@ export class RelationalDatabaseStore {
       const custKeyId = (cust.id || '').toLowerCase();
       const custKeyBox = (cust.boxNo || '').toLowerCase();
       const assignedPkg = packageMap[custKeyId] || packageMap[custKeyBox];
-      const customerFee = assignedPkg && Number(assignedPkg.monthlyFee) > 0 ? Number(assignedPkg.monthlyFee) : defaultFee;
+      const customerFee = (cust.monthlyFee !== undefined && cust.monthlyFee !== null && Number(cust.monthlyFee) >= 0)
+        ? Number(cust.monthlyFee)
+        : (assignedPkg && assignedPkg.monthlyFee !== undefined && assignedPkg.monthlyFee !== null && Number(assignedPkg.monthlyFee) >= 0 
+            ? Number(assignedPkg.monthlyFee) 
+            : defaultFee);
+      const pkgName = cust.packageName || assignedPkg?.packageName || 'Standard';
 
       await dbClient.create({
         data: {
@@ -795,7 +821,7 @@ export class RelationalDatabaseStore {
 
       createdCount++;
       totalBilledAmount += customerFee;
-      createdCustomerNames.push(`${cust.name} (Box: ${cust.boxNo}) [${assignedPkg?.packageName || 'Standard'}: LKR ${customerFee}]`);
+      createdCustomerNames.push(`${cust.name} (Box: ${cust.boxNo}) [${pkgName}: LKR ${customerFee}]`);
     }
 
     return {
@@ -1551,33 +1577,28 @@ export class RelationalDatabaseStore {
   }
 
   // -------------------------------------------------------------------
-  // DEDICATED CUSTOMER PACKAGES COLLECTION (MongoDB 'customer_packages')
+  // CUSTOMER PACKAGES DIRECT INTEGRATION (stored in 'customers' collection)
   // -------------------------------------------------------------------
   public async getCustomerPackages(): Promise<Record<string, any>> {
-    // Clean up legacy setting key if present
-    this.deleteSetting('customer_packages').catch(() => {});
-
     const map: Record<string, any> = {};
     try {
-      const res: any = await (prisma as any).$runCommandRaw({
-        find: 'customer_packages',
-        filter: {},
-      });
-
-      if (res?.cursor?.firstBatch) {
-        for (const doc of res.cursor.firstBatch) {
-          if (doc.targetKey) {
-            map[doc.targetKey] = {
-              packageId: doc.packageId,
-              packageName: doc.packageName,
-              monthlyFee: Number(doc.monthlyFee) || 0,
-              updatedAt: doc.updatedAt,
-            };
-          }
+      const custs = await this.customerDb.findMany();
+      for (const doc of custs) {
+        const pkgData = {
+          packageId: doc.packageId || 'STANDARD',
+          packageName: doc.packageName || 'Standard Package',
+          monthlyFee: (doc.monthlyFee !== null && doc.monthlyFee !== undefined) ? Number(doc.monthlyFee) : 1200,
+          updatedAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
+        };
+        if (doc.id) {
+          map[doc.id.toLowerCase()] = pkgData;
+        }
+        if (doc.boxNo) {
+          map[doc.boxNo.toLowerCase()] = pkgData;
         }
       }
     } catch (e: any) {
-      console.warn('Failed to query customer_packages collection:', e?.message);
+      console.warn('Failed to get customer packages from customers collection:', e?.message);
     }
     return map;
   }
@@ -1586,43 +1607,31 @@ export class RelationalDatabaseStore {
     customerIdentifier: { id?: string; boxNo?: string },
     assignment: { packageId: string; packageName: string; monthlyFee: number }
   ): Promise<void> {
-    // Clean up legacy setting key if present
-    this.deleteSetting('customer_packages').catch(() => {});
-
-    const stamp = new Date().toISOString();
-    const docData = {
+    const updateData: any = {
       packageId: assignment.packageId,
       packageName: assignment.packageName,
-      monthlyFee: Number(assignment.monthlyFee) || 0,
-      updatedAt: stamp,
+      monthlyFee: Number(assignment.monthlyFee),
     };
 
-    const keys: string[] = [];
-    if (customerIdentifier.id) keys.push(customerIdentifier.id.trim().toLowerCase());
-    if (customerIdentifier.boxNo) keys.push(customerIdentifier.boxNo.trim().toLowerCase());
-
-    for (const key of keys) {
-      try {
-        await (prisma as any).$runCommandRaw({
-          update: 'customer_packages',
-          updates: [
-            {
-              q: { targetKey: key },
-              u: {
-                $set: {
-                  targetKey: key,
-                  customerId: customerIdentifier.id || null,
-                  boxNo: customerIdentifier.boxNo || null,
-                  ...docData,
-                },
-              },
-              upsert: true,
-            },
-          ],
+    try {
+      if (customerIdentifier.id) {
+        await this.customerDb.update({
+          where: { id: customerIdentifier.id },
+          data: updateData,
         });
-      } catch (e: any) {
-        console.error('Failed to upsert customer_package:', e?.message);
+      } else if (customerIdentifier.boxNo) {
+        const cust = await this.customerDb.findFirst({
+          where: { boxNo: customerIdentifier.boxNo },
+        });
+        if (cust) {
+          await this.customerDb.update({
+            where: { id: cust.id },
+            data: updateData,
+          });
+        }
       }
+    } catch (e: any) {
+      console.error('Failed to update customer package in customers collection:', e?.message);
     }
   }
 

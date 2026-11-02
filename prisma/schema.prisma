@@ -55,6 +55,9 @@ model Customer {
   totalAmount Float
   paidAmount  Float
   status      String   @default("ACTIVE")
+  packageId   String?  
+  packageName String?  
+  monthlyFee  Float?   
   createdAt   DateTime @default(now())
 
   @@map("customers")
@@ -112,16 +115,4 @@ model CablePackage {
   @@map("packages")
 }
 
-model CustomerPackage {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  targetKey   String   @unique
-  customerId  String?
-  boxNo       String?
-  packageId   String
-  packageName String
-  monthlyFee  Float
-  updatedAt   DateTime @default(now()) @updatedAt
-
-  @@map("customer_packages")
-}
 
