@@ -81,6 +81,396 @@ Return ONLY the corrected, clean English title-cased phrase without quotes, expl
 });
 
 // ==========================================
+// 1.1 AI BUSINESS PERFORMANCE & HEALTH ADVISOR
+// ==========================================
+
+interface RuleInsightParams {
+  isTamil: boolean;
+  score: number;
+  healthStatus: 'Excellent' | 'Good' | 'Moderate' | 'Needs Attention' | 'Critical';
+  collectionGrade: 'A+' | 'A' | 'B' | 'C' | 'D';
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  profitMarginPct: number;
+  monthlyRevenue: number;
+  monthlyExpenses: number;
+  monthlyNet: number;
+  monthlySavingsRatePct: number;
+  totalSubscribers: number;
+  activeSubscribers: number;
+  inactiveSubscribers: number;
+  currentMonthBilled: number;
+  currentMonthCollected: number;
+  collectionRatePct: number;
+  totalPendingArrears: number;
+  topExpenseName: string;
+  topExpenseAmount: number;
+  projectedNextMonthRevenue: number;
+  activeSubscriberRatePct: number;
+  companyName: string;
+}
+
+function generateRuleBasedInsights(p: RuleInsightParams) {
+  const {
+    isTamil,
+    score,
+    healthStatus,
+    collectionGrade,
+    totalRevenue,
+    totalExpenses,
+    netProfit,
+    profitMarginPct,
+    monthlyRevenue,
+    monthlyExpenses,
+    monthlyNet,
+    monthlySavingsRatePct,
+    totalSubscribers,
+    activeSubscribers,
+    inactiveSubscribers,
+    currentMonthBilled,
+    currentMonthCollected,
+    collectionRatePct,
+    totalPendingArrears,
+    topExpenseName,
+    topExpenseAmount,
+    projectedNextMonthRevenue,
+    activeSubscriberRatePct,
+    companyName,
+  } = p;
+
+  if (isTamil) {
+    let verdict = '';
+    if (score >= 85) {
+      verdict = `${companyName} மிகச் சிறந்த நிதி ஆரோக்கியத்துடனும் (${profitMarginPct.toFixed(1)}% லாப வரம்பு) வலுவான சந்தாதாரர் ஆதரவுடனும் வெற்றிகரமாக இயங்கி வருகிறது.`;
+    } else if (score >= 70) {
+      verdict = `${companyName} நல்ல நிதி ஸ்திரத்தன்மை மற்றும் தொடர்ச்சியான பணப்புழக்கத்துடன் இயங்கி வருகிறது; நிலுவைக் கட்டணங்களை விரைந்து வசூலித்தால் லாபம் மேலும் அதிகரிக்கும்.`;
+    } else if (score >= 55) {
+      verdict = `${companyName} மிதமான லாபத்துடன் இயங்கி வருகிறது. சந்தாதாரர்களின் மாதாந்திர கட்டண வசூல் வீதத்தை (தற்போது ${collectionRatePct.toFixed(1)}%) அதிகரிப்பது அவசியமாகும்.`;
+    } else {
+      verdict = `பணப்புழக்கம் மற்றும் நிலுவையில் உள்ள கட்டணங்கள் (Rs. ${totalPendingArrears.toLocaleString()}) காரணமாக நிதி நிர்வாகத்தில் தீவிர உடனடி கவனம் தேவைப்படுகிறது.`;
+    }
+
+    const summary = `${companyName} நிறுவனத்தின் மொத்த வருமானம் Rs. ${totalRevenue.toLocaleString()} ஆகவும், மொத்த செலவுகள் Rs. ${totalExpenses.toLocaleString()} ஆகவும் உள்ள நிலையில், நிகர நிதி இருப்பு Rs. ${netProfit.toLocaleString()} (${profitMarginPct.toFixed(1)}% லாப வரம்பு) ஆக உள்ளது. நடப்பு மாதத்தில் Rs. ${monthlyRevenue.toLocaleString()} வருவாயும், Rs. ${monthlyExpenses.toLocaleString()} செலவும் பதிவாகியுள்ளது. தற்போது மொத்தமுள்ள ${totalSubscribers} வாடிக்கையாளர்களில் ${activeSubscribers} பேர் தீவிர சேவையில் உள்ளனர். மாதாந்திர கட்டண வசூலில் இதுவரை Rs. ${currentMonthCollected.toLocaleString()} (${collectionRatePct.toFixed(1)}%) வசூலிக்கப்பட்டுள்ளது.`;
+
+    const strengths: string[] = [
+      `வலுவான லாப வரம்பு: மொத்த வருவாயில் ${profitMarginPct.toFixed(1)}% நிகர நிதி இருப்பாக பாதுகாப்பாக தக்கவைக்கப்பட்டுள்ளது.`,
+      `நிலையான சந்தாதாரர் தளம்: ${activeSubscribers} தீவிர வாடிக்கையாளர்களுடன் (${activeSubscriberRatePct.toFixed(1)}% retention) தொடர்ச்சியான மாதாந்திர வருவாய் உறுதியாகிறது.`,
+      monthlyNet >= 0
+        ? `நடப்பு மாத நேர்மறை பணப்புழக்கம்: நிகர சேமிப்பு Rs. ${monthlyNet.toLocaleString()} (${monthlySavingsRatePct.toFixed(1)}% சேமிப்பு விகிதம்).`
+        : `முழுமையான மூலதன இருப்பு: முந்தைய மாதங்களின் சேமிப்புடன் Rs. ${netProfit.toLocaleString()} கையிருப்பு உள்ளது.`,
+      `அடுத்த மாத உத்தேச வருவாய் மதிப்பீடு: செயலில் உள்ள வாடிக்கையாளர்கள் மூலம் சுமார் Rs. ${projectedNextMonthRevenue.toLocaleString()} வரவு எதிர்பார்க்கப்படுகிறது.`,
+    ];
+
+    const risks: string[] = [];
+    if (totalPendingArrears > 0) {
+      risks.push(`நிலுவைக் கட்டண அபாயம்: வாடிக்கையாளர்களிடமிருந்து வசூலிக்கப்பட வேண்டிய மொத்த பாக்கித் தொகை Rs. ${totalPendingArrears.toLocaleString()} ஆக உள்ளது.`);
+    }
+    if (inactiveSubscribers > 0) {
+      risks.push(`செயலிழந்த சந்தாதாரர்கள்: ${inactiveSubscribers} வாடிக்கையாளர்கள் துண்டிக்கப்பட்டுள்ளதால் மாதத்திற்கு சுமார் Rs. ${(inactiveSubscribers * 1200).toLocaleString()} வருமான இழப்பு ஏற்படுகிறது.`);
+    }
+    if (topExpenseAmount > 0) {
+      risks.push(`முக்கிய செலவினப் பிரிவு: "${topExpenseName}" பிரிவில் Rs. ${topExpenseAmount.toLocaleString()} செலவாகியுள்ளது; இதில் சிக்கனம் கடைப்பிடிக்கலாம்.`);
+    }
+    if (risks.length === 0) {
+      risks.push(`செயல்பாட்டுச் செலவுகள் தொடர்ந்து கண்காணிக்கப்பட வேண்டும்.`);
+    }
+
+    const recommendations: string[] = [
+      `நிலுவை வைத்துள்ள வாடிக்கையாளர்களுக்கு Payment Reminder SMS உடனே அனுப்பி பாக்கித் தொகையை (Rs. ${totalPendingArrears.toLocaleString()}) விரைவாக வசூலியுங்கள்.`,
+      `Standard பேக்கேஜில் உள்ள வாடிக்கையாளர்களை Premium HD பேக்கேஜிற்கு (LKR 1,800) Upgrade செய்ய விளம்பரப்படுத்தி மாதாந்திர வருமானத்தை உயர்த்துங்கள்.`,
+      inactiveSubscribers > 0
+        ? `செயலிழந்த ${inactiveSubscribers} வாடிக்கையாளர்களுக்கு சிறப்பு மறு இணைப்பு சலுகை (Reconnection Offer) வழங்கி மீண்டும் கேபிள் சேவையைத் தொடரச் செய்யுங்கள்.`
+        : `புதிய வீடுகளுக்கு விளம்பர துண்டுப் பிரசுரங்கள் வழங்கி புதிய கேபிள் இணைப்புகளை அதிகரியுங்கள்.`,
+      `மாதாந்திர செயல்பாட்டுச் செலவுகளை மொத்த வருவாயில் 35% முதல் 40%-க்குள் கட்டுப்படுத்தி பாதுகாப்பான அவசரகால நிதி இருப்பை உருவாக்குங்கள்.`,
+    ];
+
+    return {
+      healthScore: score,
+      healthStatus,
+      verdict,
+      summary,
+      strengths,
+      risks,
+      recommendations,
+      projectedNextMonthRevenue,
+      collectionGrade,
+      profitMarginPct: Number(profitMarginPct.toFixed(1)),
+      collectionRatePct: Number(collectionRatePct.toFixed(1)),
+      activeSubscriberRatePct: Number(activeSubscriberRatePct.toFixed(1)),
+      generatedAt: new Date().toISOString(),
+      language: 'ta' as const,
+      isAiGenerated: false,
+    };
+  } else {
+    let verdict = '';
+    if (score >= 85) {
+      verdict = `${companyName} is performing exceptionally well with a stellar profit margin of ${profitMarginPct.toFixed(1)}% and robust subscriber retention.`;
+    } else if (score >= 70) {
+      verdict = `${companyName} demonstrates solid financial health and positive cashflow; accelerating monthly bill collections will further unlock liquidity.`;
+    } else if (score >= 55) {
+      verdict = `${companyName} is maintaining moderate operating stability, but requires tighter collection management (current collection efficiency: ${collectionRatePct.toFixed(1)}%).`;
+    } else {
+      verdict = `Critical attention is required on uncollected bill arrears (Rs. ${totalPendingArrears.toLocaleString()}) and operational expense controls to restore cash reserves.`;
+    }
+
+    const summary = `${companyName} has recorded total lifetime revenue of Rs. ${totalRevenue.toLocaleString()} against total expenses of Rs. ${totalExpenses.toLocaleString()}, maintaining a healthy net reserve of Rs. ${netProfit.toLocaleString()} (${profitMarginPct.toFixed(1)}% margin). In the current billing cycle, cash inflows reached Rs. ${monthlyRevenue.toLocaleString()} with operational burn of Rs. ${monthlyExpenses.toLocaleString()}. Active subscriber penetration stands at ${activeSubscriberRatePct.toFixed(1)}% across ${totalSubscribers} registered homes.`;
+
+    const strengths: string[] = [
+      `Strong Operating Margin: ${profitMarginPct.toFixed(1)}% of all-time revenues have been retained as net cash reserves.`,
+      `Stable Recurring Subscriber Base: ${activeSubscribers} active subscribers drive consistent, predictable monthly subscriptions.`,
+      monthlyNet >= 0
+        ? `Positive Current Month Cashflow: Net savings of Rs. ${monthlyNet.toLocaleString()} (${monthlySavingsRatePct.toFixed(1)}% savings rate).`
+        : `Resilient Reserve Buffer: Healthy cumulative reserve of Rs. ${netProfit.toLocaleString()}.`,
+      `Projected Pipeline: Estimated recurring inflow of Rs. ${projectedNextMonthRevenue.toLocaleString()} for the upcoming month.`,
+    ];
+
+    const risks: string[] = [];
+    if (totalPendingArrears > 0) {
+      risks.push(`Uncollected Dues Risk: Outstanding arrears across subscribers total Rs. ${totalPendingArrears.toLocaleString()}.`);
+    }
+    if (inactiveSubscribers > 0) {
+      risks.push(`Subscriber Churn: ${inactiveSubscribers} inactive accounts represent approximately Rs. ${(inactiveSubscribers * 1200).toLocaleString()}/month in unearned potential revenue.`);
+    }
+    if (topExpenseAmount > 0) {
+      risks.push(`Top Expense Exposure: "${topExpenseName}" represents the largest operational outflow at Rs. ${topExpenseAmount.toLocaleString()}.`);
+    }
+    if (risks.length === 0) {
+      risks.push(`Routine operational overhead must continue to be monitored against revenue velocity.`);
+    }
+
+    const recommendations: string[] = [
+      `Dispatch automated SMS payment reminders to accounts with overdue balances to recover Rs. ${totalPendingArrears.toLocaleString()} in arrears.`,
+      `Upsell active subscribers on Standard packages to Premium HD (LKR 1,800) with sports/movie packages to expand Average Revenue Per User (ARPU).`,
+      inactiveSubscribers > 0
+        ? `Launch a targeted Win-Back campaign offering zero reconnection fee for ${inactiveSubscribers} inactive subscribers.`
+        : `Expand optical fiber / RF distribution to neighboring streets to capture new household connections.`,
+      `Cap monthly operational overhead strictly beneath 40% of recurring inflows to compound cash reserves.`,
+    ];
+
+    return {
+      healthScore: score,
+      healthStatus,
+      verdict,
+      summary,
+      strengths,
+      risks,
+      recommendations,
+      projectedNextMonthRevenue,
+      collectionGrade,
+      profitMarginPct: Number(profitMarginPct.toFixed(1)),
+      collectionRatePct: Number(collectionRatePct.toFixed(1)),
+      activeSubscriberRatePct: Number(activeSubscriberRatePct.toFixed(1)),
+      generatedAt: new Date().toISOString(),
+      language: 'en' as const,
+      isAiGenerated: false,
+    };
+  }
+}
+
+router.post('/ai/business-insights', async (req, res) => {
+  try {
+    const { language = 'ta', metrics } = req.body;
+    const isTamil = language === 'ta';
+
+    let totalRevenue = Number(metrics?.totalRevenue ?? 0);
+    let totalExpenses = Number(metrics?.totalExpenses ?? 0);
+    let netProfit = Number(metrics?.netProfit ?? (totalRevenue - totalExpenses));
+    let profitMarginPct = Number(metrics?.profitMarginPct ?? (totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0));
+    let monthlyRevenue = Number(metrics?.monthlyRevenue ?? 0);
+    let monthlyExpenses = Number(metrics?.monthlyExpenses ?? 0);
+    let monthlyNet = Number(metrics?.monthlyNet ?? (monthlyRevenue - monthlyExpenses));
+    let monthlySavingsRatePct = Number(metrics?.monthlySavingsRatePct ?? (monthlyRevenue > 0 ? (monthlyNet / monthlyRevenue) * 100 : 0));
+    let totalSubscribers = Number(metrics?.totalSubscribers ?? 0);
+    let activeSubscribers = Number(metrics?.activeSubscribers ?? 0);
+    let inactiveSubscribers = Number(metrics?.inactiveSubscribers ?? 0);
+    let currentMonthBilled = Number(metrics?.currentMonthBilled ?? 0);
+    let currentMonthCollected = Number(metrics?.currentMonthCollected ?? 0);
+    let currentMonthPending = Number(metrics?.currentMonthPending ?? 0);
+    let collectionRatePct = Number(metrics?.collectionRatePct ?? (currentMonthBilled > 0 ? (currentMonthCollected / currentMonthBilled) * 100 : 0));
+    let totalPendingArrears = Number(metrics?.totalPendingArrears ?? 0);
+    let arpu = Number(metrics?.arpu ?? (activeSubscribers > 0 ? monthlyRevenue / activeSubscribers : 0));
+    let topExpenseName = metrics?.topExpenseCategoryName || 'Operations & Maintenance';
+    let topExpenseAmount = Number(metrics?.topExpenseCategoryAmount ?? 0);
+    let companyName = metrics?.companyName || 'ASK CABLE TV NETWORK';
+
+    // Fallback: If metrics were not passed, fetch live from database
+    if (totalRevenue === 0 && totalSubscribers === 0) {
+      try {
+        const [incomes, expenses, customers, payments] = await Promise.all([
+          db.getIncomes(),
+          db.getExpenses(),
+          db.getCustomers(),
+          db.getMonthlyPayments(),
+        ]);
+        totalRevenue = incomes.reduce((s, i) => s + i.amount, 0);
+        totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+        netProfit = totalRevenue - totalExpenses;
+        profitMarginPct = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+        totalSubscribers = customers.length;
+        activeSubscribers = customers.filter(c => (c.status || 'ACTIVE') === 'ACTIVE').length;
+        inactiveSubscribers = totalSubscribers - activeSubscribers;
+        const now = new Date();
+        const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        monthlyRevenue = incomes.filter(i => i.date.startsWith(curMonth)).reduce((s, i) => s + i.amount, 0);
+        monthlyExpenses = expenses.filter(e => e.date.startsWith(curMonth)).reduce((s, e) => s + e.amount, 0);
+        monthlyNet = monthlyRevenue - monthlyExpenses;
+        monthlySavingsRatePct = monthlyRevenue > 0 ? (monthlyNet / monthlyRevenue) * 100 : 0;
+        const curBills = payments.filter(p => p.month === curMonth);
+        currentMonthBilled = curBills.reduce((s, b) => s + b.monthlyFee, 0);
+        currentMonthCollected = curBills.reduce((s, b) => s + b.paidAmount, 0);
+        currentMonthPending = curBills.reduce((s, b) => s + b.balanceAmount, 0);
+        collectionRatePct = currentMonthBilled > 0 ? (currentMonthCollected / currentMonthBilled) * 100 : 0;
+        totalPendingArrears = payments.reduce((s, p) => s + p.balanceAmount, 0);
+        arpu = activeSubscribers > 0 ? monthlyRevenue / activeSubscribers : 0;
+      } catch (dbErr) {
+        // fallback
+      }
+    }
+
+    const activeSubscriberRatePct = totalSubscribers > 0 ? (activeSubscribers / totalSubscribers) * 100 : 100;
+    const projectedNextMonthRevenue = Math.round(activeSubscribers * (arpu > 500 ? arpu : 1200));
+
+    // Calculate Comprehensive Financial Health Score (0 - 100)
+    let score = 0;
+    if (profitMarginPct >= 45) score += 30;
+    else if (profitMarginPct >= 30) score += 25;
+    else if (profitMarginPct >= 15) score += 20;
+    else if (profitMarginPct > 0) score += 15;
+    else score += 5;
+
+    if (collectionRatePct >= 90) score += 30;
+    else if (collectionRatePct >= 75) score += 25;
+    else if (collectionRatePct >= 60) score += 18;
+    else if (collectionRatePct >= 40) score += 12;
+    else score += 6;
+
+    if (activeSubscriberRatePct >= 90) score += 20;
+    else if (activeSubscriberRatePct >= 80) score += 16;
+    else if (activeSubscriberRatePct >= 65) score += 12;
+    else score += 6;
+
+    if (monthlyNet > 0 && monthlySavingsRatePct >= 30) score += 20;
+    else if (monthlyNet > 0) score += 15;
+    else if (monthlyNet === 0) score += 10;
+    else score += 5;
+
+    score = Math.min(100, Math.max(25, Math.round(score)));
+
+    let healthStatus: 'Excellent' | 'Good' | 'Moderate' | 'Needs Attention' | 'Critical';
+    let collectionGrade: 'A+' | 'A' | 'B' | 'C' | 'D';
+
+    if (score >= 85) { healthStatus = 'Excellent'; collectionGrade = 'A+'; }
+    else if (score >= 70) { healthStatus = 'Good'; collectionGrade = 'A'; }
+    else if (score >= 55) { healthStatus = 'Moderate'; collectionGrade = 'B'; }
+    else if (score >= 40) { healthStatus = 'Needs Attention'; collectionGrade = 'C'; }
+    else { healthStatus = 'Critical'; collectionGrade = 'D'; }
+
+    // Check Gemini AI API Key
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const promptLang = isTamil
+          ? 'Respond entirely in fluent, natural, professional Tamil (தமிழ்) for verdict, summary, strengths, risks, and recommendations, while strictly keeping JSON keys in English.'
+          : 'Respond in professional corporate executive English for all fields.';
+
+        const prompt = `You are a Chief Financial Officer (CFO) and Business Intelligence Auditor analyzing "${companyName}", a Cable TV Network operator in Sri Lanka (Currency: Sri Lankan Rupees - Rs. / LKR).
+
+Financial & Performance Metrics:
+- All-Time Total Revenue: Rs. ${totalRevenue.toLocaleString()}
+- All-Time Total Expenses: Rs. ${totalExpenses.toLocaleString()}
+- Net Reserve / Cash Balance: Rs. ${netProfit.toLocaleString()}
+- Overall Profit Margin: ${profitMarginPct.toFixed(1)}%
+- Current Month Inflow: Rs. ${monthlyRevenue.toLocaleString()}
+- Current Month Expenses: Rs. ${monthlyExpenses.toLocaleString()}
+- Current Month Net Cashflow: Rs. ${monthlyNet.toLocaleString()}
+- Current Month Savings Rate: ${monthlySavingsRatePct.toFixed(1)}%
+- Total Registered Subscribers: ${totalSubscribers} (${activeSubscribers} Active, ${inactiveSubscribers} Inactive)
+- Monthly Cable Bills: Total Billed Rs. ${currentMonthBilled.toLocaleString()}, Collected Rs. ${currentMonthCollected.toLocaleString()}, Collection Rate ${collectionRatePct.toFixed(1)}%
+- Uncollected Pending Arrears: Rs. ${totalPendingArrears.toLocaleString()}
+- Top Expense Category: ${topExpenseName} (Rs. ${topExpenseAmount.toLocaleString()})
+- Calculated Health Score: ${score}/100 (${healthStatus})
+
+${promptLang}
+
+Respond with ONLY a raw JSON object (no markdown code blocks, no backticks, no extra text) with the following exact keys:
+{
+  "verdict": "A sharp, impactful 1-2 sentence executive verdict directly summarizing whether the business is healthy, growing, or facing collection friction.",
+  "summary": "A 3-4 sentence comprehensive business analysis covering revenue stability, subscriber collection performance, and expense management.",
+  "strengths": ["3 clear bullet points highlighting key business strengths and achievements"],
+  "risks": ["2-3 bullet points highlighting financial risks, uncollected arrears, or operational leakages"],
+  "recommendations": ["3-4 actionable growth and cashflow maximization steps tailored specifically for a Cable TV business (e.g. SMS payment reminders, package tier upgrades, reconnecting inactive subscribers, expense control)"]
+}`;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+        });
+
+        const rawText = response.text ? response.text.trim().replace(/^```json/i, '').replace(/```$/i, '').trim() : '';
+        if (rawText) {
+          const parsed = JSON.parse(rawText);
+          if (parsed.verdict && Array.isArray(parsed.strengths) && Array.isArray(parsed.recommendations)) {
+            return res.json({
+              healthScore: score,
+              healthStatus,
+              verdict: parsed.verdict,
+              summary: parsed.summary || parsed.verdict,
+              strengths: parsed.strengths,
+              risks: parsed.risks || [],
+              recommendations: parsed.recommendations,
+              projectedNextMonthRevenue,
+              collectionGrade,
+              profitMarginPct: Number(profitMarginPct.toFixed(1)),
+              collectionRatePct: Number(collectionRatePct.toFixed(1)),
+              activeSubscriberRatePct: Number(activeSubscriberRatePct.toFixed(1)),
+              generatedAt: new Date().toISOString(),
+              language,
+              isAiGenerated: true,
+            });
+          }
+        }
+      } catch (geminiErr: any) {
+        console.warn('Gemini AI business insight generation error, falling back to smart rule engine:', geminiErr.message);
+      }
+    }
+
+    // High precision smart rule engine fallback
+    const fallbackInsights = generateRuleBasedInsights({
+      isTamil,
+      score,
+      healthStatus,
+      collectionGrade,
+      totalRevenue,
+      totalExpenses,
+      netProfit,
+      profitMarginPct,
+      monthlyRevenue,
+      monthlyExpenses,
+      monthlyNet,
+      monthlySavingsRatePct,
+      totalSubscribers,
+      activeSubscribers,
+      inactiveSubscribers,
+      currentMonthBilled,
+      currentMonthCollected,
+      collectionRatePct,
+      totalPendingArrears,
+      topExpenseName,
+      topExpenseAmount,
+      projectedNextMonthRevenue,
+      activeSubscriberRatePct,
+      companyName,
+    });
+
+    return res.json(fallbackInsights);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to generate business insights' });
+  }
+});
+
+// ==========================================
 // 2. CATEGORIES ROUTES
 // ==========================================
 

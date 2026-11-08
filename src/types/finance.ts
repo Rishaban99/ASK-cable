@@ -244,3 +244,47 @@ export interface SqlQueryResult {
   statementType: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'ALTER' | 'UNKNOWN';
   message?: string;
 }
+
+export interface AiBusinessInsights {
+  healthScore: number; // 0 - 100
+  healthStatus: 'Excellent' | 'Good' | 'Moderate' | 'Needs Attention' | 'Critical';
+  verdict: string;
+  summary: string;
+  strengths: string[];
+  risks: string[];
+  recommendations: string[];
+  projectedNextMonthRevenue: number;
+  collectionGrade: 'A+' | 'A' | 'B' | 'C' | 'D';
+  profitMarginPct: number;
+  collectionRatePct: number;
+  activeSubscriberRatePct: number;
+  generatedAt: string;
+  language: 'ta' | 'en';
+  isAiGenerated: boolean;
+}
+
+export interface AiBusinessInsightsPayload {
+  language?: 'ta' | 'en';
+  metrics?: {
+    totalRevenue: number;
+    totalExpenses: number;
+    netProfit: number;
+    profitMarginPct: number;
+    monthlyRevenue: number;
+    monthlyExpenses: number;
+    monthlyNet: number;
+    monthlySavingsRatePct: number;
+    totalSubscribers: number;
+    activeSubscribers: number;
+    inactiveSubscribers: number;
+    currentMonthBilled: number;
+    currentMonthCollected: number;
+    currentMonthPending: number;
+    collectionRatePct: number;
+    totalPendingArrears: number;
+    arpu: number;
+    topExpenseCategoryName?: string;
+    topExpenseCategoryAmount?: number;
+    companyName?: string;
+  };
+}

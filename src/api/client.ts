@@ -19,7 +19,9 @@ import {
   SendRegistrationSmsPayload,
   SmsSendResult,
   SmsLogEntry,
-  SmsBalanceResponse
+  SmsBalanceResponse,
+  AiBusinessInsights,
+  AiBusinessInsightsPayload
 } from '../types/finance.js';
 
 export const CURRENCY_CONF = {
@@ -85,6 +87,14 @@ class ApiClient {
       console.warn('AI spell check error:', e);
       return text;
     }
+  }
+
+  // AI Executive Business Health & Performance Insights
+  async getAiBusinessInsights(payload: AiBusinessInsightsPayload): Promise<AiBusinessInsights> {
+    return this.request<AiBusinessInsights>('/ai/business-insights', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   }
 
   // Categories

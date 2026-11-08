@@ -266,9 +266,13 @@ export default function App() {
             incomes={incomes}
             expenses={expenses}
             categories={categories}
+            customers={customers}
+            monthlyPayments={monthlyPayments}
+            systemProfile={systemProfile}
             currency={currency}
             onOpenRecordModal={() => setIsRecordModalOpen(true)}
             isLoading={isLoading}
+            onNavigateTab={(tab: NavTab) => setCurrentTab(tab)}
           />
         )}
 
