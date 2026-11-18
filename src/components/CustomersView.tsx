@@ -65,7 +65,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const [phoneNo, setPhoneNo] = useState('');
   const [address, setAddress] = useState('');
   const [boxNo, setBoxNo] = useState('');
-  const [totalAmount, setTotalAmount] = useState('9500');
+  const [totalAmount, setTotalAmount] = useState('10500');
   const [paidAmount, setPaidAmount] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE' | 'DISCONNECTED'>('ACTIVE');
 
