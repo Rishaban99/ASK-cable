@@ -52,9 +52,9 @@ const COLOR_PRESETS = [
     id: 'emerald',
     name: 'Emerald Green',
     color: 'from-emerald-500 to-teal-600',
-    badgeBg: 'bg-emerald-500/15',
-    badgeBorder: 'border-emerald-500/30',
-    badgeText: 'text-emerald-400',
+    badgeBg: 'bg-emerald-50 dark:bg-emerald-500/15',
+    badgeBorder: 'border-emerald-200 dark:border-emerald-500/30',
+    badgeText: 'text-emerald-700 dark:text-emerald-400',
     cardRing: 'ring-emerald-500/30',
     borderActive: 'border-emerald-500',
     bgTint: 'bg-emerald-500/5',
@@ -63,9 +63,9 @@ const COLOR_PRESETS = [
     id: 'blue',
     name: 'Sapphire Blue',
     color: 'from-blue-500 to-indigo-600',
-    badgeBg: 'bg-blue-500/15',
-    badgeBorder: 'border-blue-500/30',
-    badgeText: 'text-blue-400',
+    badgeBg: 'bg-blue-50 dark:bg-blue-500/15',
+    badgeBorder: 'border-blue-200 dark:border-blue-500/30',
+    badgeText: 'text-blue-700 dark:text-blue-400',
     cardRing: 'ring-blue-500/30',
     borderActive: 'border-blue-500',
     bgTint: 'bg-blue-500/5',
@@ -74,9 +74,9 @@ const COLOR_PRESETS = [
     id: 'amber',
     name: 'Royal Gold / Amber',
     color: 'from-amber-500 to-orange-600',
-    badgeBg: 'bg-amber-500/15',
-    badgeBorder: 'border-amber-500/30',
-    badgeText: 'text-amber-400',
+    badgeBg: 'bg-amber-50 dark:bg-amber-500/15',
+    badgeBorder: 'border-amber-200 dark:border-amber-500/30',
+    badgeText: 'text-amber-700 dark:text-amber-400',
     cardRing: 'ring-amber-500/30',
     borderActive: 'border-amber-500',
     bgTint: 'bg-amber-500/5',
@@ -85,9 +85,9 @@ const COLOR_PRESETS = [
     id: 'purple',
     name: 'Purple Velvet',
     color: 'from-purple-500 to-pink-600',
-    badgeBg: 'bg-purple-500/15',
-    badgeBorder: 'border-purple-500/30',
-    badgeText: 'text-purple-400',
+    badgeBg: 'bg-purple-50 dark:bg-purple-500/15',
+    badgeBorder: 'border-purple-200 dark:border-purple-500/30',
+    badgeText: 'text-purple-700 dark:text-purple-400',
     cardRing: 'ring-purple-500/30',
     borderActive: 'border-purple-500',
     bgTint: 'bg-purple-500/5',
@@ -96,9 +96,9 @@ const COLOR_PRESETS = [
     id: 'rose',
     name: 'Ruby Rose',
     color: 'from-rose-500 to-red-600',
-    badgeBg: 'bg-rose-500/15',
-    badgeBorder: 'border-rose-500/30',
-    badgeText: 'text-rose-400',
+    badgeBg: 'bg-rose-50 dark:bg-rose-500/15',
+    badgeBorder: 'border-rose-200 dark:border-rose-500/30',
+    badgeText: 'text-rose-700 dark:text-rose-400',
     cardRing: 'ring-rose-500/30',
     borderActive: 'border-rose-500',
     bgTint: 'bg-rose-500/5',
@@ -107,9 +107,9 @@ const COLOR_PRESETS = [
     id: 'cyan',
     name: 'Cyan Teal',
     color: 'from-cyan-500 to-blue-600',
-    badgeBg: 'bg-cyan-500/15',
-    badgeBorder: 'border-cyan-500/30',
-    badgeText: 'text-cyan-400',
+    badgeBg: 'bg-cyan-50 dark:bg-cyan-500/15',
+    badgeBorder: 'border-cyan-200 dark:border-cyan-500/30',
+    badgeText: 'text-cyan-700 dark:text-cyan-400',
     cardRing: 'ring-cyan-500/30',
     borderActive: 'border-cyan-500',
     bgTint: 'bg-cyan-500/5',
@@ -366,11 +366,13 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
       {/* ------------------------------------------------------------------- */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <Tv className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
-            <span>Cable TV Packages & Configurations</span>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-xs">
+              <Tv className="w-5 h-5" />
+            </div>
+            <span>Cable TV Packages</span>
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 sm:mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Manage subscription plans, customize monthly fees, configure channel lineups, and assign packages to subscribers.
           </p>
         </div>
@@ -380,10 +382,10 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
             <button
               type="button"
               onClick={handleResetDefaults}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700 transition-all cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer shadow-xs"
               title="Reset to Factory Defaults"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-neutral-400" />
+              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
               <span>Reset Defaults</span>
             </button>
           )}
@@ -392,10 +394,10 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleOpenCreateModal}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-neutral-950 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm shadow-emerald-500/20 cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>+ Add New Package</span>
+              <span>Add New Package</span>
             </motion.button>
           )}
         </div>
@@ -406,65 +408,65 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
       {/* ------------------------------------------------------------------- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Packages */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-neutral-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Active Packages</span>
-            <div className="p-2 rounded-xl bg-sky-500/10 text-sky-500 dark:text-sky-400">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1.5">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-bold uppercase tracking-wider">Active Packages</span>
+            <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400">
               <Layers className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
             {packages.length}
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
             Customizable TV channel tiers
           </p>
         </div>
 
         {/* Total Active Subscribers */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-neutral-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Subscribers</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1.5">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-bold uppercase tracking-wider">Total Subscribers</span>
+            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
             {packageAnalytics.totalActiveCount}
           </div>
-          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
             Active connections in network
           </p>
         </div>
 
         {/* Projected Monthly Revenue */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-neutral-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Projected Revenue</span>
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 dark:text-amber-400">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1.5">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-bold uppercase tracking-wider">Projected Revenue</span>
+            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
             {formatMoney(packageAnalytics.totalProjectedMonthlyRevenue, currency)}
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
             Recurring monthly subscription pool
           </p>
         </div>
 
         {/* Average Revenue Per User (ARPU) */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-slate-500 dark:text-neutral-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Average Rate / User</span>
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-500 dark:text-purple-400">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1.5">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-bold uppercase tracking-wider">Average Rate / User</span>
+            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400">
               <Percent className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
             {formatMoney(packageAnalytics.arpu, currency)}
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-neutral-400">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
             Monthly ARPU per subscriber
           </p>
         </div>
@@ -474,18 +476,18 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
       {/* 3. PACKAGE CARDS (GRID VIEW) */}
       {/* ------------------------------------------------------------------- */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 pb-3">
+        <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-3">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-emerald-500" />
+              <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Available Packages & Pricing Lineup</span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Click "Edit" on any package to customize its fee, channel count, or description in MongoDB.
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Click "Edit" on any package to customize its fee, channel count, or description.
             </p>
           </div>
-          <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-            Live MongoDB Config
+          <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-500/20">
+            Live Config
           </span>
         </div>
 
@@ -502,12 +504,12 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
             return (
               <motion.div
                 key={pkg.id}
-                whileHover={{ y: -3 }}
+                whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
-                className={`relative rounded-3xl p-5 sm:p-6 bg-white dark:bg-neutral-900 border transition-all shadow-md flex flex-col justify-between space-y-4 ${
+                className={`relative rounded-2xl p-5 sm:p-6 bg-white dark:bg-slate-900 border transition-all shadow-xs flex flex-col justify-between space-y-4 ${
                   isPremium
-                    ? 'border-amber-500/50 dark:border-amber-500/40 shadow-amber-500/5'
-                    : 'border-slate-200 dark:border-neutral-800'
+                    ? 'border-amber-400/60 dark:border-amber-500/40'
+                    : 'border-slate-200/80 dark:border-slate-800'
                 }`}
               >
                 {/* Popular / Premium Ribbons */}
@@ -518,7 +520,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                       <span>{pkg.shortName || pkg.name}</span>
                     </span>
                     {isPopular && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">
                         <Sparkles className="w-2.5 h-2.5" />
                         <span>Most Popular</span>
                       </span>
@@ -530,7 +532,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleOpenEditModal(pkg)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                         title="Edit Package"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -558,39 +560,39 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                     <span className="text-3xl font-black text-slate-900 dark:text-white">
                       {formatMoney(pkg.monthlyFee, currency)}
                     </span>
-                    <span className="text-xs text-slate-500 dark:text-neutral-400 font-sans">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-sans">
                       / month
                     </span>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 text-xs font-bold text-slate-700 dark:text-neutral-300">
-                    <Tv className="w-3.5 h-3.5 text-emerald-500" />
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <Tv className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span>{pkg.channelsCount}</span>
                   </div>
-                  <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed min-h-[36px]">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed min-h-[36px]">
                     {pkg.description}
                   </p>
                 </div>
 
                 {/* Live Subscriber Metrics Box */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800/80 space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between text-slate-600 dark:text-neutral-400">
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                     <span className="font-medium">Active Subscribers:</span>
                     <span className="font-mono font-bold text-slate-900 dark:text-white flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-emerald-500" />
+                      <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>{subCount} subscribers</span>
                       <span className="text-[10px] text-slate-400 font-normal">({sharePct}%)</span>
                     </span>
                   </div>
 
                   {/* Progress Bar for Share */}
-                  <div className="w-full bg-slate-200 dark:bg-neutral-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full bg-gradient-to-r ${pkg.color || 'from-emerald-500 to-teal-500'}`}
                       style={{ width: `${Math.min(100, Math.max(0, sharePct))}%` }}
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-slate-600 dark:text-neutral-400 pt-1 border-t border-slate-200/80 dark:border-neutral-800/80">
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-800">
                     <span className="font-medium">Monthly Contribution:</span>
                     <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                       {formatMoney(revSum, currency)}
@@ -602,10 +604,10 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setSelectedPackageFilter(selectedPackageFilter === pkg.id ? 'ALL' : pkg.id)}
-                  className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
                     selectedPackageFilter === pkg.id
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                      : 'bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-750 text-slate-800 dark:text-neutral-200'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200'
                   }`}
                 >
                   <Filter className="w-3.5 h-3.5" />
@@ -622,39 +624,39 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
       {/* ------------------------------------------------------------------- */}
       {/* 4. SUBSCRIBER PACKAGE ALLOCATION TABLE */}
       {/* ------------------------------------------------------------------- */}
-      <div className="p-4 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-neutral-800 pb-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Users className="w-4 h-4 text-emerald-500" />
+              <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Subscriber Package Allocations</span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-              Change any subscriber's TV package instantly using the dropdown. Changes save directly to MongoDB.
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Change any subscriber's TV package instantly using the dropdown.
             </p>
           </div>
 
           {/* Search & Package Filters */}
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative w-full sm:w-60">
-              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500 absolute left-3 top-2.5" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
                 placeholder="Search subscriber, box no, NIC..."
                 value={customerSearchQuery}
                 onChange={(e) => setCustomerSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
               />
             </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-neutral-950 p-1 border border-slate-200 dark:border-neutral-800 rounded-xl overflow-x-auto max-w-full">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto max-w-full shadow-inner">
               <button
                 type="button"
                 onClick={() => setSelectedPackageFilter('ALL')}
                 className={`px-2.5 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
                   selectedPackageFilter === 'ALL'
                     ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 All ({customers.length})
@@ -669,7 +671,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                     className={`px-2.5 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       selectedPackageFilter === p.id
                         ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     <span>{p.shortName || p.name}</span>
@@ -681,10 +683,10 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
           </div>
         </div>
 
-        {/* Desktop Table View (hidden md:block) */}
-        <div className="hidden md:block rounded-2xl border border-slate-200 dark:border-neutral-800 overflow-hidden bg-white dark:bg-neutral-950 shadow-xs">
+        {/* Desktop Table View */}
+        <div className="hidden md:block rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-950 shadow-xs">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-neutral-900 border-b border-slate-200 dark:border-neutral-800 text-slate-600 dark:text-neutral-400 font-bold text-[11px] uppercase tracking-wider">
+            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[11px] uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3">Subscriber</th>
                 <th className="px-3 py-3">Box Number</th>
@@ -695,10 +697,10 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-neutral-800/80">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
               {filteredSubscribers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400 dark:text-neutral-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400 dark:text-slate-500">
                     No subscribers found matching the selected package and search filters.
                   </td>
                 </tr>
@@ -708,16 +710,16 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                   const isSwitching = switchingCustomerId === cust.id;
 
                   return (
-                    <tr key={cust.id} className="hover:bg-slate-50/80 dark:hover:bg-neutral-900/60 transition-colors">
+                    <tr key={cust.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/60 transition-colors">
                       <td className="px-4 py-3">
                         <p className="font-bold text-sm text-slate-900 dark:text-white">{cust.name}</p>
-                        <p className="text-[11px] text-slate-500 dark:text-neutral-400 truncate max-w-[200px]" title={cust.address}>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]" title={cust.address}>
                           {cust.address || 'No Address'}
                         </p>
                       </td>
                       <td className="px-3 py-3 font-mono whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700/80 rounded-md text-xs font-bold text-slate-800 dark:text-neutral-200">
-                          <Box className="w-3 h-3 text-slate-500 dark:text-neutral-400" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-md text-xs font-bold text-slate-800 dark:text-slate-200">
+                          <Box className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                           <span>{cust.boxNo || '-'}</span>
                         </span>
                       </td>
@@ -736,7 +738,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                             disabled={isSwitching}
                             value={assigned.packageId}
                             onChange={(e) => handleQuickSwitchPackage(cust, e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-750 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 cursor-pointer shadow-xs disabled:opacity-50"
+                            className="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 cursor-pointer shadow-xs disabled:opacity-50"
                           >
                             {packages.map((p) => (
                               <option key={p.id} value={p.id}>
@@ -781,10 +783,10 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
           </table>
         </div>
 
-        {/* Mobile Cards View (block md:hidden) */}
+        {/* Mobile Cards View */}
         <div className="block md:hidden space-y-3">
           {filteredSubscribers.length === 0 ? (
-            <div className="p-6 text-center text-slate-400 dark:text-neutral-500 text-xs bg-slate-50 dark:bg-neutral-950 rounded-2xl border border-slate-200 dark:border-neutral-800">
+            <div className="p-6 text-center text-slate-400 dark:text-slate-500 text-xs bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
               No subscribers found matching criteria.
             </div>
           ) : (
@@ -793,15 +795,15 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
               return (
                 <div
                   key={cust.id}
-                  className="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-3 shadow-xs"
+                  className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs"
                 >
-                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-neutral-800 pb-2.5">
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
                     <div>
                       <h4 className="font-bold text-base text-slate-900 dark:text-white leading-tight">
                         {cust.name}
                       </h4>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-400 font-mono mt-0.5">
-                        <Box className="w-3 h-3 text-emerald-500" />
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                        <Box className="w-3 h-3 text-emerald-600 dark:text-emerald-500" />
                         <span>Box: {cust.boxNo}</span>
                       </div>
                     </div>
@@ -816,7 +818,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
 
                   {/* Package Selector on Mobile */}
                   <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-600 dark:text-neutral-400 flex items-center justify-between">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-between">
                       <span>Assigned TV Package:</span>
                       <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                         {formatMoney(assigned.monthlyFee, currency)}/mo
@@ -825,7 +827,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                     <select
                       value={assigned.packageId}
                       onChange={(e) => handleQuickSwitchPackage(cust, e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xs"
                     >
                       {packages.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -852,32 +854,32 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
             />
 
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto z-10"
+              className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 shadow-xl space-y-5 max-h-[90vh] overflow-y-auto z-10"
             >
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-800 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-500">
+                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-500">
                     <Tv className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-slate-900 dark:text-white">
                       {editingPkgId ? 'Edit Cable Package' : 'Create New Cable Package'}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-neutral-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Configure subscription rate and channel offerings
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-lg"
+                  className="p-1.5 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-lg cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -886,7 +888,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
               <form onSubmit={handleSavePackage} className="space-y-4 text-xs">
                 {/* Package Name */}
                 <div>
-                  <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                     Package Name *
                   </label>
                   <input
@@ -895,14 +897,14 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                     placeholder="e.g. Premium HD Package, Diamond Sports Pack"
                     value={modalPkgName}
                     onChange={(e) => setModalPkgName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
                   />
                 </div>
 
                 {/* Short Name & Monthly Fee */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                       Short Badge Name
                     </label>
                     <input
@@ -910,12 +912,12 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                       placeholder="e.g. Premium, Gold, Basic"
                       value={modalShortName}
                       onChange={(e) => setModalShortName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                       Monthly Fee ({currency}) *
                     </label>
                     <input
@@ -926,14 +928,14 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                       placeholder="1200"
                       value={modalMonthlyFee}
                       onChange={(e) => setModalMonthlyFee(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 focus:outline-none focus:border-emerald-500 font-bold"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 focus:outline-none focus:border-emerald-500 font-bold shadow-xs"
                     />
                   </div>
                 </div>
 
                 {/* Channels Count Breakdown */}
                 <div>
-                  <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                     Channels Count & Quality
                   </label>
                   <input
@@ -941,13 +943,13 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                     placeholder="e.g. 140+ Full HD & 4K Channels"
                     value={modalChannelsCount}
                     onChange={(e) => setModalChannelsCount(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                     Channel Lineup & Features Description
                   </label>
                   <textarea
@@ -955,13 +957,13 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                     placeholder="Describe included genres, sports, movies, local and international channels..."
                     value={modalDescription}
                     onChange={(e) => setModalDescription(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
                   />
                 </div>
 
                 {/* Color Theme Selector */}
                 <div>
-                  <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1.5">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">
                     Card & Badge Color Theme
                   </label>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -973,11 +975,11 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                         className={`p-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
                           modalColorPreset === cp.id
                             ? `${cp.badgeBg} ${cp.badgeBorder} ring-2 ${cp.cardRing}`
-                            : 'bg-slate-50 dark:bg-neutral-950 border-slate-200 dark:border-neutral-800 hover:border-slate-300'
+                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300'
                         }`}
                       >
                         <span className={`w-4 h-4 rounded-full bg-gradient-to-r ${cp.color}`} />
-                        <span className="text-[10px] font-semibold text-slate-700 dark:text-neutral-300 truncate w-full">
+                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 truncate w-full">
                           {cp.name.split(' ')[0]}
                         </span>
                       </button>
@@ -986,18 +988,18 @@ export const PackagesView: React.FC<PackagesViewProps> = ({
                 </div>
 
                 {/* Form Action Buttons */}
-                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-neutral-800">
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 font-medium hover:bg-slate-200 dark:hover:bg-neutral-750"
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold shadow-md shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
+                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-sm shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
                   >
                     {isSaving ? 'Saving...' : editingPkgId ? 'Save Changes' : 'Create Package'}
                   </button>

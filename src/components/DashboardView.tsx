@@ -513,24 +513,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const isTrajectoryPositive = currentNetWorth >= 0;
 
   return (
-    <div className="mx-auto max-w-7xl px-2.5 sm:px-6 py-3 sm:py-6 space-y-3 sm:space-y-5">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
       {/* Editorial Page Lead */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">ASK Cable Financial Dashboard</h1>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 backdrop-blur-md">
-              <Sparkles className="w-2.5 h-2.5" />
-              <span>v18 Pro</span>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              ASK Cable Financial Dashboard
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 backdrop-blur-md">
+              <Sparkles className="w-3 h-3 text-emerald-500" />
+              <span>SaaS Enterprise</span>
             </span>
           </div>
-          <p className="hidden sm:block text-xs text-neutral-400 mt-0.5">
+          <p className="hidden sm:block text-xs text-slate-500 dark:text-neutral-400 mt-1">
             Real-time subscriber billing operations, customer eligibility, and multi-stream cashflow monitoring in Sri Lankan Rupees (LKR)
           </p>
         </div>
         <div className="flex items-center gap-2.5">
           {isLoading && (
-            <span className="flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl font-medium backdrop-blur-md">
+            <span className="flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl font-medium backdrop-blur-md">
               <Spinner size="sm" />
               <span>Syncing live...</span>
             </span>
@@ -539,9 +541,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             onClick={onOpenRecordModal}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-neutral-950 bg-emerald-400 rounded-xl hover:bg-emerald-300 shadow-lg shadow-emerald-500/20 transition-all"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl shadow-md shadow-emerald-500/25 transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Record Transaction</span>
           </motion.button>
         </div>
@@ -550,21 +552,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ==========================================================================
           SECTION 1: DASHBOARD STATUS CARDS & BILLING MONTH SELECTOR
           ========================================================================== */}
-      <div className="space-y-2 sm:space-y-3">
+      <div className="space-y-3 sm:space-y-4">
         {/* Month Selector Bar & Operational Status Header */}
-        <div className="backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 p-3 sm:p-3.5 rounded-2xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] p-4 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
           <div>
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <Calendar className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-1.5">
-                  <span>Billing & Customer Status</span>
-                  <span className="text-neutral-500">·</span>
-                  <span className="text-emerald-400 font-mono font-bold">{formatMonthLabel(selectedBillingMonth)}</span>
+                <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-1.5">
+                  <span>Billing & Subscriber Status</span>
+                  <span className="text-slate-300 dark:text-neutral-600">·</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono font-extrabold">{formatMonthLabel(selectedBillingMonth)}</span>
                 </h2>
-                <p className="hidden sm:block text-[11px] text-neutral-400 mt-0.5">
+                <p className="hidden sm:block text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
                   Accurate database-driven metrics for customer eligibility, billing generation, and collections
                 </p>
               </div>
@@ -572,14 +574,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Floating Capsule Month Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2 self-start sm:self-auto flex-wrap">
-            <div className="flex items-center bg-neutral-950/70 border border-neutral-800 p-1 rounded-xl shadow-inner">
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <div className="flex items-center bg-slate-50 dark:bg-[#090e1a] border border-slate-200/80 dark:border-white/[0.08] p-1 rounded-xl shadow-xs">
               <motion.button
                 whileTap={{ scale: 0.88 }}
                 type="button"
                 onClick={handlePrevMonth}
                 title="Previous Billing Month"
-                className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition-colors"
+                className="p-1.5 rounded-lg text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </motion.button>
@@ -588,7 +590,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 type="month"
                 value={selectedBillingMonth}
                 onChange={(e) => e.target.value && setSelectedBillingMonth(e.target.value)}
-                className="px-2 py-0.5 text-xs font-mono font-bold rounded-md bg-transparent text-white focus:outline-none focus:bg-neutral-800/90 transition-colors cursor-pointer"
+                className="px-2 py-0.5 text-xs font-mono font-bold rounded-md bg-transparent text-slate-900 dark:text-white focus:outline-none transition-colors cursor-pointer"
               />
 
               <motion.button
@@ -596,7 +598,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 type="button"
                 onClick={handleNextMonth}
                 title="Next Billing Month"
-                className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800/80 transition-colors"
+                className="p-1.5 rounded-lg text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </motion.button>
@@ -607,33 +609,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 whileTap={{ scale: 0.92 }}
                 type="button"
                 onClick={() => setSelectedBillingMonth(currentMonthStr)}
-                className="px-3 py-1.5 text-xs font-bold rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-xs"
+                className="px-3 py-1.5 text-xs font-bold rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all shadow-xs cursor-pointer"
               >
-                Current
+                Current Month
               </motion.button>
             )}
           </div>
         </div>
 
         {/* Mobile View Mode Switcher (Screening vs Super Cards) */}
-        <div className="sm:hidden flex items-center justify-between backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 p-2 rounded-2xl shadow-md">
+        <div className="sm:hidden flex items-center justify-between bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] p-2 rounded-2xl shadow-xs">
           <div className="flex items-center gap-1.5 px-2">
-            <Smartphone className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-bold text-white tracking-wide">Mobile View</span>
+            <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs font-bold text-slate-900 dark:text-white tracking-wide">Layout View</span>
           </div>
-          <div className="relative flex items-center bg-neutral-950 p-1 rounded-xl border border-neutral-800">
+          <div className="relative flex items-center bg-slate-100 dark:bg-black/40 p-1 rounded-xl border border-slate-200 dark:border-white/[0.06]">
             <button
               type="button"
               onClick={() => setMobileViewMode('SCREENING')}
-              className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                mobileViewMode === 'SCREENING' ? 'text-neutral-950' : 'text-neutral-400 hover:text-white'
+              className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                mobileViewMode === 'SCREENING' ? 'text-white' : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {mobileViewMode === 'SCREENING' && (
                 <motion.div
                   layoutId="mobileViewModePill"
                   transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-                  className="absolute inset-0 bg-emerald-400 rounded-lg -z-10 shadow-sm"
+                  className="absolute inset-0 bg-emerald-600 rounded-lg -z-10 shadow-xs"
                 />
               )}
               <Layers className="w-3.5 h-3.5" />
@@ -643,15 +645,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={() => setMobileViewMode('GRID')}
-              className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                mobileViewMode === 'GRID' ? 'text-neutral-950' : 'text-neutral-400 hover:text-white'
+              className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                mobileViewMode === 'GRID' ? 'text-white' : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {mobileViewMode === 'GRID' && (
                 <motion.div
                   layoutId="mobileViewModePill"
                   transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-                  className="absolute inset-0 bg-emerald-400 rounded-lg -z-10 shadow-sm"
+                  className="absolute inset-0 bg-emerald-600 rounded-lg -z-10 shadow-xs"
                 />
               )}
               <LayoutGrid className="w-3.5 h-3.5" />
@@ -665,7 +667,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             ========================================================================= */}
         {mobileViewMode === 'SCREENING' && (
           <div
-            className="sm:hidden space-y-2.5 select-none"
+            className="sm:hidden space-y-3 select-none"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -678,40 +680,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.97, y: -8 }}
                   transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-                  className="p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-emerald-950/30 via-neutral-900/90 to-neutral-900/90 border border-emerald-500/30 shadow-2xl space-y-3"
+                  className="p-4.5 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/90 dark:border-white/[0.08] shadow-md space-y-3.5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20 flex items-center justify-center">
                         <Receipt className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                           Monthly Finances
                         </h4>
-                        <span className="text-[11px] font-mono text-emerald-400 font-medium">
+                        <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
                           {formatMonthLabel(selectedBillingMonth)}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-800/90 border border-neutral-700/80 text-neutral-300">
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-neutral-800/90 border border-slate-200 dark:border-neutral-700/80 text-slate-700 dark:text-neutral-300">
                       Screen 1 / 4
                     </span>
                   </div>
 
                   {/* Hero Net Metric */}
-                  <div className="p-3.5 rounded-2xl bg-neutral-950/70 border border-neutral-800/90">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#090e1a] border border-slate-200/80 dark:border-white/[0.06]">
+                    <span className="text-[10px] font-extrabold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                       Net Surplus / Deficit
                     </span>
                     <div className={`mt-1 text-2xl font-black font-mono tabular-nums leading-tight ${
-                      isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
+                      isActiveNetSavingsPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                     }`}>
                       {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
                     </div>
                     <div className="mt-1.5 flex items-center justify-between text-xs">
-                      <span className="text-neutral-400">Savings Rate:</span>
-                      <span className="font-mono font-bold text-white bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg text-[11px]">
+                      <span className="text-slate-500 dark:text-neutral-400">Savings Rate:</span>
+                      <span className="font-mono font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/20 border border-indigo-200 dark:border-indigo-500/30 px-2 py-0.5 rounded-lg text-[11px]">
                         {activeMonthSavingsRatePct}%
                       </span>
                     </div>
@@ -719,28 +721,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                   {/* Inflow vs Expense Sub-cards */}
                   <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-300 uppercase">
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                    <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/20">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                         <span>Income Inflow</span>
                       </div>
-                      <div className="mt-1.5 text-sm font-black text-emerald-400 font-mono tabular-nums truncate">
+                      <div className="mt-1.5 text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono tabular-nums truncate">
                         +{formatMoney(activeMonthIncome, currency)}
                       </div>
-                      <div className="mt-0.5 text-[10px] text-neutral-400 font-mono">
+                      <div className="mt-0.5 text-[10px] text-slate-500 dark:text-neutral-400 font-mono">
                         {activeMonthIncomeCount} rev. trans.
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-300 uppercase">
-                        <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+                    <div className="p-3 rounded-2xl bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/20">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-700 dark:text-rose-300 uppercase">
+                        <TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                         <span>Expenses</span>
                       </div>
-                      <div className="mt-1.5 text-sm font-black text-rose-400 font-mono tabular-nums truncate">
+                      <div className="mt-1.5 text-sm font-black text-rose-600 dark:text-rose-400 font-mono tabular-nums truncate">
                         -{formatMoney(activeMonthExpense, currency)}
                       </div>
-                      <div className="mt-0.5 text-[10px] text-neutral-400 font-mono">
+                      <div className="mt-0.5 text-[10px] text-slate-500 dark:text-neutral-400 font-mono">
                         {activeMonthExpenseCount} deductions
                       </div>
                     </div>
@@ -750,15 +752,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     whileTap={{ scale: 0.97 }}
                     type="button"
                     onClick={onOpenRecordModal}
-                    className="w-full py-2.5 px-4 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-500/20"
+                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
                     <span>Record Transaction</span>
                   </motion.button>
                 </motion.div>
               )}
 
-              {/* Screen 2 of 4: Subscribers Overview */}
+              {/* Screen 2 of 4: Subscribers Status */}
               {activeScreenSlide === 1 && (
                 <motion.div
                   key="slide-1"
@@ -766,62 +768,62 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.97, y: -8 }}
                   transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-                  className="p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-cyan-950/30 via-neutral-900/90 to-neutral-900/90 border border-cyan-500/30 shadow-2xl space-y-3"
+                  className="p-4.5 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/90 dark:border-white/[0.08] shadow-md space-y-3.5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                      <div className="w-8 h-8 rounded-xl bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-500/20 flex items-center justify-center">
                         <Users className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                          Subscribers Overview
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                          Subscriber Base
                         </h4>
-                        <span className="text-[11px] font-mono text-cyan-400 font-medium">
+                        <span className="text-[11px] font-mono text-cyan-600 dark:text-cyan-400 font-semibold">
                           {totalCustomersCount} Total Registered
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-800/90 border border-neutral-700/80 text-neutral-300">
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-neutral-800/90 border border-slate-200 dark:border-neutral-700/80 text-slate-700 dark:text-neutral-300">
                       Screen 2 / 4
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/25">
-                      <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider block">
+                    <div className="p-3 rounded-2xl bg-cyan-50/80 dark:bg-cyan-500/10 border border-cyan-200/60 dark:border-cyan-500/25">
+                      <span className="text-[10px] font-extrabold text-cyan-700 dark:text-cyan-300 uppercase tracking-wider block">
                         Active Subscribers
                       </span>
-                      <div className="mt-1.5 text-2xl font-black text-white font-mono leading-none">
+                      <div className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white font-mono leading-none">
                         {activeCustomersCount}
                       </div>
-                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 mt-1 block">
                         Active connections
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25">
-                      <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
+                    <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/25">
+                      <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
                         Eligible This Month
                       </span>
-                      <div className="mt-1.5 text-2xl font-black text-emerald-400 font-mono leading-none">
+                      <div className="mt-1.5 text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono leading-none">
                         {eligibleCustomersCount}
                       </div>
-                      <span className="text-[10px] text-neutral-400 mt-1 block truncate">
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 mt-1 block truncate">
                         Ready for {formatMonthLabel(selectedBillingMonth).split(' ')[0]}
                       </span>
                     </div>
                   </div>
 
                   {/* Skipped Banner */}
-                  <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-between">
+                  <div className="p-3 rounded-2xl bg-purple-50/80 dark:bg-purple-500/10 border border-purple-200/60 dark:border-purple-500/25 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <UserX className="w-4 h-4 text-purple-400 shrink-0" />
+                      <UserX className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                       <div>
-                        <span className="text-xs font-bold text-purple-300 block">
+                        <span className="text-xs font-bold text-purple-700 dark:text-purple-300 block">
                           Skipped Customers: {totalSkippedCount}
                         </span>
-                        <span className="text-[10px] text-neutral-400">
+                        <span className="text-[10px] text-slate-500 dark:text-neutral-400">
                           Bypassed in bulk bill generation
                         </span>
                       </div>
@@ -830,7 +832,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       whileTap={{ scale: 0.94 }}
                       type="button"
                       onClick={() => setIsSkippedModalOpen(true)}
-                      className="px-2.5 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-[11px] font-bold border border-purple-500/30 flex items-center gap-1 shrink-0"
+                      className="px-2.5 py-1.5 rounded-xl bg-purple-100 dark:bg-purple-500/20 hover:bg-purple-200 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 text-[11px] font-bold border border-purple-300/80 dark:border-purple-500/30 flex items-center gap-1 shrink-0 cursor-pointer"
                     >
                       <span>Reasons</span>
                       <ArrowRight className="w-3 h-3" />
@@ -841,7 +843,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     whileTap={{ scale: 0.97 }}
                     type="button"
                     onClick={() => onNavigateToTab('customers')}
-                    className="w-full py-2.5 px-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-lg shadow-cyan-500/20"
+                    className="w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-md shadow-cyan-600/20 cursor-pointer"
                   >
                     <Users className="w-4 h-4" />
                     <span>Manage All Customers</span>
@@ -857,63 +859,63 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.97, y: -8 }}
                   transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-                  className="p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-blue-950/30 via-neutral-900/90 to-neutral-900/90 border border-blue-500/30 shadow-2xl space-y-3"
+                  className="p-4.5 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/90 dark:border-white/[0.08] shadow-md space-y-3.5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/20 flex items-center justify-center">
                         <Receipt className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                           Billing Pipeline
                         </h4>
-                        <span className="text-[11px] font-mono text-blue-400 font-medium">
+                        <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-semibold">
                           {formatMonthLabel(selectedBillingMonth)}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-800/90 border border-neutral-700/80 text-neutral-300">
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-neutral-800/90 border border-slate-200 dark:border-neutral-700/80 text-slate-700 dark:text-neutral-300">
                       Screen 3 / 4
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/25">
-                      <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider block">
+                    <div className="p-3 rounded-2xl bg-blue-50/80 dark:bg-blue-500/10 border border-blue-200/60 dark:border-blue-500/25">
+                      <span className="text-[10px] font-extrabold text-blue-700 dark:text-blue-300 uppercase tracking-wider block">
                         Bills Generated
                       </span>
-                      <div className="mt-1.5 text-2xl font-black text-white font-mono leading-none">
+                      <div className="mt-1.5 text-2xl font-black text-slate-900 dark:text-white font-mono leading-none">
                         {billsGeneratedCount}
                       </div>
-                      <span className="text-[10px] text-blue-300 font-mono mt-1 block truncate">
+                      <span className="text-[10px] text-blue-600 dark:text-blue-300 font-mono mt-1 block truncate font-semibold">
                         Billed: {formatMoney(totalBilledAmount, currency)}
                       </span>
                     </div>
 
                     <div className={`p-3 rounded-2xl ${
                       billsPendingCount > 0
-                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                        ? 'bg-amber-50/80 dark:bg-amber-500/10 border-amber-200/60 dark:border-amber-500/30 text-amber-700 dark:text-amber-300'
+                        : 'bg-emerald-50/80 dark:bg-emerald-500/10 border-emerald-200/60 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
                     } border`}>
-                      <span className="text-[10px] font-bold uppercase tracking-wider block">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider block">
                         Bills Pending
                       </span>
                       <div className="mt-1.5 text-2xl font-black font-mono leading-none">
                         {billsPendingCount}
                       </div>
-                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 mt-1 block font-medium">
                         {billsPendingCount === 0 ? '✓ Complete' : '⚠️ Awaiting'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-neutral-950/60 border border-neutral-800 space-y-1.5">
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#090e1a] border border-slate-200/80 dark:border-white/[0.06] space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] font-mono">
-                      <span className="text-neutral-400">Generation Progress</span>
-                      <span className="text-blue-400 font-bold">{generationPct}%</span>
+                      <span className="text-slate-500 dark:text-neutral-400 font-medium">Generation Progress</span>
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">{generationPct}%</span>
                     </div>
-                    <div className="h-2 w-full bg-neutral-800 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-200 dark:bg-neutral-800 rounded-full overflow-hidden">
                       <div style={{ width: `${generationPct}%` }} className="h-full bg-blue-500 rounded-full transition-all duration-500" />
                     </div>
                   </div>
@@ -922,7 +924,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     whileTap={{ scale: 0.97 }}
                     type="button"
                     onClick={() => onNavigateToTab('monthly-payment')}
-                    className="w-full py-2.5 px-4 rounded-2xl bg-blue-400 hover:bg-blue-300 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
+                    className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-md shadow-blue-600/20 cursor-pointer"
                   >
                     <Receipt className="w-4 h-4" />
                     <span>Open Monthly Bills</span>
@@ -938,59 +940,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.97, y: -8 }}
                   transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-                  className="p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-emerald-950/30 via-neutral-900/90 to-neutral-900/90 border border-emerald-500/30 shadow-2xl space-y-3"
+                  className="p-4.5 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/90 dark:border-white/[0.08] shadow-md space-y-3.5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20 flex items-center justify-center">
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                           Payment Collections
                         </h4>
-                        <span className="text-[11px] font-mono text-emerald-400 font-medium">
+                        <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
                           {formatMonthLabel(selectedBillingMonth)}
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-800/90 border border-neutral-700/80 text-neutral-300">
+                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-neutral-800/90 border border-slate-200 dark:border-neutral-700/80 text-slate-700 dark:text-neutral-300">
                       Screen 4 / 4
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25">
-                      <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">
+                    <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/25">
+                      <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
                         Payments Received
                       </span>
-                      <div className="mt-1.5 text-sm font-black text-emerald-400 font-mono tabular-nums leading-none truncate">
+                      <div className="mt-1.5 text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono tabular-nums leading-none truncate">
                         +{formatMoney(paymentsReceivedAmount, currency)}
                       </div>
-                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 mt-1 block">
                         {paymentsReceivedCount} paid records
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/25">
-                      <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider block">
+                    <div className="p-3 rounded-2xl bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/25">
+                      <span className="text-[10px] font-extrabold text-rose-700 dark:text-rose-300 uppercase tracking-wider block">
                         Balance Due
                       </span>
-                      <div className="mt-1.5 text-sm font-black text-rose-400 font-mono tabular-nums leading-none truncate">
+                      <div className="mt-1.5 text-sm font-black text-rose-600 dark:text-rose-400 font-mono tabular-nums leading-none truncate">
                         {formatMoney(paymentsPendingAmount, currency)}
                       </div>
-                      <span className="text-[10px] text-neutral-400 mt-1 block">
+                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 mt-1 block">
                         {unpaidBillsCount} unpaid bills
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-neutral-950/60 border border-neutral-800 space-y-1.5">
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#090e1a] border border-slate-200/80 dark:border-white/[0.06] space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] font-mono">
-                      <span className="text-neutral-400">Recovery Rate</span>
-                      <span className="text-emerald-400 font-bold">{collectionPct}%</span>
+                      <span className="text-slate-500 dark:text-neutral-400 font-medium">Recovery Rate</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{collectionPct}%</span>
                     </div>
-                    <div className="h-2 w-full bg-neutral-800 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-200 dark:bg-neutral-800 rounded-full overflow-hidden">
                       <div style={{ width: `${collectionPct}%` }} className="h-full bg-emerald-500 rounded-full transition-all duration-500" />
                     </div>
                   </div>
@@ -999,7 +1001,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     whileTap={{ scale: 0.97 }}
                     type="button"
                     onClick={() => onNavigateToTab('payment-collection')}
-                    className="w-full py-2.5 px-4 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-500/20"
+                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Collect Payments Now</span>
@@ -1009,19 +1011,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </AnimatePresence>
 
             {/* Carousel Screening Navigation Strip with Gliding Spring Pill */}
-            <div className="backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 p-2 rounded-2xl shadow-md space-y-2">
+            <div className="bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] p-2.5 rounded-2xl shadow-xs space-y-2">
               <div className="flex items-center justify-between gap-1">
                 <motion.button
                   whileTap={{ scale: 0.88 }}
                   type="button"
                   onClick={() => setActiveScreenSlide((prev) => (prev > 0 ? prev - 1 : 3))}
-                  className="p-2 rounded-xl bg-neutral-800/80 hover:bg-neutral-800 text-neutral-200 transition-colors"
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/[0.05] dark:hover:bg-white/[0.08] dark:text-neutral-200 transition-colors cursor-pointer"
                   title="Previous Screen"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </motion.button>
 
-                <div className="relative flex items-center gap-1 bg-neutral-950/80 p-1 rounded-xl border border-neutral-800">
+                <div className="relative flex items-center gap-1 bg-slate-100 dark:bg-[#090e1a] p-1 rounded-xl border border-slate-200 dark:border-white/[0.06]">
                   {[
                     { label: 'Finances' },
                     { label: 'Subscribers' },
@@ -1032,17 +1034,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => setActiveScreenSlide(idx)}
-                      className={`relative z-10 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+                      className={`relative z-10 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
                         activeScreenSlide === idx
-                          ? 'text-neutral-950'
-                          : 'text-neutral-400 hover:text-white'
+                          ? 'text-white'
+                          : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       {activeScreenSlide === idx && (
                         <motion.div
                           layoutId="carouselTabIndicator"
                           transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-                          className="absolute inset-0 bg-emerald-400 rounded-lg -z-10 shadow-sm"
+                          className="absolute inset-0 bg-emerald-600 rounded-lg -z-10 shadow-xs"
                         />
                       )}
                       <span>{tab.label}</span>
@@ -1054,7 +1056,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   whileTap={{ scale: 0.88 }}
                   type="button"
                   onClick={() => setActiveScreenSlide((prev) => (prev < 3 ? prev + 1 : 0))}
-                  className="p-2 rounded-xl bg-neutral-800/80 hover:bg-neutral-800 text-neutral-200 transition-colors"
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/[0.05] dark:hover:bg-white/[0.08] dark:text-neutral-200 transition-colors cursor-pointer"
                   title="Next Screen"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -1068,10 +1070,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     key={idx}
                     type="button"
                     onClick={() => setActiveScreenSlide(idx)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                       activeScreenSlide === idx
-                        ? 'w-6 bg-emerald-400'
-                        : 'w-1.5 bg-neutral-700 hover:bg-neutral-600'
+                        ? 'w-6 bg-emerald-500'
+                        : 'w-1.5 bg-slate-300 dark:bg-neutral-700 hover:bg-slate-400'
                     }`}
                     aria-label={`Slide ${idx + 1}`}
                   />
@@ -1085,36 +1087,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             SUPER CARDS GRID: Active when mobileViewMode === 'GRID' on mobile,
             AND ALWAYS VISIBLE on Desktop (hidden sm:grid)
             ========================================================================= */}
-        <div className={`${mobileViewMode === 'GRID' ? 'grid' : 'hidden sm:grid'} grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5`}>
+        <div className={`${mobileViewMode === 'GRID' ? 'grid' : 'hidden sm:grid'} grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3`}>
           {/* Card 1: Total Active Customers */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-cyan-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-cyan-500/50 shadow-sm hover:shadow-cyan-500/10 transition-all flex flex-col justify-between"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] hover:border-cyan-400/60 dark:hover:border-cyan-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300 truncate">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
                   Active Customers
                 </span>
-                <div className="p-1 rounded-lg bg-cyan-500/10 text-cyan-400">
+                <div className="p-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-500/20">
                   <Users className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="my-2">
-                <div className="text-xl sm:text-2xl font-black text-white font-mono tabular-nums leading-none">
+              <div className="my-2.5">
+                <div className="text-2xl font-black text-slate-900 dark:text-white font-mono tabular-nums leading-none">
                   {activeCustomersCount}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
+                <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-1.5 truncate">
                   {totalCustomersCount} total registered
                 </div>
               </div>
             </div>
-            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-neutral-400 font-mono text-[9px]">Active</span>
+            <div className="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-[10px]">
+              <span className="text-slate-500 dark:text-neutral-400 font-mono text-[9px] font-semibold">Active Base</span>
               <button
                 onClick={() => onNavigateToTab('customers')}
-                className="text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-0.5 transition-colors shrink-0"
+                className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 font-bold flex items-center gap-0.5 transition-colors shrink-0"
               >
                 <span>Manage</span>
                 <ArrowRight className="w-2.5 h-2.5" />
@@ -1124,36 +1126,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Card 2: Eligible for This Month */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-emerald-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-emerald-500/50 shadow-sm hover:shadow-emerald-500/10 transition-all flex flex-col justify-between"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] hover:border-emerald-400/60 dark:hover:border-emerald-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 truncate">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
                   Eligible This Month
                 </span>
-                <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <div className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20">
                   <UserCheck className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="my-2">
-                <div className="text-xl sm:text-2xl font-black text-emerald-400 font-mono tabular-nums leading-none">
+              <div className="my-2.5">
+                <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono tabular-nums leading-none">
                   {eligibleCustomersCount}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
+                <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-1.5 truncate">
                   Ready for {formatMonthLabel(selectedBillingMonth).split(' ')[0]}
                 </div>
               </div>
             </div>
-            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-emerald-400/90 font-mono text-[9px] font-semibold">
+            <div className="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-[10px]">
+              <span className="text-emerald-600 dark:text-emerald-400/90 font-mono text-[9px] font-bold">
                 {activeCustomersCount > 0 ? Math.round((eligibleCustomersCount / activeCustomersCount) * 100) : 0}% active
               </span>
               <button
                 type="button"
                 onClick={() => toast.info(`Eligible Rule: Customers registered in or after ${formatMonthLabel(selectedBillingMonth).split(' ')[0]} are excluded.`)}
-                className="inline-flex items-center gap-1 font-mono text-[9px] font-bold uppercase px-2 py-0.5 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 dark:bg-neutral-800/90 dark:hover:bg-neutral-750 dark:text-neutral-200 dark:border-neutral-700/80 transition-colors shrink-0 cursor-pointer shadow-xs active:scale-95"
+                className="inline-flex items-center gap-1 font-mono text-[9px] font-bold uppercase px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 dark:bg-neutral-800/90 dark:hover:bg-neutral-750 dark:text-neutral-200 dark:border-neutral-700/80 transition-colors shrink-0 cursor-pointer shadow-xs active:scale-95"
                 title="Customers registered in or after selected month excluded"
               >
                 <Info className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1164,33 +1166,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Card 3: Bills Generated */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-blue-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-blue-500/50 shadow-sm hover:shadow-blue-500/10 transition-all flex flex-col justify-between"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] hover:border-blue-400/60 dark:hover:border-blue-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300 truncate">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
                   Bills Generated
                 </span>
-                <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400">
+                <div className="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/20">
                   <Receipt className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="my-2">
-                <div className="text-xl sm:text-2xl font-black text-white font-mono tabular-nums leading-none">
+              <div className="my-2.5">
+                <div className="text-2xl font-black text-slate-900 dark:text-white font-mono tabular-nums leading-none">
                   {billsGeneratedCount}
                 </div>
-                <div className="text-[10px] text-blue-300 font-mono mt-1 truncate" title={`Total Billed: ${formatMoney(totalBilledAmount, currency)}`}>
+                <div className="text-[10px] text-blue-600 dark:text-blue-300 font-mono mt-1.5 truncate font-semibold" title={`Total Billed: ${formatMoney(totalBilledAmount, currency)}`}>
                   Billed: {formatMoney(totalBilledAmount, currency)}
                 </div>
               </div>
             </div>
-            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-neutral-400 font-mono text-[9px] font-semibold">{generationPct}% done</span>
+            <div className="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-[10px]">
+              <span className="text-slate-500 dark:text-neutral-400 font-mono text-[9px] font-semibold">{generationPct}% done</span>
               <button
                 onClick={() => onNavigateToTab('monthly-payment')}
-                className="text-blue-400 hover:text-blue-300 font-bold flex items-center gap-0.5 transition-colors shrink-0"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold flex items-center gap-0.5 transition-colors shrink-0"
               >
                 <span>Bills</span>
                 <ArrowRight className="w-2.5 h-2.5" />
@@ -1200,50 +1202,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Card 4: Bills Pending */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className={`p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br ${
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className={`p-4 rounded-2xl bg-white dark:bg-[#0f172a] border ${
               billsPendingCount > 0
-                ? 'from-amber-950/20 via-neutral-900/90 to-neutral-900/90 border-neutral-800/80 hover:border-amber-500/50'
-                : 'from-emerald-950/20 via-neutral-900/90 to-neutral-900/90 border-neutral-800/80 hover:border-emerald-500/50'
-            } border shadow-sm transition-all flex flex-col justify-between`}
+                ? 'border-slate-200/80 dark:border-white/[0.08] hover:border-amber-400/60 dark:hover:border-amber-500/40'
+                : 'border-slate-200/80 dark:border-white/[0.08] hover:border-emerald-400/60 dark:hover:border-emerald-500/40'
+            } shadow-xs hover:shadow-md transition-all flex flex-col justify-between`}
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className={`text-[10px] font-bold uppercase tracking-wider truncate ${
-                  billsPendingCount > 0 ? 'text-amber-300' : 'text-emerald-300'
+                <span className={`text-[10px] font-extrabold uppercase tracking-wider truncate ${
+                  billsPendingCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-neutral-400'
                 }`}>
                   Bills Pending
                 </span>
-                <div className={`p-1 rounded-lg ${billsPendingCount > 0 ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                <div className={`p-1.5 rounded-xl ${
+                  billsPendingCount > 0
+                    ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-500/20'
+                    : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20'
+                }`}>
                   <Clock className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="my-2">
-                <div className={`text-xl sm:text-2xl font-black font-mono tabular-nums leading-none ${
-                  billsPendingCount > 0 ? 'text-amber-400' : 'text-emerald-400'
+              <div className="my-2.5">
+                <div className={`text-2xl font-black font-mono tabular-nums leading-none ${
+                  billsPendingCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
                 }`}>
                   {billsPendingCount}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
+                <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-1.5 truncate">
                   {billsPendingCount === 0 ? 'All bills created' : 'Awaiting creation'}
                 </div>
               </div>
             </div>
-            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
+            <div className="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-[10px]">
               {billsPendingCount > 0 ? (
                 <>
-                  <span className="text-amber-400 font-mono font-semibold text-[9px]">Pending</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-mono font-bold text-[9px]">Pending</span>
                   <button
                     onClick={() => onNavigateToTab('monthly-payment')}
-                    className="text-amber-300 hover:text-amber-200 font-bold flex items-center gap-0.5 transition-colors shrink-0"
+                    className="text-amber-600 dark:text-amber-300 hover:text-amber-700 font-bold flex items-center gap-0.5 transition-colors shrink-0"
                   >
                     <span>Generate</span>
                     <ArrowRight className="w-2.5 h-2.5" />
                   </button>
                 </>
               ) : (
-                <span className="text-emerald-400 font-mono font-semibold flex items-center gap-0.5 text-[9px]">
+                <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold flex items-center gap-0.5 text-[9px]">
                   <CheckCircle2 className="w-2.5 h-2.5" />
                   Complete
                 </span>
@@ -1253,37 +1259,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Card 5: Payments Received */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-emerald-950/25 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-emerald-500/50 shadow-sm hover:shadow-emerald-500/10 transition-all flex flex-col justify-between"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] hover:border-emerald-400/60 dark:hover:border-emerald-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 truncate">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
                   Payments Received
                 </span>
-                <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <div className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="my-2">
+              <div className="my-2.5">
                 <div
-                  className="text-sm sm:text-lg font-black text-emerald-400 font-mono tabular-nums leading-none truncate"
+                  className="text-sm sm:text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono tabular-nums leading-none truncate"
                   title={`+${formatMoney(paymentsReceivedAmount, currency)}`}
                 >
                   +{formatMoney(paymentsReceivedAmount, currency)}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
+                <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-1.5 truncate">
                   {paymentsReceivedCount} paid records
                 </div>
               </div>
             </div>
-            <div className="pt-2 border-t border-neutral-800/80 space-y-1">
-              <div className="flex items-center justify-between text-[9px] font-mono font-semibold">
-                <span className="text-neutral-400">Rate:</span>
-                <span className="text-emerald-400">{collectionPct}%</span>
+            <div className="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] space-y-1.5">
+              <div className="flex items-center justify-between text-[9px] font-mono font-bold">
+                <span className="text-slate-500 dark:text-neutral-400">Recovery:</span>
+                <span className="text-emerald-600 dark:text-emerald-400">{collectionPct}%</span>
               </div>
-              <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-neutral-800 rounded-full overflow-hidden">
                 <div style={{ width: `${collectionPct}%` }} className="h-full bg-emerald-500 rounded-full transition-all duration-500" />
               </div>
             </div>
@@ -1291,36 +1297,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Card 6: Payments Pending */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className="p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-rose-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-rose-500/50 shadow-sm hover:shadow-rose-500/10 transition-all flex flex-col justify-between"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] hover:border-rose-400/60 dark:hover:border-rose-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 truncate">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
                   Payments Pending
                 </span>
-                <div className="p-1 rounded-lg bg-rose-500/10 text-rose-400">
+                <div className="p-1.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-500/20">
                   <AlertTriangle className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="my-2">
+              <div className="my-2.5">
                 <div
-                  className="text-sm sm:text-lg font-black text-rose-400 font-mono tabular-nums leading-none truncate"
+                  className="text-sm sm:text-lg font-black text-rose-600 dark:text-rose-400 font-mono tabular-nums leading-none truncate"
                   title={formatMoney(paymentsPendingAmount, currency)}
                 >
                   {formatMoney(paymentsPendingAmount, currency)}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
+                <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-1.5 truncate">
                   {paymentsPendingCount} balance bills
                 </div>
               </div>
             </div>
-            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-neutral-400 font-mono text-[9px] font-semibold">{unpaidBillsCount} unpaid</span>
+            <div className="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-[10px]">
+              <span className="text-slate-500 dark:text-neutral-400 font-mono text-[9px] font-semibold">{unpaidBillsCount} unpaid</span>
               <button
                 onClick={() => onNavigateToTab('payment-collection')}
-                className="text-rose-400 hover:text-rose-300 font-bold flex items-center gap-0.5 transition-colors shrink-0"
+                className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-bold flex items-center gap-0.5 transition-colors shrink-0"
               >
                 <span>Collect</span>
                 <ArrowRight className="w-2.5 h-2.5" />
@@ -1330,34 +1336,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Card 7: Skipped Customers (spans 2-col on mobile for balanced grid) */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className="col-span-2 md:col-span-1 lg:col-span-1 p-3.5 rounded-2xl backdrop-blur-xl bg-gradient-to-br from-purple-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-purple-500/50 shadow-sm hover:shadow-purple-500/10 transition-all flex flex-col justify-between"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className="col-span-2 md:col-span-1 lg:col-span-1 p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] hover:border-purple-400/60 dark:hover:border-purple-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300 truncate">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
                   Skipped Customers
                 </span>
-                <div className="p-1 rounded-lg bg-purple-500/10 text-purple-400">
+                <div className="p-1.5 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-500/20">
                   <UserX className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="my-2">
-                <div className="text-xl sm:text-2xl font-black text-purple-300 font-mono tabular-nums leading-none">
+              <div className="my-2.5">
+                <div className="text-2xl font-black text-purple-600 dark:text-purple-300 font-mono tabular-nums leading-none">
                   {totalSkippedCount}
                 </div>
-                <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">
-                  Bypassed in bulk bill generation
+                <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono mt-1.5 truncate">
+                  Bypassed in bulk bill gen
                 </div>
               </div>
             </div>
-            <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[10px]">
-              <span className="text-purple-400 font-mono text-[9px] font-bold">{totalSkippedCount} Skipped</span>
+            <div className="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-[10px]">
+              <span className="text-purple-600 dark:text-purple-400 font-mono text-[9px] font-bold">{totalSkippedCount} Skipped</span>
               <button
                 type="button"
                 onClick={() => setIsSkippedModalOpen(true)}
-                className="text-purple-300 hover:text-purple-200 font-bold flex items-center gap-0.5 bg-purple-500/20 hover:bg-purple-500/30 px-2 py-0.5 rounded-lg border border-purple-500/30 transition-colors shrink-0"
+                className="text-purple-600 dark:text-purple-300 hover:text-purple-700 font-bold flex items-center gap-0.5 bg-purple-50 dark:bg-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/30 px-2 py-0.5 rounded-lg border border-purple-200 dark:border-purple-500/30 transition-colors shrink-0"
               >
                 <span>Reasons</span>
                 <ArrowRight className="w-2.5 h-2.5" />
@@ -1626,26 +1632,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* ==========================================================================
           SECTION 2: FINANCIAL METRICS OVERVIEW (LINKED TO MONTH SELECTOR)
-          - Hidden on mobile during SCREENING mode (since Screen 1 is Monthly Finances)
-          - Unified Master Financial Card on mobile in GRID mode
-          - 3-Column spacious layout on desktop (sm+)
           ========================================================================== */}
-      <div className={`${mobileViewMode === 'SCREENING' ? 'hidden sm:block' : 'block'} space-y-2.5 sm:space-y-3`}>
+      <div className={`${mobileViewMode === 'SCREENING' ? 'hidden sm:block' : 'block'} space-y-3 sm:space-y-4`}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center justify-center">
               <Receipt className="w-4 h-4" />
             </div>
-            <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
               Financial Overview
             </h3>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+            <span className="px-3 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400">
               {formatMonthLabel(selectedBillingMonth)}
             </span>
           </div>
           {!isCurrentMonthSelected && (
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-400">
-              Filtered
+            <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 text-amber-700 dark:text-amber-400">
+              Filtered Month
             </span>
           )}
         </div>
@@ -1653,128 +1656,128 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Mobile Unified Financial Card (Visible only in GRID mode on mobile) */}
         <motion.div
           whileHover={{ y: -2 }}
-          className="sm:hidden p-4 rounded-3xl backdrop-blur-2xl bg-gradient-to-br from-emerald-950/25 via-neutral-900/90 to-neutral-900/90 border border-emerald-500/30 shadow-xl space-y-3"
+          className="sm:hidden p-4 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] shadow-sm space-y-3"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-              <Receipt className="w-3.5 h-3.5 text-indigo-400" />
+            <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
+              <Receipt className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               <span>Net Surplus / Deficit</span>
             </div>
-            <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
               Rate: {activeMonthSavingsRatePct}%
             </span>
           </div>
           <div>
             <div className={`text-2xl font-black font-mono tabular-nums leading-tight ${
-              isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
+              isActiveNetSavingsPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
             }`}>
               {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-neutral-800/80">
-            <div className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-              <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-300 uppercase">
-                <TrendingUp className="w-3 h-3 text-emerald-400" />
+          <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-100 dark:border-white/[0.06]">
+            <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/20">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 <span>Income Inflow</span>
               </div>
-              <div className="text-xs font-black text-emerald-400 font-mono tabular-nums mt-1 truncate">
+              <div className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono tabular-nums mt-1 truncate">
                 +{formatMoney(activeMonthIncome, currency)}
               </div>
-              <span className="text-[9px] text-neutral-400 font-mono block mt-0.5">{activeMonthIncomeCount} rev. trans.</span>
+              <span className="text-[9px] text-slate-500 dark:text-neutral-400 font-mono block mt-0.5">{activeMonthIncomeCount} rev. trans.</span>
             </div>
-            <div className="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-              <div className="flex items-center gap-1 text-[10px] font-bold text-rose-300 uppercase">
-                <TrendingDown className="w-3 h-3 text-rose-400" />
+            <div className="p-3 rounded-2xl bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/20">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-rose-700 dark:text-rose-300 uppercase">
+                <TrendingDown className="w-3 h-3 text-rose-600 dark:text-rose-400" />
                 <span>Expenses</span>
               </div>
-              <div className="text-xs font-black text-rose-400 font-mono tabular-nums mt-1 truncate">
+              <div className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono tabular-nums mt-1 truncate">
                 -{formatMoney(activeMonthExpense, currency)}
               </div>
-              <span className="text-[9px] text-neutral-400 font-mono block mt-0.5">{activeMonthExpenseCount} deductions</span>
+              <span className="text-[9px] text-slate-500 dark:text-neutral-400 font-mono block mt-0.5">{activeMonthExpenseCount} deductions</span>
             </div>
           </div>
         </motion.div>
 
         {/* Desktop 3-Card Grid (sm+) */}
-        <div className="hidden sm:grid sm:grid-cols-3 gap-3">
-          {/* Metric 2: Monthly Income Inflow */}
+        <div className="hidden sm:grid sm:grid-cols-3 gap-3.5">
+          {/* Metric 1: Monthly Income Inflow */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className="p-4 rounded-3xl backdrop-blur-xl bg-gradient-to-br from-emerald-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-emerald-500/50 shadow-md hover:shadow-emerald-500/10 transition-all flex flex-col justify-between"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className="p-5 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] hover:border-emerald-400/60 dark:hover:border-emerald-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 truncate">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
                   Monthly Income Inflow
                 </span>
-                <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                   <TrendingUp className="w-4 h-4" />
                 </div>
               </div>
-              <div className="mt-2 text-2xl font-black tracking-tight text-emerald-400 font-mono tabular-nums leading-none">
+              <div className="mt-2.5 text-2xl sm:text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400 font-mono tabular-nums leading-none">
                 +{formatMoney(activeMonthIncome, currency)}
               </div>
             </div>
-            <div className="mt-3 pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400 font-mono tabular-nums flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shadow-sm" />
+            <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-white/[0.06] text-[11px] text-slate-500 dark:text-neutral-400 font-mono tabular-nums flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shadow-xs" />
               <span>{activeMonthIncomeCount} revenue transactions</span>
             </div>
           </motion.div>
 
-          {/* Metric 3: Monthly Expenses */}
+          {/* Metric 2: Monthly Expenses */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className="p-4 rounded-3xl backdrop-blur-xl bg-gradient-to-br from-rose-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-rose-500/50 shadow-md hover:shadow-rose-500/10 transition-all flex flex-col justify-between"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className="p-5 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] hover:border-rose-400/60 dark:hover:border-rose-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-300 truncate">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
                   Monthly Expenses
                 </span>
-                <div className="p-1 rounded-lg bg-rose-500/10 text-rose-400">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/25 flex items-center justify-center text-rose-600 dark:text-rose-400">
                   <TrendingDown className="w-4 h-4" />
                 </div>
               </div>
-              <div className="mt-2 text-2xl font-black tracking-tight text-rose-400 font-mono tabular-nums leading-none">
+              <div className="mt-2.5 text-2xl sm:text-3xl font-black tracking-tight text-rose-600 dark:text-rose-400 font-mono tabular-nums leading-none">
                 -{formatMoney(activeMonthExpense, currency)}
               </div>
             </div>
-            <div className="mt-3 pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400 font-mono tabular-nums flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-rose-400 inline-block shadow-sm" />
+            <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-white/[0.06] text-[11px] text-slate-500 dark:text-neutral-400 font-mono tabular-nums flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-rose-500 inline-block shadow-xs" />
               <span>{activeMonthExpenseCount} expense deductions</span>
             </div>
           </motion.div>
 
-          {/* Metric 4: Net Savings & Rate */}
+          {/* Metric 3: Net Savings & Rate */}
           <motion.div
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.15 }}
-            className="p-4 rounded-3xl backdrop-blur-xl bg-gradient-to-br from-indigo-950/20 via-neutral-900/90 to-neutral-900/90 border border-neutral-800/80 hover:border-indigo-500/50 shadow-md hover:shadow-indigo-500/10 transition-all flex flex-col justify-between"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.18 }}
+            className="p-5 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] hover:border-indigo-400/60 dark:hover:border-indigo-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 truncate">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-neutral-400 truncate">
                   Surplus / Deficit
                 </span>
-                <div className="p-1 rounded-lg bg-indigo-500/10 text-indigo-400">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/25 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                   <Receipt className="w-4 h-4" />
                 </div>
               </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className={`text-2xl font-black tracking-tight font-mono tabular-nums leading-none ${
-                  isActiveNetSavingsPositive ? 'text-emerald-400' : 'text-rose-400'
+              <div className="mt-2.5 flex items-baseline gap-1.5">
+                <span className={`text-2xl sm:text-3xl font-black tracking-tight font-mono tabular-nums leading-none ${
+                  isActiveNetSavingsPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                 }`}>
                   {isActiveNetSavingsPositive ? '+' : ''}{formatMoney(activeMonthNetSavings, currency)}
                 </span>
               </div>
             </div>
-            <div className="mt-3 pt-2 border-t border-neutral-800/80 flex items-center gap-2 text-[11px] text-neutral-300">
-              <span className="font-mono tabular-nums font-bold text-white bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg text-[10px]">
+            <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center gap-2 text-[11px] text-slate-600 dark:text-neutral-300">
+              <span className="font-mono tabular-nums font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/20 border border-indigo-200 dark:border-indigo-500/30 px-2 py-0.5 rounded-lg text-[10px]">
                 {activeMonthSavingsRatePct}%
               </span>
-              <span className="text-neutral-400 truncate">savings rate ({formatMonthLabel(selectedBillingMonth)})</span>
+              <span className="text-slate-500 dark:text-neutral-400 truncate font-medium">savings rate ({formatMonthLabel(selectedBillingMonth)})</span>
             </div>
           </motion.div>
         </div>
@@ -1783,20 +1786,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Main Section: Expense Categories Breakdown & Cash Trajectory */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* 1. Category Expense Allocation */}
-        <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 shadow-xl space-y-4 flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3.5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-4">
               <div>
-                <h2 className="text-base font-bold text-white">Top Expense Categories</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">Distribution of {formatMonthLabel(selectedBillingMonth)} operational expenditure</p>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Top Expense Categories</h2>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">Distribution of {formatMonthLabel(selectedBillingMonth)} operational expenditure</p>
               </div>
-              <div className="p-2 rounded-xl bg-neutral-800/80 text-neutral-400">
+              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-neutral-400 border border-slate-200/60 dark:border-white/[0.06]">
                 <PieIcon className="w-4 h-4" />
               </div>
             </div>
 
             {activeMonthTopExpenseCategories.length === 0 ? (
-              <div className="py-12 text-center text-xs text-neutral-500">
+              <div className="py-12 text-center text-xs text-slate-400 dark:text-neutral-500">
                 No expense transactions recorded for {formatMonthLabel(selectedBillingMonth)}.
               </div>
             ) : (
@@ -1807,16 +1810,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div className="flex items-center gap-2">
                         <span
                           style={{ backgroundColor: c.color }}
-                          className="w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-sm"
+                          className="w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-xs"
                         />
-                        <span className="font-semibold text-white">{c.categoryName}</span>
+                        <span className="font-semibold text-slate-900 dark:text-white">{c.categoryName}</span>
                       </div>
                       <div className="flex items-center gap-2 font-mono tabular-nums">
-                        <span className="text-white font-bold">{formatMoney(c.amount, currency)}</span>
-                        <span className="text-neutral-400 text-[11px] w-12 text-right">{c.percentage}%</span>
+                        <span className="text-slate-900 dark:text-white font-bold">{formatMoney(c.amount, currency)}</span>
+                        <span className="text-slate-500 dark:text-neutral-400 text-[11px] w-12 text-right">{c.percentage}%</span>
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-neutral-800/80 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-slate-100 dark:bg-neutral-800 rounded-full overflow-hidden">
                       <div
                         style={{ width: `${c.percentage}%`, backgroundColor: c.color }}
                         className="h-full rounded-full transition-all duration-500 shadow-xs"
@@ -1828,27 +1831,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </div>
 
-          <div className="pt-4 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
+          <div className="pt-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
             <span>Total Operational Spend ({formatMonthLabel(selectedBillingMonth)}):</span>
-            <span className="font-mono tabular-nums text-white font-bold text-sm">
+            <span className="font-mono tabular-nums text-slate-900 dark:text-white font-bold text-sm">
               {formatMoney(activeMonthExpense, currency)}
             </span>
           </div>
         </div>
 
         {/* 2. Cash Trajectory */}
-        <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 shadow-xl space-y-4 flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3.5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-4">
               <div>
-                <h2 className="text-base font-bold text-white">Cash Balance Trajectory</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">Multi-month cumulative cash balance accumulation in LKR</p>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Cash Balance Trajectory</h2>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">Multi-month cumulative cash balance accumulation in LKR</p>
               </div>
-              <div className="p-2 rounded-xl bg-neutral-800/80">
+              <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.05] border border-slate-200/60 dark:border-white/[0.06]">
                 {isTrajectoryPositive ? (
-                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 ) : (
-                  <TrendingDown className="w-4 h-4 text-rose-400" />
+                  <TrendingDown className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                 )}
               </div>
             </div>
@@ -1873,9 +1876,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </defs>
 
                   {/* Horizontal Grid lines */}
-                  <line x1="0" y1={trajPaddingY} x2={trajSvgWidth} y2={trajPaddingY} stroke="#262626" strokeDasharray="3 3" />
-                  <line x1="0" y1={trajSvgHeight / 2} x2={trajSvgWidth} y2={trajSvgHeight / 2} stroke="#262626" strokeDasharray="3 3" />
-                  <line x1="0" y1={trajSvgHeight - trajPaddingY} x2={trajSvgWidth} y2={trajSvgHeight - trajPaddingY} stroke="#262626" strokeDasharray="3 3" />
+                  <line x1="0" y1={trajPaddingY} x2={trajSvgWidth} y2={trajPaddingY} stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="3 3" />
+                  <line x1="0" y1={trajSvgHeight / 2} x2={trajSvgWidth} y2={trajSvgHeight / 2} stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="3 3" />
+                  <line x1="0" y1={trajSvgHeight - trajPaddingY} x2={trajSvgWidth} y2={trajSvgHeight - trajPaddingY} stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="3 3" />
 
                   {/* Zero reference line */}
                   {zeroLineY !== null && (
@@ -1910,23 +1913,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         cy={p.y}
                         r={hoveredPointIdx === idx ? '6' : '4'}
                         fill={isTrajectoryPositive ? '#10B981' : '#F43F5E'}
-                        stroke="#0A0A0A"
+                        stroke="#ffffff"
                         strokeWidth="2"
-                        className="transition-all duration-200"
+                        className="transition-all duration-200 shadow-sm"
                       />
                     </g>
                   ))}
                 </svg>
 
                 {/* X-Axis Month Labels */}
-                <div className="flex items-center justify-between text-xs text-neutral-400 font-mono px-2 pt-1 border-t border-neutral-800">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 font-mono px-2 pt-2 border-t border-slate-100 dark:border-white/[0.06]">
                   {trajPoints.map((p, idx) => (
                     <span
                       key={idx}
                       onMouseEnter={() => setHoveredPointIdx(idx)}
                       onMouseLeave={() => setHoveredPointIdx(null)}
                       className={`cursor-pointer transition-colors ${
-                        hoveredPointIdx === idx ? 'text-white font-bold' : 'hover:text-neutral-200'
+                        hoveredPointIdx === idx ? 'text-slate-900 dark:text-white font-bold' : 'hover:text-slate-700 dark:hover:text-neutral-200'
                       }`}
                     >
                       {p.month}
@@ -1937,14 +1940,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {/* Interactive Floating Tooltip */}
                 {hoveredPointIdx !== null && trajPoints[hoveredPointIdx] && (
                   <div
-                    className="absolute z-20 backdrop-blur-xl bg-neutral-950/90 border border-neutral-700 text-white px-3 py-1.5 rounded-xl shadow-2xl text-xs font-mono pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 transition-all"
+                    className="absolute z-20 bg-white/95 dark:bg-[#0f172a]/95 border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-white px-3 py-1.5 rounded-xl shadow-xl text-xs font-mono pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 transition-all backdrop-blur-md"
                     style={{
                       left: `${(trajPoints[hoveredPointIdx].x / trajSvgWidth) * 100}%`,
                       top: `${Math.max(10, Math.min(80, (trajPoints[hoveredPointIdx].y / trajSvgHeight) * 100))}%`,
                     }}
                   >
-                    <div className="text-[10px] text-neutral-400 font-sans">{trajPoints[hoveredPointIdx].month} Balance</div>
-                    <div className={`font-bold ${trajPoints[hoveredPointIdx].value >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <div className="text-[10px] text-slate-500 dark:text-neutral-400 font-sans">{trajPoints[hoveredPointIdx].month} Balance</div>
+                    <div className={`font-bold ${trajPoints[hoveredPointIdx].value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                       {formatMoney(trajPoints[hoveredPointIdx].value, currency)}
                     </div>
                   </div>
@@ -1953,10 +1956,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
+          <div className="pt-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400">
             <span>Overall Net Cash Reserve:</span>
             <span className={`font-mono tabular-nums font-bold text-sm ${
-              netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'
+              netWorth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
             }`}>
               {formatMoney(netWorth, currency)}
             </span>
@@ -1967,26 +1970,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Lower Section: Monthly Cash Flow Trend + Recent Transactions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column: Monthly Cash Flow Trend (2 cols) */}
-        <div className="lg:col-span-2 p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 shadow-xl flex flex-col justify-between">
+        <div className="lg:col-span-2 p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-neutral-800/80 pb-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 dark:border-white/[0.06] pb-4">
               <div>
-                <h2 className="text-base font-bold text-white">Monthly Cash Flow Trend</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">Historical comparison of incoming revenue vs operational expenses</p>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">Monthly Cash Flow Trend</h2>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">Historical comparison of incoming revenue vs operational expenses</p>
               </div>
-              <div className="flex items-center gap-4 text-xs font-medium">
-                <span className="flex items-center gap-1.5 text-neutral-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-sm" /> Income
+              <div className="flex items-center gap-4 text-xs font-semibold">
+                <span className="flex items-center gap-1.5 text-slate-600 dark:text-neutral-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-xs" /> Income
                 </span>
-                <span className="flex items-center gap-1.5 text-neutral-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-sm" /> Expense
+                <span className="flex items-center gap-1.5 text-slate-600 dark:text-neutral-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs" /> Expense
                 </span>
               </div>
             </div>
 
             {/* Custom Bar Comparison Chart */}
             <div className="mt-6 pt-2 relative">
-              <div className="h-44 flex items-end justify-between gap-4 border-b border-neutral-800/80 pb-2 relative">
+              <div className="h-44 flex items-end justify-between gap-4 border-b border-slate-100 dark:border-white/[0.06] pb-2 relative">
                 {monthlyCashflowHistory.map((m, idx) => {
                   const incHeight = m.income > 0 ? Math.max(6, (m.income / maxFlow) * 100) : 0;
                   const expHeight = m.expense > 0 ? Math.max(6, (m.expense / maxFlow) * 100) : 0;
@@ -2002,17 +2005,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     >
                       {/* Floating Tooltip */}
                       {isHovered && (
-                        <div className="absolute -top-16 z-20 backdrop-blur-xl bg-neutral-950/95 border border-neutral-700 text-white px-3 py-2 rounded-xl shadow-2xl text-[11px] font-mono pointer-events-none transform -translate-y-2 whitespace-nowrap">
-                          <p className="font-bold text-neutral-300 border-b border-neutral-800 pb-0.5 mb-1">{m.month}</p>
-                          <div className="flex items-center justify-between gap-3 text-emerald-400">
+                        <div className="absolute -top-16 z-20 bg-white/95 dark:bg-[#0f172a]/95 border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-white px-3 py-2 rounded-xl shadow-xl text-[11px] font-mono pointer-events-none transform -translate-y-2 whitespace-nowrap backdrop-blur-md">
+                          <p className="font-bold text-slate-700 dark:text-neutral-300 border-b border-slate-100 dark:border-white/[0.06] pb-0.5 mb-1">{m.month}</p>
+                          <div className="flex items-center justify-between gap-3 text-emerald-600 dark:text-emerald-400">
                             <span>Income:</span>
                             <span className="font-bold">+{formatMoney(m.income, currency)}</span>
                           </div>
-                          <div className="flex items-center justify-between gap-3 text-rose-400">
+                          <div className="flex items-center justify-between gap-3 text-rose-600 dark:text-rose-400">
                             <span>Expense:</span>
                             <span className="font-bold">-{formatMoney(m.expense, currency)}</span>
                           </div>
-                          <div className={`flex items-center justify-between gap-3 pt-0.5 border-t border-neutral-800 font-bold ${net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          <div className={`flex items-center justify-between gap-3 pt-0.5 border-t border-slate-100 dark:border-white/[0.06] font-bold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                             <span>Net:</span>
                             <span>{net >= 0 ? '+' : ''}{formatMoney(net, currency)}</span>
                           </div>
@@ -2027,7 +2030,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             className="w-full max-w-[16px] bg-emerald-500 hover:bg-emerald-400 rounded-t-lg transition-all shadow-xs"
                           />
                         ) : (
-                          <div className="w-full max-w-[8px] h-1 bg-neutral-700/40 rounded-full" />
+                          <div className="w-full max-w-[8px] h-1 bg-slate-200 dark:bg-neutral-700/40 rounded-full" />
                         )}
 
                         {/* Expense Bar */}
@@ -2037,10 +2040,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             className="w-full max-w-[16px] bg-rose-500 hover:bg-rose-400 rounded-t-lg transition-all shadow-xs"
                           />
                         ) : (
-                          <div className="w-full max-w-[8px] h-1 bg-neutral-700/40 rounded-full" />
+                          <div className="w-full max-w-[8px] h-1 bg-slate-200 dark:bg-neutral-700/40 rounded-full" />
                         )}
                       </div>
-                      <span className={`text-xs font-mono transition-colors ${isHovered ? 'text-white font-bold' : 'text-neutral-400 group-hover:text-neutral-200'}`}>
+                      <span className={`text-xs font-mono transition-colors ${isHovered ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-500 dark:text-neutral-400 group-hover:text-slate-800 dark:group-hover:text-neutral-200'}`}>
                         {m.month}
                       </span>
                     </div>
@@ -2050,22 +2053,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400 mt-4">
+          <div className="pt-4 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 mt-4">
             <span>6-Month Net Cashflow (Avg):</span>
-            <span className={`font-mono tabular-nums font-bold ${isAvgNetPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <span className={`font-mono tabular-nums font-bold ${isAvgNetPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {isAvgNetPositive ? '+' : '-'}{formatMoney(Math.abs(avgNetCashflow), currency)} / mo
             </span>
           </div>
         </div>
 
         {/* Right Column: Recent Activity Feed (1 col) */}
-        <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-neutral-900/80 border border-neutral-800/80 shadow-xl flex flex-col justify-between">
+        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-white/[0.08] shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3.5">
-              <h2 className="text-base font-bold text-white">Recent Ledger Activity</h2>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Recent Ledger Activity</h2>
               <button
                 onClick={() => onNavigateToTab('transactions')}
-                className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-bold transition-colors"
+                className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 font-bold transition-colors cursor-pointer"
               >
                 <span>View All</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -2073,50 +2076,50 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             {recentIncomes.length === 0 && recentExpenses.length === 0 ? (
-              <div className="py-12 text-center text-xs text-neutral-500">
+              <div className="py-12 text-center text-xs text-slate-400 dark:text-neutral-500">
                 No recent activity. Click "Record Transaction" to add one.
               </div>
             ) : (
-              <div className="pt-3 divide-y divide-neutral-800/70">
+              <div className="pt-2 divide-y divide-slate-100 dark:divide-white/[0.06]">
                 {recentIncomes.map((inc) => (
-                  <div key={inc.id} className="py-2.5 flex items-center justify-between gap-3 text-xs group">
+                  <div key={inc.id} className="py-3 flex items-center justify-between gap-3 text-xs group">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
                         style={{ backgroundColor: inc.categoryColor || '#10B981' }}
                       />
                       <div className="min-w-0">
-                        <p className="font-semibold text-white truncate group-hover:text-emerald-300 transition-colors">
+                        <p className="font-semibold text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                           {inc.description}
                         </p>
-                        <p className="text-[11px] text-neutral-400 font-mono">
+                        <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
                           {inc.categoryName} · {inc.date}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 font-mono tabular-nums font-bold text-emerald-400">
+                    <div className="text-right shrink-0 font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
                       +{formatMoney(inc.amount, currency)}
                     </div>
                   </div>
                 ))}
 
                 {recentExpenses.map((exp) => (
-                  <div key={exp.id} className="py-2.5 flex items-center justify-between gap-3 text-xs group">
+                  <div key={exp.id} className="py-3 flex items-center justify-between gap-3 text-xs group">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
                         style={{ backgroundColor: exp.categoryColor || '#F43F5E' }}
                       />
                       <div className="min-w-0">
-                        <p className="font-semibold text-white truncate group-hover:text-rose-300 transition-colors">
+                        <p className="font-semibold text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                           {exp.description}
                         </p>
-                        <p className="text-[11px] text-neutral-400 font-mono">
+                        <p className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
                           {exp.categoryName} · {exp.date}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 font-mono tabular-nums font-bold text-rose-400">
+                    <div className="text-right shrink-0 font-mono tabular-nums font-bold text-rose-600 dark:text-rose-400">
                       -{formatMoney(exp.amount, currency)}
                     </div>
                   </div>
@@ -2125,13 +2128,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </div>
 
-          <div className="pt-4 border-t border-neutral-800/80">
+          <div className="pt-4 border-t border-slate-100 dark:border-white/[0.06]">
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={onOpenRecordModal}
-              className="w-full py-2.5 px-3.5 text-xs font-bold text-neutral-300 hover:text-white bg-neutral-800/80 hover:bg-neutral-800 border border-neutral-700/80 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-sm"
+              className="w-full py-2.5 px-3.5 text-xs font-bold text-slate-700 dark:text-neutral-200 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
             >
-              <Plus className="w-4 h-4 text-emerald-400" />
+              <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Add New Entry</span>
             </motion.button>
           </div>

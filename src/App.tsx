@@ -216,8 +216,8 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 flex flex-col md:flex-row font-sans selection:bg-emerald-500/20 selection:text-emerald-300 ${
-      theme === 'light' ? 'theme-light light bg-slate-50 text-slate-900' : 'dark bg-neutral-950 text-neutral-100'
+    <div className={`min-h-screen transition-colors duration-200 flex flex-col md:flex-row font-sans selection:bg-emerald-500/20 selection:text-emerald-400 ${
+      theme === 'light' ? 'theme-light light bg-[#f8fafc] text-slate-900' : 'dark bg-[#080c14] text-slate-100'
     }`}>
       {/* Side Menu Navigation (Desktop Fixed + Mobile Drawer Overlay) */}
       <Sidebar

@@ -48,26 +48,42 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-center justify-between gap-3 p-3.5 rounded-lg border shadow-xl backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 text-xs font-medium ${
+            className={`pointer-events-auto flex items-center justify-between gap-3 p-3.5 rounded-2xl border shadow-xl backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 text-xs font-semibold ${
               toast.type === 'success'
-                ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200'
+                ? 'bg-white/95 dark:bg-slate-900/95 border-emerald-300/80 dark:border-emerald-500/40 text-slate-800 dark:text-slate-100'
                 : toast.type === 'error'
-                ? 'bg-rose-950/90 border-rose-500/40 text-rose-200'
+                ? 'bg-white/95 dark:bg-slate-900/95 border-rose-300/80 dark:border-rose-500/40 text-slate-800 dark:text-slate-100'
                 : toast.type === 'ai'
-                ? 'bg-indigo-950/90 border-indigo-500/40 text-indigo-200'
-                : 'bg-neutral-900/90 border-neutral-700 text-neutral-200'
+                ? 'bg-white/95 dark:bg-slate-900/95 border-indigo-300/80 dark:border-indigo-500/40 text-slate-800 dark:text-slate-100'
+                : 'bg-white/95 dark:bg-slate-900/95 border-slate-300/80 dark:border-slate-700 text-slate-800 dark:text-slate-100'
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-              {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
-              {toast.type === 'info' && <Info className="w-4 h-4 text-neutral-400 shrink-0" />}
-              {toast.type === 'ai' && <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />}
-              <span className="truncate">{toast.message}</span>
+              {toast.type === 'success' && (
+                <div className="p-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              )}
+              {toast.type === 'error' && (
+                <div className="p-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+              )}
+              {toast.type === 'info' && (
+                <div className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 shrink-0">
+                  <Info className="w-4 h-4" />
+                </div>
+              )}
+              {toast.type === 'ai' && (
+                <div className="p-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+              )}
+              <span className="truncate leading-tight">{toast.message}</span>
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-neutral-400 hover:text-white transition-colors shrink-0"
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors shrink-0 p-1 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>

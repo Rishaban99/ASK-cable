@@ -294,33 +294,35 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Incomes & Expenses Tables</h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 sm:mt-1">
-            Edit, search, and manage your records and categories
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Incomes &amp; Expenses Ledgers
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Audit, search, and manage financial records and custom ledger categories
           </p>
         </div>
         <div className="flex items-center gap-2">
           {activeSubTab === 'incomes' && (
             <button
               onClick={() => api.downloadIncomesCsv()}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-neutral-300 bg-neutral-900 border border-neutral-800 rounded-md hover:bg-neutral-800 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               <span>Export CSV</span>
             </button>
           )}
           {activeSubTab === 'expenses' && (
             <button
               onClick={() => api.downloadExpensesCsv()}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-neutral-300 bg-neutral-900 border border-neutral-800 rounded-md hover:bg-neutral-800 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               <span>Export CSV</span>
             </button>
           )}
           <button
             onClick={onOpenRecordModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-950 bg-emerald-400 rounded-md hover:bg-emerald-300 transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl shadow-xs hover:shadow-sm hover:shadow-emerald-500/20 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Record</span>
@@ -329,41 +331,50 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       </div>
 
       {/* Subtabs Switcher */}
-      <div className="flex overflow-x-auto items-center gap-2 border-b border-neutral-800 pb-3 scrollbar-none">
+      <div className="flex overflow-x-auto items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 scrollbar-none">
         <button
           onClick={() => setActiveSubTab('incomes')}
-          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
             activeSubTab === 'incomes'
-              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
-              : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
+              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-400/50 text-emerald-700 dark:text-emerald-400 shadow-xs'
+              : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5" />
-          <span>Incomes Table ({incomes.length})</span>
+          <span>Incomes Table</span>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+            {incomes.length}
+          </span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('expenses')}
-          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
             activeSubTab === 'expenses'
-              ? 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
-              : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
+              ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-400/50 text-rose-700 dark:text-rose-400 shadow-xs'
+              : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <TrendingDown className="w-3.5 h-3.5" />
-          <span>Expenses Table ({expenses.length})</span>
+          <span>Expenses Table</span>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-rose-500/10 text-rose-700 dark:text-rose-400">
+            {expenses.length}
+          </span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('categories')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md transition-colors ${
+          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
             activeSubTab === 'categories'
-              ? 'bg-indigo-500/10 border border-indigo-500/30 text-indigo-400'
-              : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
+              ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-400/50 text-indigo-700 dark:text-indigo-400 shadow-xs'
+              : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Tag className="w-3.5 h-3.5" />
-          <span>Categories ({categories.length})</span>
+          <span>Categories</span>
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-indigo-500/10 text-indigo-700 dark:text-indigo-400">
+            {categories.length}
+          </span>
         </button>
       </div>
 
@@ -374,19 +385,19 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-3" />
               <input
                 type="text"
                 placeholder="Search income records by description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs transition-all"
               />
             </div>
             <select
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs text-white focus:outline-none focus:border-neutral-700"
+              className="px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs transition-all cursor-pointer"
             >
               <option value="">All Income Categories</option>
               {categories.filter(c => c.type === 'INCOME').map((c) => (
@@ -397,21 +408,21 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             </select>
           </div>
 
-          {/* Mobile Cards View for Incomes (block md:hidden) - Perfectly Aligned */}
+          {/* Mobile Cards View for Incomes (block md:hidden) */}
           <div className="block md:hidden space-y-3">
             {filteredIncomes.length === 0 ? (
-              <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-900 rounded-xl border border-neutral-800">
-                No income records found.
+              <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                No income records found matching your filters.
               </div>
             ) : (
               filteredIncomes.map((inc) => (
-                <div key={inc.id} className="p-4 space-y-3 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all">
-                  <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-2.5">
+                <div key={inc.id} className="p-4 space-y-3 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs transition-all">
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
                     <div className="space-y-1">
-                      <h3 className="font-bold text-white text-base leading-tight">{inc.description}</h3>
-                      <p className="text-[11px] font-mono text-neutral-400">Date: {inc.date} • Method: <span className="text-neutral-200">{inc.paymentMethod}</span></p>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{inc.description}</h3>
+                      <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">Date: {inc.date} • Method: <span className="text-slate-700 dark:text-slate-200 font-medium">{inc.paymentMethod}</span></p>
                     </div>
-                    <span className="font-mono font-bold text-emerald-400 text-sm px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg shrink-0">
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg shrink-0">
                       +{formatMoney(inc.amount, currency)}
                     </span>
                   </div>
@@ -420,9 +431,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                     <span
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
                       style={{
-                        backgroundColor: `${inc.categoryColor || '#10B981'}20`,
+                        backgroundColor: `${inc.categoryColor || '#10B981'}15`,
                         color: inc.categoryColor || '#10B981',
-                        border: `1px solid ${inc.categoryColor || '#10B981'}40`,
+                        border: `1px solid ${inc.categoryColor || '#10B981'}30`,
                       }}
                     >
                       {inc.categoryName}
@@ -431,7 +442,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleOpenEditIncome(inc)}
-                        className="p-2 text-neutral-300 hover:text-emerald-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
                         title="Edit Record"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -439,7 +450,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                       {currentUser?.role !== 'STAFF' && (
                         <button
                           onClick={() => handleDeleteIncome(inc.id)}
-                          className="p-2 text-neutral-300 hover:text-rose-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
                           title="Delete Record"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -450,61 +461,61 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 </div>
               ))
             )}
-            <div className="p-3.5 bg-neutral-900 rounded-xl border border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono shadow-sm">
-              <span>Total Income Inflows:</span>
-              <span className="font-bold text-emerald-400 text-sm">
+            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono shadow-xs">
+              <span className="font-sans font-medium text-slate-600 dark:text-slate-300">Total Income Inflows:</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
                 +{formatMoney(totalIncomesSum, currency)}
               </span>
             </div>
           </div>
 
           {/* Desktop Table View for Incomes (hidden md:block) */}
-          <div className="hidden md:block rounded-lg bg-neutral-900 border border-neutral-800 overflow-hidden">
+          <div className="hidden md:block rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-neutral-950 border-b border-neutral-800 text-neutral-400 font-mono">
+                <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
                   <tr>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Description</th>
-                    <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3">Payment Method</th>
-                    <th className="px-4 py-3 text-right">Amount (LKR)</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-5 py-3.5">Date</th>
+                    <th className="px-5 py-3.5">Description</th>
+                    <th className="px-5 py-3.5">Category</th>
+                    <th className="px-5 py-3.5">Payment Method</th>
+                    <th className="px-5 py-3.5 text-right">Amount ({currency})</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                   {filteredIncomes.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">
-                        No income records found.
+                      <td colSpan={6} className="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                        No income records found matching your filters.
                       </td>
                     </tr>
                   ) : (
                     filteredIncomes.map((inc) => (
-                      <tr key={inc.id} className="hover:bg-neutral-850/50 transition-colors">
-                        <td className="px-4 py-3 font-mono text-neutral-300">{inc.date}</td>
-                        <td className="px-4 py-3 font-medium text-white">{inc.description}</td>
-                        <td className="px-4 py-3">
+                      <tr key={inc.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="px-5 py-3.5 font-mono text-slate-600 dark:text-slate-300">{inc.date}</td>
+                        <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-white">{inc.description}</td>
+                        <td className="px-5 py-3.5">
                           <span
-                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
                             style={{
-                              backgroundColor: `${inc.categoryColor || '#10B981'}20`,
+                              backgroundColor: `${inc.categoryColor || '#10B981'}15`,
                               color: inc.categoryColor || '#10B981',
-                              border: `1px solid ${inc.categoryColor || '#10B981'}40`,
+                              border: `1px solid ${inc.categoryColor || '#10B981'}30`,
                             }}
                           >
                             <span>{inc.categoryName}</span>
                           </span>
                         </td>
-                        <td className="px-4 py-3 font-mono text-neutral-400">{inc.paymentMethod}</td>
-                        <td className="px-4 py-3 text-right font-mono font-semibold text-emerald-400">
+                        <td className="px-5 py-3.5 font-mono text-slate-500 dark:text-slate-400">{inc.paymentMethod}</td>
+                        <td className="px-5 py-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                           +{formatMoney(inc.amount, currency)}
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleOpenEditIncome(inc)}
-                              className="text-neutral-400 hover:text-emerald-400 transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                               title="Edit Record"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -512,7 +523,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                             {currentUser?.role !== 'STAFF' && (
                               <button
                                 onClick={() => handleDeleteIncome(inc.id)}
-                                className="text-neutral-500 hover:text-rose-400 transition-colors"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                                 title="Delete Record (Admin Only)"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -527,9 +538,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               </table>
             </div>
 
-            <div className="px-4 py-3 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
-              <span>Total Income Inflows:</span>
-              <span className="font-mono font-bold text-emerald-400 text-sm">
+            <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+              <span className="font-medium">Total Income Inflows:</span>
+              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
                 +{formatMoney(totalIncomesSum, currency)}
               </span>
             </div>
@@ -544,19 +555,19 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-3" />
               <input
                 type="text"
                 placeholder="Search expense records by description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs transition-all"
               />
             </div>
             <select
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs text-white focus:outline-none focus:border-neutral-700"
+              className="px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs transition-all cursor-pointer"
             >
               <option value="">All Expense Categories</option>
               {categories.filter(c => c.type === 'EXPENSE').map((c) => (
@@ -567,21 +578,21 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             </select>
           </div>
 
-          {/* Mobile Cards View for Expenses (block md:hidden) - Perfectly Aligned */}
+          {/* Mobile Cards View for Expenses (block md:hidden) */}
           <div className="block md:hidden space-y-3">
             {filteredExpenses.length === 0 ? (
-              <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-900 rounded-xl border border-neutral-800">
-                No expense records found.
+              <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                No expense records found matching your filters.
               </div>
             ) : (
               filteredExpenses.map((exp) => (
-                <div key={exp.id} className="p-4 space-y-3 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all">
-                  <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-2.5">
+                <div key={exp.id} className="p-4 space-y-3 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs transition-all">
+                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
                     <div className="space-y-1">
-                      <h3 className="font-bold text-white text-base leading-tight">{exp.description}</h3>
-                      <p className="text-[11px] font-mono text-neutral-400">Date: {exp.date} • Method: <span className="text-neutral-200">{exp.paymentMethod}</span></p>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{exp.description}</h3>
+                      <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">Date: {exp.date} • Method: <span className="text-slate-700 dark:text-slate-200 font-medium">{exp.paymentMethod}</span></p>
                     </div>
-                    <span className="font-mono font-bold text-rose-400 text-sm px-2.5 py-1 bg-rose-500/10 border border-rose-500/20 rounded-lg shrink-0">
+                    <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-sm px-2.5 py-1 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg shrink-0">
                       -{formatMoney(exp.amount, currency)}
                     </span>
                   </div>
@@ -590,9 +601,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                     <span
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
                       style={{
-                        backgroundColor: `${exp.categoryColor || '#F43F5E'}20`,
+                        backgroundColor: `${exp.categoryColor || '#F43F5E'}15`,
                         color: exp.categoryColor || '#F43F5E',
-                        border: `1px solid ${exp.categoryColor || '#F43F5E'}40`,
+                        border: `1px solid ${exp.categoryColor || '#F43F5E'}30`,
                       }}
                     >
                       {exp.categoryName}
@@ -601,7 +612,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleOpenEditExpense(exp)}
-                        className="p-2 text-neutral-300 hover:text-emerald-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
                         title="Edit Record"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -609,7 +620,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                       {currentUser?.role !== 'STAFF' && (
                         <button
                           onClick={() => handleDeleteExpense(exp.id)}
-                          className="p-2 text-neutral-300 hover:text-rose-400 bg-neutral-950 border border-neutral-800 rounded-lg transition-colors cursor-pointer"
+                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
                           title="Delete Record"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -620,61 +631,61 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 </div>
               ))
             )}
-            <div className="p-3.5 bg-neutral-900 rounded-xl border border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono shadow-sm">
-              <span>Total Operational Expenses:</span>
-              <span className="font-bold text-rose-400 text-sm">
+            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono shadow-xs">
+              <span className="font-sans font-medium text-slate-600 dark:text-slate-300">Total Operational Expenses:</span>
+              <span className="font-bold text-rose-600 dark:text-rose-400 text-sm">
                 -{formatMoney(totalExpensesSum, currency)}
               </span>
             </div>
           </div>
 
           {/* Desktop Table View for Expenses (hidden md:block) */}
-          <div className="hidden md:block rounded-lg bg-neutral-900 border border-neutral-800 overflow-hidden">
+          <div className="hidden md:block rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-neutral-950 border-b border-neutral-800 text-neutral-400 font-mono">
+                <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
                   <tr>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Description</th>
-                    <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3">Payment Method</th>
-                    <th className="px-4 py-3 text-right">Amount (LKR)</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-5 py-3.5">Date</th>
+                    <th className="px-5 py-3.5">Description</th>
+                    <th className="px-5 py-3.5">Category</th>
+                    <th className="px-5 py-3.5">Payment Method</th>
+                    <th className="px-5 py-3.5 text-right">Amount ({currency})</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                   {filteredExpenses.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">
-                        No expense records found.
+                      <td colSpan={6} className="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                        No expense records found matching your filters.
                       </td>
                     </tr>
                   ) : (
                     filteredExpenses.map((exp) => (
-                      <tr key={exp.id} className="hover:bg-neutral-850/50 transition-colors">
-                        <td className="px-4 py-3 font-mono text-neutral-300">{exp.date}</td>
-                        <td className="px-4 py-3 font-medium text-white">{exp.description}</td>
-                        <td className="px-4 py-3">
+                      <tr key={exp.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="px-5 py-3.5 font-mono text-slate-600 dark:text-slate-300">{exp.date}</td>
+                        <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-white">{exp.description}</td>
+                        <td className="px-5 py-3.5">
                           <span
-                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
                             style={{
-                              backgroundColor: `${exp.categoryColor || '#F43F5E'}20`,
+                              backgroundColor: `${exp.categoryColor || '#F43F5E'}15`,
                               color: exp.categoryColor || '#F43F5E',
-                              border: `1px solid ${exp.categoryColor || '#F43F5E'}40`,
+                              border: `1px solid ${exp.categoryColor || '#F43F5E'}30`,
                             }}
                           >
                             <span>{exp.categoryName}</span>
                           </span>
                         </td>
-                        <td className="px-4 py-3 font-mono text-neutral-400">{exp.paymentMethod}</td>
-                        <td className="px-4 py-3 text-right font-mono font-semibold text-rose-400">
+                        <td className="px-5 py-3.5 font-mono text-slate-500 dark:text-slate-400">{exp.paymentMethod}</td>
+                        <td className="px-5 py-3.5 text-right font-mono font-bold text-rose-600 dark:text-rose-400">
                           -{formatMoney(exp.amount, currency)}
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleOpenEditExpense(exp)}
-                              className="text-neutral-400 hover:text-emerald-400 transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                               title="Edit Record"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -682,7 +693,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                             {currentUser?.role !== 'STAFF' && (
                               <button
                                 onClick={() => handleDeleteExpense(exp.id)}
-                                className="text-neutral-500 hover:text-rose-400 transition-colors"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                                 title="Delete Record (Admin Only)"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -697,9 +708,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               </table>
             </div>
 
-            <div className="px-4 py-3 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
-              <span>Total Operational Expenses:</span>
-              <span className="font-mono font-bold text-rose-400 text-sm">
+            <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+              <span className="font-medium">Total Operational Expenses:</span>
+              <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-sm">
                 -{formatMoney(totalExpensesSum, currency)}
               </span>
             </div>
@@ -712,26 +723,29 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       {/* ------------------------------------------------------------------- */}
       {activeSubTab === 'categories' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="p-5 rounded-lg bg-neutral-900 border border-neutral-800 space-y-4">
-            <h2 className="text-sm font-semibold text-white">Create New Category</h2>
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Create New Category</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Add custom tags for financial reporting</p>
+            </div>
 
             {catError && (
-              <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded">
+              <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs rounded-xl">
                 {catError}
               </div>
             )}
 
-            <form onSubmit={handleCreateCategory} className="space-y-3.5 text-xs">
+            <form onSubmit={handleCreateCategory} className="space-y-4 text-xs">
               <div>
-                <label className="block text-neutral-400 mb-1">Category Type</label>
+                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Category Type</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setNewCatType('INCOME')}
-                    className={`py-1.5 rounded border transition-colors ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                       newCatType === 'INCOME'
-                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-medium'
-                        : 'border-neutral-800 text-neutral-400'
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850'
                     }`}
                   >
                     Income
@@ -739,10 +753,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setNewCatType('EXPENSE')}
-                    className={`py-1.5 rounded border transition-colors ${
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                       newCatType === 'EXPENSE'
-                        ? 'border-rose-500/50 bg-rose-500/10 text-rose-400 font-medium'
-                        : 'border-neutral-800 text-neutral-400'
+                        ? 'border-rose-500 bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-400 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850'
                     }`}
                   >
                     Expense
@@ -751,8 +765,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-neutral-400">Category Name</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-slate-600 dark:text-slate-400 font-medium">Category Name</label>
                   {newCatName.trim() && (
                     <button
                       type="button"
@@ -762,83 +776,86 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                         if (fixed) setNewCatName(fixed);
                         setIsAiFixing(false);
                       }}
-                      className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors cursor-pointer"
                     >
                       <Sparkles className="w-3 h-3" />
-                      <span>{isAiFixing ? 'Correcting...' : 'Fix English with AI ✨'}</span>
+                      <span>{isAiFixing ? 'Correcting...' : 'Fix English ✨'}</span>
                     </button>
                   )}
                 </div>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. First Investment, Equipment Purchase"
+                  placeholder="e.g. Fiber Line Expansion, Equipment"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-neutral-600"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-neutral-400 mb-1">Color Tag</label>
-                <div className="flex items-center gap-2">
+                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Color Tag</label>
+                <div className="flex items-center gap-2.5">
                   <input
                     type="color"
                     value={newCatColor}
                     onChange={(e) => setNewCatColor(e.target.value)}
-                    className="w-8 h-8 rounded bg-transparent border-0 cursor-pointer"
+                    className="w-10 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
                   />
                   <input
                     type="text"
                     value={newCatColor}
                     onChange={(e) => setNewCatColor(e.target.value)}
-                    className="flex-1 px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono uppercase"
+                    className="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono uppercase text-xs"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2 px-3 text-xs font-semibold text-neutral-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors"
+                className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 Add Category
               </button>
             </form>
           </div>
 
-          <div className="lg:col-span-2 p-5 rounded-lg bg-neutral-900 border border-neutral-800 space-y-4">
-            <h2 className="text-sm font-semibold text-white">Active Categories ({categories.length})</h2>
+          <div className="lg:col-span-2 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Active Categories ({categories.length})</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Categories used across incomes and expenses</p>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {categories.map((c) => (
                 <div
                   key={c.id}
-                  className="p-3 rounded-md bg-neutral-950 border border-neutral-800 flex items-center justify-between gap-3 text-xs"
+                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 text-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
                       style={{ backgroundColor: c.color }}
-                      className="w-3 h-3 rounded-full shrink-0 shadow-sm"
+                      className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs ring-2 ring-white dark:ring-slate-900"
                     />
                     <div className="min-w-0">
-                      <p className="font-medium text-white truncate">{c.name}</p>
-                      <p className="text-[10px] text-neutral-500 font-mono">
+                      <p className="font-semibold text-slate-900 dark:text-white truncate">{c.name}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                         {c.type}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => handleOpenEditCategory(c)}
-                      className="text-neutral-400 hover:text-emerald-400 transition-colors p-1.5 rounded hover:bg-neutral-900"
+                      className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors p-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-900 cursor-pointer"
                       title="Edit Category"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleDeleteCategory(c.id)}
-                      className="text-neutral-400 hover:text-rose-400 transition-colors p-1.5 rounded hover:bg-neutral-900"
+                      className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors p-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-900 cursor-pointer"
                       title="Delete Category"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -855,19 +872,19 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       {/* EDIT CATEGORY MODAL */}
       {/* ------------------------------------------------------------------- */}
       {editingCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-xl bg-neutral-900 border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h2 className="text-base font-semibold text-white">Edit Category</h2>
-              <button onClick={() => setEditingCategory(null)} className="text-neutral-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Edit Category</h2>
+              <button onClick={() => setEditingCategory(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditCategory} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveEditCategory} className="space-y-4 text-xs">
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-neutral-400">Category Name</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-slate-600 dark:text-slate-400 font-medium">Category Name</label>
                   {editCatName.trim() && (
                     <button
                       type="button"
@@ -875,10 +892,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                         const fixed = await api.fixSpelling(editCatName);
                         if (fixed) setEditCatName(fixed);
                       }}
-                      className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300"
+                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 cursor-pointer"
                     >
                       <Sparkles className="w-3 h-3" />
-                      <span>Fix English with AI ✨</span>
+                      <span>Fix English ✨</span>
                     </button>
                   )}
                 </div>
@@ -887,39 +904,39 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                   required
                   value={editCatName}
                   onChange={(e) => setEditCatName(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-neutral-400 mb-1">Color Tag</label>
-                <div className="flex items-center gap-2">
+                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Color Tag</label>
+                <div className="flex items-center gap-2.5">
                   <input
                     type="color"
                     value={editCatColor}
                     onChange={(e) => setEditCatColor(e.target.value)}
-                    className="w-8 h-8 rounded bg-transparent border-0 cursor-pointer"
+                    className="w-10 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
                   />
                   <input
                     type="text"
                     value={editCatColor}
                     onChange={(e) => setEditCatColor(e.target.value)}
-                    className="flex-1 px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono uppercase"
+                    className="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono uppercase text-xs"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditingCategory(null)}
-                  className="px-3 py-1.5 rounded bg-neutral-800 text-neutral-300 hover:text-white"
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-emerald-400 font-semibold text-neutral-950 hover:bg-emerald-300"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-semibold text-white shadow-xs transition-all cursor-pointer"
                 >
                   Save Changes
                 </button>
@@ -933,19 +950,19 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       {/* EDIT INCOME MODAL */}
       {/* ------------------------------------------------------------------- */}
       {editingIncome && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-xl bg-neutral-900 border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h2 className="text-base font-semibold text-white">Edit Income Record</h2>
-              <button onClick={() => setEditingIncome(null)} className="text-neutral-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Edit Income Record</h2>
+              <button onClick={() => setEditingIncome(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditIncome} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveEditIncome} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-neutral-400 mb-1">Amount (Rs. LKR)</label>
+                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Amount ({currency})</label>
                   <input
                     type="number"
                     step="0.01"
@@ -953,27 +970,27 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                     required
                     value={editIncAmount}
                     onChange={(e) => setEditIncAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-neutral-400 mb-1">Date</label>
+                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Date</label>
                   <input
                     type="date"
                     required
                     value={editIncDate}
                     onChange={(e) => setEditIncDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-neutral-400 mb-1">Category</label>
+                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Category</label>
                 <select
                   value={editIncCategoryId}
                   onChange={(e) => setEditIncCategoryId(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
                 >
                   {categories.filter(c => c.type === 'INCOME').map((c) => (
                     <option key={c.id} value={c.id}>
@@ -984,8 +1001,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-neutral-400">Description</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-slate-600 dark:text-slate-400 font-medium">Description</label>
                   {editIncDescription.trim() && (
                     <button
                       type="button"
@@ -993,10 +1010,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                         const fixed = await api.fixSpelling(editIncDescription);
                         if (fixed) setEditIncDescription(fixed);
                       }}
-                      className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300"
+                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 cursor-pointer"
                     >
                       <Sparkles className="w-3 h-3" />
-                      <span>Fix English with AI ✨</span>
+                      <span>Fix English ✨</span>
                     </button>
                   )}
                 </div>
@@ -1005,16 +1022,16 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                   required
                   value={editIncDescription}
                   onChange={(e) => setEditIncDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-neutral-400 mb-1">Payment Method</label>
+                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Payment Method</label>
                 <select
                   value={editIncPaymentMethod}
                   onChange={(e) => setEditIncPaymentMethod(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
                 >
                   <option value="BANK_TRANSFER">Bank Transfer / CEFT</option>
                   <option value="CASH">Cash</option>
@@ -1024,17 +1041,17 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 </select>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditingIncome(null)}
-                  className="px-3 py-1.5 rounded bg-neutral-800 text-neutral-300 hover:text-white"
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-emerald-400 font-semibold text-neutral-950 hover:bg-emerald-300"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-semibold text-white shadow-xs transition-all cursor-pointer"
                 >
                   Update Income
                 </button>
@@ -1048,19 +1065,19 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       {/* EDIT EXPENSE MODAL */}
       {/* ------------------------------------------------------------------- */}
       {editingExpense && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-xl bg-neutral-900 border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h2 className="text-base font-semibold text-white">Edit Expense Record</h2>
-              <button onClick={() => setEditingExpense(null)} className="text-neutral-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Edit Expense Record</h2>
+              <button onClick={() => setEditingExpense(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditExpense} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveEditExpense} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-neutral-400 mb-1">Amount (Rs. LKR)</label>
+                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Amount ({currency})</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1068,27 +1085,27 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                     required
                     value={editExpAmount}
                     onChange={(e) => setEditExpAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-neutral-400 mb-1">Date</label>
+                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Date</label>
                   <input
                     type="date"
                     required
                     value={editExpDate}
                     onChange={(e) => setEditExpDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-neutral-400 mb-1">Category</label>
+                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Category</label>
                 <select
                   value={editExpCategoryId}
                   onChange={(e) => setEditExpCategoryId(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
                 >
                   {categories.filter(c => c.type === 'EXPENSE').map((c) => (
                     <option key={c.id} value={c.id}>
@@ -1099,8 +1116,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-neutral-400">Description</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-slate-600 dark:text-slate-400 font-medium">Description</label>
                   {editExpDescription.trim() && (
                     <button
                       type="button"
@@ -1108,10 +1125,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                         const fixed = await api.fixSpelling(editExpDescription);
                         if (fixed) setEditExpDescription(fixed);
                       }}
-                      className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300"
+                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 cursor-pointer"
                     >
                       <Sparkles className="w-3 h-3" />
-                      <span>Fix English with AI ✨</span>
+                      <span>Fix English ✨</span>
                     </button>
                   )}
                 </div>
@@ -1120,16 +1137,16 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                   required
                   value={editExpDescription}
                   onChange={(e) => setEditExpDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-neutral-400 mb-1">Payment Method</label>
+                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Payment Method</label>
                 <select
                   value={editExpPaymentMethod}
                   onChange={(e) => setEditExpPaymentMethod(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
                 >
                   <option value="BANK_TRANSFER">Bank Transfer / CEFT</option>
                   <option value="CASH">Cash</option>
@@ -1139,17 +1156,17 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 </select>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditingExpense(null)}
-                  className="px-3 py-1.5 rounded bg-neutral-800 text-neutral-300 hover:text-white"
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-emerald-400 font-semibold text-neutral-950 hover:bg-emerald-300"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-semibold text-white shadow-xs transition-all cursor-pointer"
                 >
                   Update Expense
                 </button>

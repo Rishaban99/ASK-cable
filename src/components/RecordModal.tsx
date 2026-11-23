@@ -4,7 +4,7 @@ import {
   SupportedCurrency
 } from '../types/finance.js';
 import { api } from '../api/client.js';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, Receipt, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { useToast } from './Toast.tsx';
 import { Spinner } from './Spinner.tsx';
 
@@ -127,56 +127,70 @@ export const RecordModal: React.FC<RecordModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
-      <div className="w-full max-w-md rounded-xl bg-neutral-900 border border-neutral-800 p-6 shadow-2xl space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-          <div>
-            <h2 className="text-base font-semibold text-white">Record Entry</h2>
-            <p className="text-xs text-neutral-400 mt-0.5">Add a new record to Income or Expenses table</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs p-4 animate-fade-in">
+      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-2xl space-y-5">
+        <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className={`p-2 rounded-xl border ${
+              txType === 'INCOME'
+                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400'
+            }`}>
+              <Receipt className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">Record Entry</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Add a new financial transaction</p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-neutral-400 hover:text-white">
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {errorMsg && (
-          <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded">
+          <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs rounded-xl font-medium">
             {errorMsg}
           </div>
         )}
 
-        <form onSubmit={handleTransactionSubmit} className="space-y-3.5 text-xs">
+        <form onSubmit={handleTransactionSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block text-neutral-400 mb-1">Target Table</label>
-            <div className="grid grid-cols-2 gap-2">
+            <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Target Ledger</label>
+            <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setTxType('INCOME')}
-                className={`py-1.5 rounded border transition-colors ${
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   txType === 'INCOME'
-                    ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-medium'
-                    : 'border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                    ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Incomes Table
+                <ArrowDownRight className="w-3.5 h-3.5" />
+                <span>Incomes</span>
               </button>
               <button
                 type="button"
                 onClick={() => setTxType('EXPENSE')}
-                className={`py-1.5 rounded border transition-colors ${
+                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   txType === 'EXPENSE'
-                    ? 'border-rose-500/50 bg-rose-500/10 text-rose-400 font-medium'
-                    : 'border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                    ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-xs'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Expenses Table
+                <ArrowUpRight className="w-3.5 h-3.5" />
+                <span>Expenses</span>
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-neutral-400 mb-1">Amount (Rs. LKR)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Amount (Rs. LKR) *</label>
               <input
                 type="number"
                 step="0.01"
@@ -185,28 +199,28 @@ export const RecordModal: React.FC<RecordModalProps> = ({
                 placeholder="0.00"
                 value={txAmount}
                 onChange={(e) => setTxAmount(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-neutral-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono font-bold text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
             <div>
-              <label className="block text-neutral-400 mb-1">Date</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Date *</label>
               <input
                 type="date"
                 required
                 value={txDate}
                 onChange={(e) => setTxDate(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono focus:outline-none focus:border-neutral-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-neutral-400 mb-1">Category (Linked)</label>
+            <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Category *</label>
             <select
               required
               value={txCategoryId}
               onChange={(e) => setTxCategoryId(e.target.value)}
-              className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-neutral-600"
+              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
             >
               {availableCategories.length === 0 ? (
                 <option value="">No categories created yet</option>
@@ -221,17 +235,17 @@ export const RecordModal: React.FC<RecordModalProps> = ({
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-neutral-400">Description</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold">Description *</label>
               {txDescription.trim() && (
                 <button
                   type="button"
                   onClick={handleFixSpelling}
                   disabled={isFixingSpelling}
-                  className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline transition-colors cursor-pointer"
                 >
                   {isFixingSpelling ? <Spinner size="sm" /> : <Sparkles className="w-3 h-3" />}
-                  <span>{isFixingSpelling ? 'Correcting...' : 'Fix English with AI ✨'}</span>
+                  <span>{isFixingSpelling ? 'Correcting...' : 'Fix with AI ✨'}</span>
                 </button>
               )}
             </div>
@@ -241,17 +255,17 @@ export const RecordModal: React.FC<RecordModalProps> = ({
               placeholder="e.g. Salary Payout, Client Retainer, Keells Supermarket"
               value={txDescription}
               onChange={(e) => setTxDescription(e.target.value)}
-              className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-neutral-600"
+              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-neutral-400 mb-1">Payment Method</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Payment Method</label>
               <select
                 value={txPaymentMethod}
                 onChange={(e) => setTxPaymentMethod(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-neutral-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
               >
                 <option value="BANK_TRANSFER">Bank Transfer / CEFT</option>
                 <option value="CASH">Cash</option>
@@ -261,13 +275,13 @@ export const RecordModal: React.FC<RecordModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-neutral-400 mb-1">Tags (Optional)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Tags (Optional)</label>
               <input
                 type="text"
-                placeholder="salary, consulting, bills"
+                placeholder="salary, bills, hardware"
                 value={txTags}
                 onChange={(e) => setTxTags(e.target.value)}
-                className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white focus:outline-none focus:border-neutral-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
           </div>
@@ -276,9 +290,9 @@ export const RecordModal: React.FC<RecordModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2 px-4 text-xs font-semibold text-neutral-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
-              {isSubmitting && <Spinner size="sm" className="text-neutral-950" />}
+              {isSubmitting && <Spinner size="sm" className="text-white" />}
               <span>{isSubmitting ? 'Saving Record...' : 'Save Record'}</span>
             </button>
           </div>

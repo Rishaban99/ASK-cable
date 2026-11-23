@@ -150,88 +150,40 @@ const ThermalReceiptSlip: React.FC<{
             <span className="font-semibold text-black">{billData.paymentDate || billData.date}</span>
           </div>
         )}
-      </div>
-
-      {/* Dashed Divider */}
-      <div className="border-t border-dashed border-neutral-400 my-1" />
-
-      {/* Subscriber & Connection Info */}
-      <div className="space-y-0.5 text-[9.5px]">
-        <div className="flex justify-between items-start">
-          <span className="text-[8.5px] font-bold text-neutral-600 uppercase shrink-0 pt-0.5">
-            Customer:
-          </span>
-          <span
-            className={`font-extrabold text-black text-right break-words ${
-              is58mm ? 'max-w-[150px] text-[10px]' : 'max-w-[190px] text-[11px]'
-            }`}
-          >
+        <div className="flex justify-between items-center">
+          <span>Customer:</span>
+          <span className="font-bold text-black truncate max-w-[170px]">
             {billData.customerName}
           </span>
         </div>
-
         <div className="flex justify-between items-center">
-          <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
-            Box Number:
-          </span>
-          <span
-            className="font-extrabold text-[10.5px] text-black px-1.5 py-0.2 rounded border border-neutral-400"
-            style={{ backgroundColor: '#f3f4f6' }}
-          >
+          <span>Box No:</span>
+          <span className="font-black text-black px-1 rounded-xs bg-neutral-200 border border-neutral-400 text-[10px]">
             BOX #{billData.boxNo}
           </span>
         </div>
-
-        {billData.month && (
-          <div className="flex justify-between items-center">
-            <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
-              Month:
-            </span>
-            <span className="font-extrabold text-black">
-              {formatMonthDisplay(billData.month)}
-            </span>
-          </div>
-        )}
-
-        {billData.phoneNo && (
-          <div className="flex justify-between items-center">
-            <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
-              Phone:
-            </span>
-            <span className="font-semibold text-black">{billData.phoneNo}</span>
-          </div>
-        )}
-
-        {billData.nicNo && (
-          <div className="flex justify-between items-center">
-            <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
-              NIC:
-            </span>
-            <span className="font-semibold text-black">{billData.nicNo}</span>
-          </div>
-        )}
-
         {billData.packageName && (
           <div className="flex justify-between items-center">
-            <span className="text-[8.5px] font-bold text-neutral-600 uppercase">
-              Package:
-            </span>
-            <span className="font-bold text-black">{billData.packageName}</span>
+            <span>Package:</span>
+            <span className="font-semibold text-black">{billData.packageName}</span>
           </div>
         )}
-
-        {billData.address && (
-          <div className="flex justify-between items-start pt-0.5">
-            <span className="text-[8.5px] font-bold text-neutral-600 uppercase shrink-0 pt-0.5">
-              Address:
-            </span>
-            <span
-              className={`text-right text-[8.5px] text-neutral-800 break-words leading-tight ${
-                is58mm ? 'max-w-[150px]' : 'max-w-[190px]'
-              }`}
-            >
-              {billData.address}
-            </span>
+        {billData.nicNo && (
+          <div className="flex justify-between items-center">
+            <span>NIC:</span>
+            <span className="font-mono text-neutral-700">{billData.nicNo}</span>
+          </div>
+        )}
+        {billData.phoneNo && (
+          <div className="flex justify-between items-center">
+            <span>Phone:</span>
+            <span className="font-mono text-neutral-700">{billData.phoneNo}</span>
+          </div>
+        )}
+        {billData.month && (
+          <div className="flex justify-between items-center">
+            <span>Billing Month:</span>
+            <span className="font-bold text-black">{formatMonthDisplay(billData.month)}</span>
           </div>
         )}
       </div>
@@ -239,13 +191,8 @@ const ThermalReceiptSlip: React.FC<{
       {/* Dashed Divider */}
       <div className="border-t border-dashed border-neutral-400 my-1" />
 
-      {/* Dues / Charges Breakdown */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-[8.5px] font-bold text-neutral-700 uppercase border-b border-dashed border-neutral-300 pb-0.5">
-          <span>Description</span>
-          <span>Amount ({currency})</span>
-        </div>
-
+      {/* Line Items Breakdown */}
+      <div className="space-y-1 py-0.5">
         {billData.items && billData.items.length > 0 ? (
           billData.items.map((item, idx) => (
             <div key={idx} className="space-y-0.5 text-[9.5px]">
@@ -496,23 +443,23 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
       {/* =========================================================================
           SCREEN MODAL (Hidden completely during Print via @media print)
           ========================================================================= */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto print:hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto print:hidden animate-fade-in">
         {/* Container Card */}
-        <div className="w-full max-w-md bg-neutral-900 border border-neutral-750 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
+        <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
           {/* Modal Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 bg-neutral-950">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                 <Printer className="w-4 h-4 shrink-0" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-sm font-bold text-white truncate leading-tight flex items-center gap-1.5">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight flex items-center gap-1.5">
                   <span>Thermal Bill Printer</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
                     {paperWidth}mm
                   </span>
                 </h3>
-                <p className="text-[10.5px] text-neutral-400 font-mono truncate">
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-mono truncate">
                   POS Slip • {billData.billNo}
                 </p>
               </div>
@@ -520,7 +467,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               title="Close modal"
             >
               <X className="w-4 h-4" />
@@ -528,17 +475,17 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
           </div>
 
           {/* Paper Size & Quick Control Bar */}
-          <div className="px-4 py-2.5 bg-neutral-900/90 border-b border-neutral-800 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs text-neutral-300 font-medium">
+          <div className="px-5 py-2.5 bg-slate-50/50 dark:bg-slate-900/90 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 font-semibold">
               <span>Paper Roll:</span>
-              <div className="inline-flex rounded-lg bg-neutral-950 p-0.5 border border-neutral-750">
+              <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-950 p-0.5 border border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => handlePaperWidthChange(58)}
-                  className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                     paperWidth === 58
-                      ? 'bg-emerald-500 text-neutral-950 shadow-xs'
-                      : 'text-neutral-400 hover:text-white'
+                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   58mm (Mini)
@@ -546,10 +493,10 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handlePaperWidthChange(80)}
-                  className={`px-2 py-0.5 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                     paperWidth === 80
-                      ? 'bg-emerald-500 text-neutral-950 shadow-xs'
-                      : 'text-neutral-400 hover:text-white'
+                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   80mm (POS)
@@ -560,7 +507,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
             <button
               type="button"
               onClick={() => setShowGuide(!showGuide)}
-              className="text-[11px] text-sky-400 hover:text-sky-300 flex items-center gap-1 cursor-pointer"
+              className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
             >
               <HelpCircle className="w-3.5 h-3.5" />
               <span>{showGuide ? 'Hide Help' : 'Printer Help'}</span>
@@ -569,20 +516,20 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
 
           {/* Quick Help Guide Banner (Collapsible) */}
           {showGuide && (
-            <div className="p-3 bg-sky-950/40 border-b border-sky-800/40 text-[11px] text-sky-200 space-y-1.5 animate-in fade-in duration-200">
-              <div className="font-bold text-sky-100 flex items-center gap-1">
-                <Bluetooth className="w-3.5 h-3.5 text-sky-400" />
+            <div className="p-3.5 bg-sky-50 dark:bg-sky-950/40 border-b border-sky-100 dark:border-sky-800/40 text-[11px] text-sky-800 dark:text-sky-200 space-y-1.5 animate-in fade-in duration-200 font-sans">
+              <div className="font-bold text-sky-900 dark:text-sky-100 flex items-center gap-1.5">
+                <Bluetooth className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                 <span>புளூடூத் பிரிண்டர் இயக்கும் முறை:</span>
               </div>
-              <ol className="list-decimal list-inside space-y-1 pl-1 text-[10.5px] text-neutral-300">
+              <ol className="list-decimal list-inside space-y-1 pl-1 text-[10.5px] text-slate-600 dark:text-slate-300">
                 <li>
-                  பிரிண்டரை ஆன் செய்து உங்கள் சாதனம் (Mobile / PC)-ல் Bluetooth Settings சென்று Pair செய்யவும் (Default PIN: <span className="font-mono font-bold text-white">0000</span> அல்லது <span className="font-mono font-bold text-white">1234</span>).
+                  பிரிண்டரை ஆன் செய்து உங்கள் சாதனம் (Mobile / PC)-ல் Bluetooth Settings சென்று Pair செய்யவும் (Default PIN: <span className="font-mono font-bold text-slate-900 dark:text-white">0000</span> அல்லது <span className="font-mono font-bold text-slate-900 dark:text-white">1234</span>).
                 </li>
                 <li>
-                  கீழே உள்ள <strong className="text-emerald-400">⚡ Direct Bluetooth Print</strong> பட்டனை அழுத்தி உங்கள் பிரிண்டரைத் தொடுங்கள் — பில் நேரடியாக அச்சிடப்படும்!
+                  கீழே உள்ள <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">⚡ Direct Bluetooth Print</strong> பட்டனை அழுத்தி உங்கள் பிரிண்டரைத் தொடுங்கள் — பில் நேரடியாக அச்சிடப்படும்!
                 </li>
                 <li>
-                  அல்லது வழக்கமான பிரிண்டர் / PDF செய்ய <strong className="text-neutral-200">🖨️ System Print (PDF)</strong> பட்டனை அழுத்தவும்.
+                  அல்லது வழக்கமான பிரிண்டர் / PDF செய்ய <strong className="text-slate-800 dark:text-slate-200 font-semibold">🖨️ System Print (PDF)</strong> பட்டனை அழுத்தவும்.
                 </li>
               </ol>
             </div>
@@ -593,26 +540,26 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
             <div
               className={`px-4 py-2 text-xs flex items-center justify-between gap-2 border-b ${
                 bluetoothMessage.type === 'success'
-                  ? 'bg-emerald-950/60 border-emerald-800/60 text-emerald-200'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200'
                   : bluetoothMessage.type === 'error'
-                  ? 'bg-rose-950/60 border-rose-800/60 text-rose-200'
-                  : 'bg-sky-950/60 border-sky-800/60 text-sky-200'
+                  ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200'
+                  : 'bg-sky-50 dark:bg-sky-950/60 border-sky-200 dark:border-sky-800/60 text-sky-800 dark:text-sky-200'
               }`}
             >
               <div className="flex items-center gap-2 truncate">
                 {bluetoothMessage.type === 'success' ? (
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 ) : bluetoothMessage.type === 'error' ? (
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
                 ) : (
-                  <Info className="w-4 h-4 text-sky-400 shrink-0" />
+                  <Info className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
                 )}
-                <span className="truncate">{bluetoothMessage.text}</span>
+                <span className="truncate font-medium">{bluetoothMessage.text}</span>
               </div>
               <button
                 type="button"
                 onClick={() => setBluetoothMessage(null)}
-                className="text-neutral-400 hover:text-white p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -620,15 +567,15 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
           )}
 
           {/* Paper Slip Preview Area */}
-          <div className="p-3 sm:p-4 bg-neutral-950 overflow-y-auto flex flex-col items-center flex-1 max-h-[50vh]">
+          <div className="p-4 bg-slate-100/70 dark:bg-slate-950 overflow-y-auto flex flex-col items-center flex-1 max-h-[50vh]">
             {/* Helper label */}
-            <div className="text-[10px] text-neutral-400 font-mono mb-2 flex items-center gap-1.5">
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono font-semibold mb-2.5 flex items-center gap-1.5">
               <span>🧾 POS Thermal Slip Preview ({paperWidth}mm Roll)</span>
             </div>
 
             {/* Paper Preview Slip (matches exact roll size) */}
             <div
-              className={`bg-white p-3 rounded-xs shadow-2xl border border-neutral-300 transition-all ${
+              className={`bg-white p-3.5 rounded-sm shadow-xl border border-slate-300 transition-all ${
                 paperWidth === 58 ? 'w-[230px] max-w-[230px]' : 'w-[290px] max-w-[290px]'
               }`}
             >
@@ -643,20 +590,20 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
           </div>
 
           {/* Action Toolbar / Print Buttons */}
-          <div className="p-3 bg-neutral-950 border-t border-neutral-800 space-y-2">
+          <div className="p-4 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
             {/* Saved Printer status indicator pill */}
             {savedPrinter.name && (
-              <div className="flex items-center justify-between px-2.5 py-1 bg-neutral-900 border border-neutral-800 rounded-lg text-[10.5px]">
-                <div className="flex items-center gap-1.5 text-neutral-300 min-w-0">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
-                  <span className="text-neutral-400 shrink-0">Default Printer:</span>
-                  <span className="font-bold text-white truncate">{savedPrinter.name}</span>
+              <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-[10.5px]">
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span className="text-slate-400 shrink-0">Default Printer:</span>
+                  <span className="font-bold text-slate-900 dark:text-white truncate">{savedPrinter.name}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleDirectBluetoothPrint(true)}
                   disabled={isBluetoothPrinting}
-                  className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 text-[10px] font-semibold cursor-pointer shrink-0 ml-2"
+                  className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 text-[10.5px] font-bold cursor-pointer shrink-0 ml-2"
                   title="Pair or select another Bluetooth printer"
                 >
                   <RefreshCw className="w-3 h-3" />
@@ -671,16 +618,16 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
                 type="button"
                 onClick={() => handleDirectBluetoothPrint(false)}
                 disabled={isBluetoothPrinting}
-                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-neutral-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isBluetoothPrinting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin text-neutral-950" />
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
                     <span className="truncate">{bluetoothStatus || 'Printing...'}</span>
                   </>
                 ) : (
                   <>
-                    <Bluetooth className="w-4 h-4 text-neutral-950 shrink-0" />
+                    <Bluetooth className="w-4 h-4 text-white shrink-0" />
                     <span className="truncate">
                       {savedPrinter.name ? `Direct Print (${savedPrinter.name})` : 'Direct Bluetooth Print'}
                     </span>
@@ -692,7 +639,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
               <button
                 type="button"
                 onClick={handleSystemPrint}
-                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-neutral-800 hover:bg-neutral-700 active:scale-[0.98] text-neutral-100 text-xs font-semibold rounded-xl transition-colors cursor-pointer border border-neutral-700 shadow-sm"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors cursor-pointer border border-slate-200 dark:border-slate-700 shadow-xs"
               >
                 <Printer className="w-4 h-4" />
                 <span className="truncate">System Print (PDF)</span>
@@ -700,11 +647,11 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
             </div>
 
             {/* Close action */}
-            <div className="flex justify-end pt-0.5">
+            <div className="flex justify-end pt-1">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1 text-xs text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
+                className="px-3 py-1 text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer font-medium"
               >
                 Close
               </button>
@@ -778,23 +725,13 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
           #thermal-receipt-print-portal {
             display: block !important;
             visibility: visible !important;
-            position: static !important;
-            width: ${paperWidth === 58 ? '52mm' : '74mm'} !important;
-            max-width: ${paperWidth}mm !important;
             margin: 0 auto !important;
-            padding: 1.5mm 2mm 3mm 2mm !important;
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            box-shadow: none !important;
-            border: none !important;
-            page-break-after: avoid !important;
-            break-after: avoid !important;
+            padding: 2mm 3mm !important;
+            width: ${paperWidth}mm !important;
+            max-width: ${paperWidth}mm !important;
+            box-sizing: border-box !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-          }
-
-          #thermal-receipt-print-portal * {
-            visibility: visible !important;
           }
         }
       `}</style>

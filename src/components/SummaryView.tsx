@@ -105,7 +105,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const currentMonthIncomes = useMemo(() => incomes.filter((i) => i.date.startsWith(currentMonthStr)), [incomes, currentMonthStr]);
   const currentMonthExpenses = useMemo(() => expenses.filter((e) => e.date.startsWith(currentMonthStr)), [expenses, currentMonthStr]);
-  
+
   const monthlyInc = analytics?.monthlyCashFlow?.totalIncome ?? currentMonthIncomes.reduce((acc, curr) => acc + curr.amount, 0);
   const monthlyExp = analytics?.monthlyCashFlow?.totalExpense ?? currentMonthExpenses.reduce((acc, curr) => acc + curr.amount, 0);
   const monthlyNet = monthlyInc - monthlyExp;
@@ -122,7 +122,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
   const currentMonthBilledAmount = useMemo(() => currentMonthBills.reduce((acc, curr) => acc + curr.monthlyFee, 0), [currentMonthBills]);
   const currentMonthCollectedAmount = useMemo(() => currentMonthBills.reduce((acc, curr) => acc + curr.paidAmount, 0), [currentMonthBills]);
   const currentMonthPendingAmount = Math.max(0, currentMonthBilledAmount - currentMonthCollectedAmount);
-  const collectionRatePct = currentMonthBilledAmount > 0 
+  const collectionRatePct = currentMonthBilledAmount > 0
     ? ((currentMonthCollectedAmount / currentMonthBilledAmount) * 100).toFixed(1)
     : '0.0';
 
@@ -281,36 +281,36 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
   const getHealthBadge = (score: number) => {
     if (score >= 85) {
       return {
-        bg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
-        border: 'border-emerald-500/30',
-        text: 'text-emerald-500 dark:text-emerald-400',
-        dot: 'bg-emerald-400',
+        bg: 'bg-emerald-50 dark:bg-emerald-500/15',
+        border: 'border-emerald-200 dark:border-emerald-500/30',
+        text: 'text-emerald-700 dark:text-emerald-400',
+        dot: 'bg-emerald-500',
         label: isTamil ? 'வளர்ச்சி (Excellent)' : 'Excellent',
       };
     }
     if (score >= 70) {
       return {
-        bg: 'bg-sky-500/10 dark:bg-sky-500/15',
-        border: 'border-sky-500/30',
-        text: 'text-sky-500 dark:text-sky-400',
-        dot: 'bg-sky-400',
+        bg: 'bg-sky-50 dark:bg-sky-500/15',
+        border: 'border-sky-200 dark:border-sky-500/30',
+        text: 'text-sky-700 dark:text-sky-400',
+        dot: 'bg-sky-500',
         label: isTamil ? 'ஆரோக்கியம் (Good)' : 'Good Health',
       };
     }
     if (score >= 55) {
       return {
-        bg: 'bg-amber-500/10 dark:bg-amber-500/15',
-        border: 'border-amber-500/30',
-        text: 'text-amber-500 dark:text-amber-400',
-        dot: 'bg-amber-400',
+        bg: 'bg-amber-50 dark:bg-amber-500/15',
+        border: 'border-amber-200 dark:border-amber-500/30',
+        text: 'text-amber-700 dark:text-amber-400',
+        dot: 'bg-amber-500',
         label: isTamil ? 'மிதமானது (Moderate)' : 'Moderate',
       };
     }
     return {
-      bg: 'bg-rose-500/10 dark:bg-rose-500/15',
-      border: 'border-rose-500/30',
-      text: 'text-rose-500 dark:text-rose-400',
-      dot: 'bg-rose-400',
+      bg: 'bg-rose-50 dark:bg-rose-500/15',
+      border: 'border-rose-200 dark:border-rose-500/30',
+      text: 'text-rose-700 dark:text-rose-400',
+      dot: 'bg-rose-500',
       label: isTamil ? 'கவனம் தேவை (Critical)' : 'Critical',
     };
   };
@@ -319,22 +319,22 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
   const healthBadge = getHealthBadge(currentScore);
 
   return (
-    <div className="mx-auto max-w-7xl px-2.5 sm:px-6 py-3 sm:py-6 space-y-3 sm:space-y-5 animate-fadeIn">
+    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 animate-fadeIn">
       {/* ========================================================================= */}
       {/* 1. COMPACT PAGE HEADER */}
       {/* ========================================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 border-b border-neutral-800/80 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-base sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span>{isTamil ? 'நிதி அறிக்கை & AI பகுப்பாய்வு' : 'Total Financial Summary & AI Insights'}</span>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              <span>{isTamil ? 'நிதி அறிக்கை & AI பகுப்பாய்வு' : 'Financial Summary & Insights'}</span>
             </h1>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30">
               <Sparkles className="w-2.5 h-2.5" />
               <span>AI</span>
             </span>
           </div>
-          <p className="text-[11px] sm:text-xs text-neutral-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             {isTamil 
               ? 'நிறுவன நிதி இருப்பு, சந்தா வசூல் வேகம் மற்றும் AI செயல்திறன் மதிப்பாய்வு'
               : 'Real-time company cash reserves, subscriber billing velocity, and AI executive performance briefing'
@@ -345,19 +345,19 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
         {/* Action Controls Toolbar */}
         <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
           {/* Language Switcher */}
-          <div className="flex items-center p-0.5 rounded-lg bg-neutral-900 border border-neutral-800 text-[11px]">
+          <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-semibold shadow-inner">
             <button
               onClick={() => handleLanguageToggle('ta')}
-              className={`px-2 py-0.5 rounded font-medium transition-all ${
-                isTamil ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                isTamil ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               தமிழ்
             </button>
             <button
               onClick={() => handleLanguageToggle('en')}
-              className={`px-2 py-0.5 rounded font-medium transition-all ${
-                !isTamil ? 'bg-indigo-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                !isTamil ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               EN
@@ -368,17 +368,17 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
           <button
             onClick={() => fetchAiInsights()}
             disabled={isGeneratingAi}
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-indigo-300 bg-indigo-950/60 border border-indigo-700/50 rounded-lg hover:bg-indigo-900/80 transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-700/50 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/80 transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-xs"
             title={isTamil ? 'AI மூலம் புதிய நிதி அறிக்கையை ஆய்வு செய்' : 'Re-analyze financial performance with AI'}
           >
-            <RefreshCw className={`w-3 h-3 ${isGeneratingAi ? 'animate-spin text-indigo-400' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isGeneratingAi ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
             <span>{isGeneratingAi ? (isTamil ? 'ஆய்வு...' : 'Auditing...') : (isTamil ? 'AI ஆய்வு' : 'Ask AI')}</span>
           </button>
 
           {/* Record Entry */}
           <button
             onClick={onOpenRecordModal}
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-neutral-950 bg-emerald-400 rounded-lg hover:bg-emerald-300 transition-colors shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{isTamil ? 'பதிவு செய்' : 'Record'}</span>
@@ -389,21 +389,21 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       {/* ========================================================================= */}
       {/* 2. COMPACT AI BUSINESS INTELLIGENCE ADVISOR (SPACE-EFFICIENT HERO) */}
       {/* ========================================================================= */}
-      <div className="rounded-xl border border-indigo-500/25 bg-neutral-900/90 shadow-lg p-3.5 sm:p-5 space-y-3 sm:space-y-4 relative overflow-hidden backdrop-blur-sm">
+      <div className="rounded-2xl border border-indigo-200/80 dark:border-indigo-500/30 bg-white dark:bg-slate-900 shadow-xs p-4 sm:p-5 space-y-3 sm:space-y-4 relative overflow-hidden">
         {/* Subtle decorative glow */}
         <div className="absolute -top-16 -right-16 w-56 h-56 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
 
         {/* Top Header Row */}
-        <div className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2.5 relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 relative z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
               <BrainCircuit className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs sm:text-sm font-bold text-white tracking-tight">
+              <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight">
                 {isTamil ? 'ASK AI தொழில் ஆலோசகர்' : 'ASK AI Strategic Advisor'}
               </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-indigo-500/15 text-indigo-300 font-semibold">
+              <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-500/30">
                 {aiInsights?.isAiGenerated ? 'Gemini AI' : 'BI Engine'}
               </span>
             </div>
@@ -411,7 +411,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
 
           {/* Health Badge & Micro Stats */}
           <div className="flex items-center gap-2">
-            <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${healthBadge.bg} ${healthBadge.border} ${healthBadge.text}`}>
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${healthBadge.bg} ${healthBadge.border} ${healthBadge.text}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${healthBadge.dot} animate-pulse`} />
               <span>{currentScore}/100 • {healthBadge.label}</span>
             </div>
@@ -419,11 +419,11 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
         </div>
 
         {/* Verdict Statement */}
-        <div className="p-3 sm:p-3.5 rounded-lg bg-neutral-950/80 border border-neutral-800 relative z-10 space-y-1.5">
-          <div className="flex items-start gap-2">
-            <Bot className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+        <div className="p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 relative z-10 space-y-1.5 shadow-inner">
+          <div className="flex items-start gap-2.5">
+            <Bot className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="text-xs sm:text-sm font-medium text-neutral-100 leading-relaxed">
+              <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 leading-relaxed">
                 "{aiInsights?.verdict || (
                   isTamil 
                     ? `${systemProfile?.companyName || 'ASK Cable'} நிறுவனம் ஆரோக்கியமான நிதி ஸ்திரத்தன்மையுடன் இயங்கி வருகிறது. நிலுவைக் கட்டணங்களை விரைந்து வசூலித்தால் லாபம் மேலும் அதிகரிக்கும்.`
@@ -431,7 +431,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
                 )}"
               </p>
               {aiInsights?.summary && (
-                <p className="text-[11px] text-neutral-400 leading-normal pt-1 border-t border-neutral-800/80">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal pt-1 border-t border-slate-200/80 dark:border-slate-800">
                   {aiInsights.summary}
                 </p>
               )}
@@ -442,27 +442,27 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
         {/* 3 Strategic Pillars (Mobile Tabs / Desktop Grid) */}
         <div className="space-y-2 relative z-10">
           {/* Mobile Tab Switcher */}
-          <div className="flex sm:hidden p-0.5 rounded-lg bg-neutral-950 border border-neutral-800 text-[11px]">
+          <div className="flex sm:hidden p-0.5 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-semibold">
             <button
               onClick={() => setMobilePillarTab('strengths')}
-              className={`flex-1 py-1 rounded text-center font-medium transition-all ${
-                mobilePillarTab === 'strengths' ? 'bg-emerald-500/20 text-emerald-400 font-bold' : 'text-neutral-400'
+              className={`flex-1 py-1 rounded-lg text-center transition-all ${
+                mobilePillarTab === 'strengths' ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'text-slate-500'
               }`}
             >
               🌟 {isTamil ? 'பலங்கள்' : 'Strengths'}
             </button>
             <button
               onClick={() => setMobilePillarTab('risks')}
-              className={`flex-1 py-1 rounded text-center font-medium transition-all ${
-                mobilePillarTab === 'risks' ? 'bg-rose-500/20 text-rose-400 font-bold' : 'text-neutral-400'
+              className={`flex-1 py-1 rounded-lg text-center transition-all ${
+                mobilePillarTab === 'risks' ? 'bg-rose-600 text-white font-bold shadow-xs' : 'text-slate-500'
               }`}
             >
               ⚠️ {isTamil ? 'அபாயங்கள்' : 'Risks'}
             </button>
             <button
               onClick={() => setMobilePillarTab('recommendations')}
-              className={`flex-1 py-1 rounded text-center font-medium transition-all ${
-                mobilePillarTab === 'recommendations' ? 'bg-indigo-500/20 text-indigo-400 font-bold' : 'text-neutral-400'
+              className={`flex-1 py-1 rounded-lg text-center transition-all ${
+                mobilePillarTab === 'recommendations' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'text-slate-500'
               }`}
             >
               💡 {isTamil ? 'ஆலோசனைகள்' : 'Plan'}
@@ -470,25 +470,25 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
           </div>
 
           {/* Pillars Layout: 3 Columns on Desktop, Single Tab on Mobile */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* 1. Strengths */}
-            <div className={`p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/20 space-y-2 ${
+            <div className={`p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/20 space-y-2 ${
               mobilePillarTab !== 'strengths' ? 'hidden sm:block' : 'block'
             }`}>
-              <div className="flex items-center gap-1.5 border-b border-emerald-500/20 pb-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <h2 className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+              <div className="flex items-center gap-1.5 border-b border-emerald-200 dark:border-emerald-500/20 pb-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <h2 className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
                   {isTamil ? 'முக்கிய பலங்கள் (Strengths)' : 'Key Strengths'}
                 </h2>
               </div>
-              <ul className="space-y-1.5 text-[11px] text-neutral-200">
+              <ul className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-200">
                 {(aiInsights?.strengths || [
                   isTamil ? `வலுவான லாப வரம்பு: மொத்த வருவாயில் ${profitMarginPct}% நிகர கையிருப்பு.` : `Strong margin: ${profitMarginPct}% retained as reserves.`,
                   isTamil ? `${activeSubscribers} தீவிர வாடிக்கையாளர்களுடன் (${activeSubscriberPct}%) தொடர் வருவாய்.` : `${activeSubscribers} active subscribers drive consistent monthly revenue.`,
                   isTamil ? `நடப்பு மாதத்தில் ${formatCompactMoney(monthlyInc, currency)} வசூலிக்கப்பட்டுள்ளது.` : `Healthy monthly inflows of ${formatCompactMoney(monthlyInc, currency)}.`,
                 ]).map((str, idx) => (
                   <li key={idx} className="flex items-start gap-1.5 leading-snug">
-                    <span className="text-emerald-400 font-bold">•</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">•</span>
                     <span>{str}</span>
                   </li>
                 ))}
@@ -496,16 +496,16 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
             </div>
 
             {/* 2. Risks & Watchlist */}
-            <div className={`p-3 rounded-lg bg-rose-950/20 border border-rose-500/20 space-y-2 ${
+            <div className={`p-3.5 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-500/20 space-y-2 ${
               mobilePillarTab !== 'risks' ? 'hidden sm:block' : 'block'
             }`}>
-              <div className="flex items-center gap-1.5 border-b border-rose-500/20 pb-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                <h2 className="text-[11px] font-bold uppercase tracking-wider text-rose-400">
+              <div className="flex items-center gap-1.5 border-b border-rose-200 dark:border-rose-500/20 pb-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                <h2 className="text-[11px] font-bold uppercase tracking-wider text-rose-800 dark:text-rose-400">
                   {isTamil ? 'கவனம் தேவை (Watchlist)' : 'Financial Watchlist'}
                 </h2>
               </div>
-              <ul className="space-y-1.5 text-[11px] text-neutral-200">
+              <ul className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-200">
                 {(aiInsights?.risks || [
                   isTamil ? `வசூலாகாத நிலுவை பாக்கி: ${formatCompactMoney(totalPendingArrears, currency)}.` : `Uncollected arrears: ${formatCompactMoney(totalPendingArrears, currency)}.`,
                   inactiveSubscribers > 0 
@@ -514,7 +514,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
                   isTamil ? `அதிக செலவு: "${topExpense.name}" (${formatCompactMoney(topExpense.amount, currency)}).` : `Top expense: "${topExpense.name}" (${formatCompactMoney(topExpense.amount, currency)}).`,
                 ]).map((risk, idx) => (
                   <li key={idx} className="flex items-start gap-1.5 leading-snug">
-                    <span className="text-rose-400 font-bold">•</span>
+                    <span className="text-rose-600 dark:text-rose-400 font-bold">•</span>
                     <span>{risk}</span>
                   </li>
                 ))}
@@ -522,23 +522,23 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
             </div>
 
             {/* 3. Actionable Recommendations */}
-            <div className={`p-3 rounded-lg bg-indigo-950/20 border border-indigo-500/20 space-y-2 ${
+            <div className={`p-3.5 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-500/20 space-y-2 ${
               mobilePillarTab !== 'recommendations' ? 'hidden sm:block' : 'block'
             }`}>
-              <div className="flex items-center gap-1.5 border-b border-indigo-500/20 pb-1.5">
-                <Lightbulb className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                <h2 className="text-[11px] font-bold uppercase tracking-wider text-indigo-400">
+              <div className="flex items-center gap-1.5 border-b border-indigo-200 dark:border-indigo-500/20 pb-1.5">
+                <Lightbulb className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <h2 className="text-[11px] font-bold uppercase tracking-wider text-indigo-800 dark:text-indigo-400">
                   {isTamil ? 'ஆலோசனைகள் (Action Plan)' : 'Growth Action Plan'}
                 </h2>
               </div>
-              <ul className="space-y-1.5 text-[11px] text-neutral-200">
+              <ul className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-200">
                 {(aiInsights?.recommendations || [
                   isTamil ? `நிலுவை வைத்துள்ள வாடிக்கையாளர்களுக்கு Reminder SMS அனுப்பி பாக்கியை வசூலியுங்கள்.` : `Dispatch payment reminder SMS to accounts with arrears.`,
                   isTamil ? `Standard பேக்கேஜ் வாடிக்கையாளர்களை Premium HD பேக்கேஜிற்கு Upgrade செய்யுங்கள்.` : `Upsell Standard subscribers to Premium HD packages.`,
                   isTamil ? `செயலிழந்த வாடிக்கையாளர்களுக்கு மறு இணைப்பு சலுகை அறிவித்து மீண்டும் இணையுங்கள்.` : `Launch a zero-fee winback offer for disconnected customers.`,
                 ]).map((rec, idx) => (
                   <li key={idx} className="flex items-start gap-1.5 leading-snug">
-                    <span className="text-indigo-400 font-bold">•</span>
+                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">•</span>
                     <span>{rec}</span>
                   </li>
                 ))}
@@ -549,130 +549,130 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. CORE FINANCIAL KPI MATRIX (COMPACT 2x2 ON MOBILE, 4 ON TABLET/DESKTOP) */}
+      {/* 3. CORE FINANCIAL KPI MATRIX */}
       {/* ========================================================================= */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-            <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <BarChart3 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>{isTamil ? 'முக்கிய நிதி குறிகாட்டிகள்' : 'Core Financial Metrics'}</span>
           </h2>
-          <span className="text-[10px] text-neutral-500 font-mono">
+          <span className="text-[10px] text-slate-400 font-mono">
             {currency} • {isTamil ? 'நேரலை' : 'Live'}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
           {/* Tile 1: Net Cash Reserve */}
-          <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 space-y-1 hover:border-neutral-700 transition-all">
-            <div className="flex items-center justify-between text-[11px] text-neutral-400">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span className="truncate">{isTamil ? 'நிகர இருப்பு' : 'Net Reserve'}</span>
-              <Wallet className={`w-3.5 h-3.5 shrink-0 ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`} />
+              <Wallet className={`w-3.5 h-3.5 shrink-0 ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`} />
             </div>
-            <div className={`text-base sm:text-lg font-bold font-mono tracking-tight truncate ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <div className={`text-base sm:text-lg font-black font-mono tracking-tight truncate ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {formatCompactMoney(netBalance, currency)}
             </div>
-            <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1 border-t border-neutral-800 font-mono">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 font-mono">
               <span>{isTamil ? 'லாபம்' : 'Margin'}:</span>
-              <strong className="text-emerald-400">+{profitMarginPct}%</strong>
+              <strong className="text-emerald-600 dark:text-emerald-400">+{profitMarginPct}%</strong>
             </div>
           </div>
 
           {/* Tile 2: Current Month Net */}
-          <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 space-y-1 hover:border-neutral-700 transition-all">
-            <div className="flex items-center justify-between text-[11px] text-neutral-400">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span className="truncate">{isTamil ? 'நடப்பு மாத சேமிப்பு' : 'Monthly Net'}</span>
-              <Activity className="w-3.5 h-3.5 shrink-0 text-sky-400" />
+              <Activity className="w-3.5 h-3.5 shrink-0 text-sky-500" />
             </div>
-            <div className={`text-base sm:text-lg font-bold font-mono tracking-tight truncate ${monthlyNet >= 0 ? 'text-sky-400' : 'text-rose-400'}`}>
+            <div className={`text-base sm:text-lg font-black font-mono tracking-tight truncate ${monthlyNet >= 0 ? 'text-sky-600 dark:text-sky-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {monthlyNet >= 0 ? '+' : ''}{formatCompactMoney(monthlyNet, currency)}
             </div>
-            <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1 border-t border-neutral-800 font-mono">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 font-mono">
               <span>{isTamil ? 'விகிதம்' : 'Rate'}:</span>
-              <strong className="text-sky-400">{savingsRate}%</strong>
+              <strong className="text-sky-600 dark:text-sky-400">{savingsRate}%</strong>
             </div>
           </div>
 
           {/* Tile 3: Cable Collections */}
-          <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 space-y-1 hover:border-neutral-700 transition-all">
-            <div className="flex items-center justify-between text-[11px] text-neutral-400">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span className="truncate">{isTamil ? 'கட்டண வசூல்' : 'Collection'}</span>
-              <Receipt className="w-3.5 h-3.5 shrink-0 text-blue-400" />
+              <Receipt className="w-3.5 h-3.5 shrink-0 text-blue-500" />
             </div>
-            <div className="text-base sm:text-lg font-bold font-mono tracking-tight text-white flex items-baseline gap-1 truncate">
+            <div className="text-base sm:text-lg font-black font-mono tracking-tight text-slate-900 dark:text-white flex items-baseline gap-1 truncate">
               <span>{collectionRatePct}%</span>
-              <span className="text-[10px] text-neutral-400 font-normal">({aiInsights?.collectionGrade || 'A'})</span>
+              <span className="text-[10px] text-slate-400 font-normal">({aiInsights?.collectionGrade || 'A'})</span>
             </div>
-            <div className="w-full bg-neutral-800 h-1 rounded-full overflow-hidden mt-1">
-              <div style={{ width: `${Math.min(100, Number(collectionRatePct))}%` }} className="bg-blue-500 h-full rounded-full transition-all duration-500" />
+            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1">
+              <div style={{ width: `${Math.min(100, Number(collectionRatePct))}%` }} className="bg-blue-600 h-full rounded-full transition-all duration-500" />
             </div>
           </div>
 
           {/* Tile 4: Pending Arrears */}
-          <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 space-y-1 hover:border-neutral-700 transition-all">
-            <div className="flex items-center justify-between text-[11px] text-neutral-400">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span className="truncate">{isTamil ? 'நிலுவை பாக்கி' : 'Arrears'}</span>
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
             </div>
-            <div className="text-base sm:text-lg font-bold font-mono tracking-tight text-rose-400 truncate">
+            <div className="text-base sm:text-lg font-black font-mono tracking-tight text-rose-600 dark:text-rose-400 truncate">
               {formatCompactMoney(totalPendingArrears, currency)}
             </div>
-            <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1 border-t border-neutral-800 font-mono">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 font-mono">
               <span>{isTamil ? 'பாக்கி' : 'Pending'}:</span>
-              <span className="text-rose-400 font-bold">{formatCompactMoney(currentMonthPendingAmount, currency)}</span>
+              <span className="text-rose-600 dark:text-rose-400 font-bold">{formatCompactMoney(currentMonthPendingAmount, currency)}</span>
             </div>
           </div>
 
           {/* Tile 5: Subscribers & ARPU */}
-          <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 space-y-1 hover:border-neutral-700 transition-all">
-            <div className="flex items-center justify-between text-[11px] text-neutral-400">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span className="truncate">{isTamil ? 'சந்தாதாரர்கள்' : 'Subscribers'}</span>
-              <Users className="w-3.5 h-3.5 shrink-0 text-purple-400" />
+              <Users className="w-3.5 h-3.5 shrink-0 text-purple-500" />
             </div>
-            <div className="text-base sm:text-lg font-bold font-mono tracking-tight text-white truncate">
-              {activeSubscribers} <span className="text-[10px] text-neutral-400 font-normal">/ {totalSubscribers}</span>
+            <div className="text-base sm:text-lg font-black font-mono tracking-tight text-slate-900 dark:text-white truncate">
+              {activeSubscribers} <span className="text-[10px] text-slate-400 font-normal">/ {totalSubscribers}</span>
             </div>
-            <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1 border-t border-neutral-800 font-mono">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 font-mono">
               <span>ARPU:</span>
-              <strong className="text-purple-400 font-mono">Rs. {arpu}</strong>
+              <strong className="text-purple-600 dark:text-purple-400 font-mono">Rs. {arpu}</strong>
             </div>
           </div>
 
           {/* Tile 6: Forecast */}
-          <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-800 space-y-1 hover:border-neutral-700 transition-all">
-            <div className="flex items-center justify-between text-[11px] text-neutral-400">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span className="truncate">{isTamil ? 'அடுத்த மாத வரவு' : 'Next Inflow'}</span>
-              <Zap className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+              <Zap className="w-3.5 h-3.5 shrink-0 text-amber-500" />
             </div>
-            <div className="text-base sm:text-lg font-bold font-mono tracking-tight text-amber-400 truncate">
+            <div className="text-base sm:text-lg font-black font-mono tracking-tight text-amber-600 dark:text-amber-400 truncate">
               {formatCompactMoney(projectedNextMonthRevenue, currency)}
             </div>
-            <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1 border-t border-neutral-800 font-mono">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 font-mono">
               <span>{isTamil ? 'வீடுகள்' : 'Homes'}:</span>
-              <span className="text-amber-400 font-bold">{activeSubscribers}</span>
+              <span className="text-amber-600 dark:text-amber-400 font-bold">{activeSubscribers}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. PACKAGE DISTRIBUTION & MONTHLY CASHFLOW HISTORY (COMPACT GRID) */}
+      {/* 4. PACKAGE DISTRIBUTION & MONTHLY CASHFLOW HISTORY */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Cable Package Distribution Card */}
-        <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-900 border border-neutral-800 space-y-2.5 shadow-xs">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-            <div className="flex items-center gap-1.5">
-              <Tv className="w-3.5 h-3.5 text-indigo-400" />
-              <h2 className="text-xs font-bold text-white">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <Tv className="w-4 h-4 text-indigo-500" />
+              <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                 {isTamil ? 'கேபிள் பேக்கேஜ் சந்தாதாரர் பகிர்வு' : 'TV Package Distribution'}
               </h2>
             </div>
-            <span className="text-[10px] text-neutral-400 font-mono">{packageStats.length} {isTamil ? 'பேக்கேஜ்கள்' : 'tiers'}</span>
+            <span className="text-[10px] text-slate-400 font-mono">{packageStats.length} {isTamil ? 'பேக்கேஜ்கள்' : 'tiers'}</span>
           </div>
 
           {packageStats.length === 0 ? (
-            <p className="text-[11px] text-neutral-500 text-center py-4">
+            <p className="text-[11px] text-slate-400 text-center py-4">
               {isTamil ? 'பேக்கேஜ் விபரங்கள் இல்லை.' : 'No package assignments.'}
             </p>
           ) : (
@@ -680,20 +680,20 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
               {packageStats.map((pkg, idx) => {
                 const pct = totalSubscribers > 0 ? ((pkg.count / totalSubscribers) * 100).toFixed(1) : '0';
                 return (
-                  <div key={idx} className="p-2 rounded-lg bg-neutral-950 border border-neutral-850 space-y-1">
+                  <div key={idx} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-850 space-y-1.5 shadow-2xs">
                     <div className="flex items-center justify-between text-[11px]">
                       <div className="flex items-center gap-1.5 truncate">
                         <span className="w-2 h-2 rounded-full bg-indigo-500 inline-block shrink-0" />
-                        <span className="font-semibold text-white truncate">{pkg.name}</span>
-                        <span className="text-[10px] text-neutral-400 font-mono shrink-0">({pkg.count})</span>
+                        <span className="font-semibold text-slate-900 dark:text-white truncate">{pkg.name}</span>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">({pkg.count})</span>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-mono text-emerald-400 font-semibold">{formatCompactMoney(pkg.totalFee, currency)}</span>
-                        <span className="text-neutral-500 text-[10px] ml-1 font-mono">({pct}%)</span>
+                        <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{formatCompactMoney(pkg.totalFee, currency)}</span>
+                        <span className="text-slate-400 text-[10px] ml-1 font-mono">({pct}%)</span>
                       </div>
                     </div>
-                    <div className="h-1 w-full bg-neutral-850 rounded-full overflow-hidden">
-                      <div style={{ width: `${pct}%` }} className="h-full bg-indigo-500 rounded-full" />
+                    <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div style={{ width: `${pct}%` }} className="h-full bg-indigo-600 rounded-full" />
                     </div>
                   </div>
                 );
@@ -703,44 +703,44 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
         </div>
 
         {/* Monthly Cashflow History Comparison */}
-        <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-900 border border-neutral-800 space-y-2.5 shadow-xs">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-              <h2 className="text-xs font-bold text-white">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                 {isTamil ? 'மாதாந்திர பணப்புழக்க வரலாறு (6 மாதங்கள்)' : 'Monthly Cashflow History'}
               </h2>
             </div>
-            <span className="text-[10px] text-neutral-400 font-mono">{isTamil ? 'வரவு vs செலவு' : 'In vs Out'}</span>
+            <span className="text-[10px] text-slate-400 font-mono">{isTamil ? 'வரவு vs செலவு' : 'In vs Out'}</span>
           </div>
 
           {!analytics?.monthlyCashflowHistory || analytics.monthlyCashflowHistory.length === 0 ? (
-            <p className="text-[11px] text-neutral-500 text-center py-4">
+            <p className="text-[11px] text-slate-400 text-center py-4">
               {isTamil ? 'வரலாற்றுப் பதிவுகள் இல்லை.' : 'Insufficient data.'}
             </p>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {analytics.monthlyCashflowHistory.slice(-5).map((item, idx) => {
                 const maxVal = Math.max(...analytics.monthlyCashflowHistory.map((m) => Math.max(m.income, m.expense, 1)));
                 const incPct = (item.income / maxVal) * 100;
                 const expPct = (item.expense / maxVal) * 100;
                 return (
-                  <div key={idx} className="p-1.5 sm:p-2 rounded-lg bg-neutral-950 border border-neutral-850 space-y-1">
+                  <div key={idx} className="p-2 sm:p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-850 space-y-1.5 shadow-2xs">
                     <div className="flex items-center justify-between text-[11px] font-mono">
-                      <span className="font-bold text-white">{item.month}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{item.month}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-emerald-400">+{formatCompactMoney(item.income, currency)}</span>
-                        <span className="text-rose-400">-{formatCompactMoney(item.expense, currency)}</span>
-                        <span className={`font-bold ${item.net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <span className="text-emerald-600 dark:text-emerald-400">+{formatCompactMoney(item.income, currency)}</span>
+                        <span className="text-rose-600 dark:text-rose-400">-{formatCompactMoney(item.expense, currency)}</span>
+                        <span className={`font-bold ${item.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {item.net >= 0 ? '+' : ''}{formatCompactMoney(item.net, currency)}
                         </span>
                       </div>
                     </div>
                     <div className="space-y-0.5">
-                      <div className="h-0.5 w-full bg-neutral-850 rounded-full overflow-hidden">
+                      <div className="h-1 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div style={{ width: `${incPct}%` }} className="h-full bg-emerald-500 rounded-full" />
                       </div>
-                      <div className="h-0.5 w-full bg-neutral-850 rounded-full overflow-hidden">
+                      <div className="h-1 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div style={{ width: `${expPct}%` }} className="h-full bg-rose-500 rounded-full" />
                       </div>
                     </div>
@@ -753,25 +753,25 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 5. INCOME & EXPENSE CATEGORY BREAKDOWN (COMPACT GRID) */}
+      {/* 5. INCOME & EXPENSE CATEGORY BREAKDOWN */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Income Categories */}
-        <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-900 border border-neutral-800 space-y-2.5 shadow-xs">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-            <div className="flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-              <h2 className="text-xs font-bold text-white">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                 {isTamil ? 'வருமானப் பிரிவுகள்' : 'Income Categories'}
               </h2>
             </div>
-            <span className="text-[11px] font-mono font-bold text-emerald-400">
+            <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
               +{formatCompactMoney(totalIncomeSum, currency)}
             </span>
           </div>
 
           {Object.keys(incCatMap).length === 0 ? (
-            <p className="text-[11px] text-neutral-500 text-center py-4">
+            <p className="text-[11px] text-slate-400 text-center py-4">
               {isTamil ? 'வருமானப் பிரிவுகள் இல்லை.' : 'No income categories.'}
             </p>
           ) : (
@@ -779,18 +779,18 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
               {Object.values(incCatMap).map((cat, idx) => {
                 const pct = totalIncomeSum > 0 ? ((cat.amount / totalIncomeSum) * 100).toFixed(1) : '0';
                 return (
-                  <div key={idx} className="p-2 rounded-lg bg-neutral-950 border border-neutral-850 space-y-1">
+                  <div key={idx} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-850 space-y-1.5 shadow-2xs">
                     <div className="flex items-center justify-between text-[11px]">
                       <div className="flex items-center gap-1.5 truncate">
-                        <span style={{ backgroundColor: cat.color }} className="w-2 h-2 rounded-full inline-block shrink-0" />
-                        <span className="font-medium text-white truncate">{cat.name}</span>
-                        <span className="text-[10px] text-neutral-500 font-mono shrink-0">({cat.count})</span>
+                        <span style={{ backgroundColor: cat.color }} className="w-2.5 h-2.5 rounded-full inline-block shrink-0" />
+                        <span className="font-semibold text-slate-900 dark:text-white truncate">{cat.name}</span>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">({cat.count})</span>
                       </div>
-                      <div className="font-mono text-emerald-400 font-semibold shrink-0">
-                        +{formatCompactMoney(cat.amount, currency)} <span className="text-neutral-500 text-[10px]">({pct}%)</span>
+                      <div className="font-mono text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
+                        +{formatCompactMoney(cat.amount, currency)} <span className="text-slate-400 text-[10px]">({pct}%)</span>
                       </div>
                     </div>
-                    <div className="h-1 w-full bg-neutral-850 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div style={{ width: `${pct}%`, backgroundColor: cat.color }} className="h-full rounded-full" />
                     </div>
                   </div>
@@ -801,21 +801,21 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
         </div>
 
         {/* Expense Categories */}
-        <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-900 border border-neutral-800 space-y-2.5 shadow-xs">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-            <div className="flex items-center gap-1.5">
-              <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
-              <h2 className="text-xs font-bold text-white">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <TrendingDown className="w-4 h-4 text-rose-500" />
+              <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                 {isTamil ? 'செலவுப் பிரிவுகள்' : 'Expense Categories'}
               </h2>
             </div>
-            <span className="text-[11px] font-mono font-bold text-rose-400">
+            <span className="text-[11px] font-mono font-bold text-rose-600 dark:text-rose-400">
               -{formatCompactMoney(totalExpenseSum, currency)}
             </span>
           </div>
 
           {Object.keys(expCatMap).length === 0 ? (
-            <p className="text-[11px] text-neutral-500 text-center py-4">
+            <p className="text-[11px] text-slate-400 text-center py-4">
               {isTamil ? 'செலவுப் பிரிவுகள் இல்லை.' : 'No expense categories.'}
             </p>
           ) : (
@@ -823,18 +823,18 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
               {Object.values(expCatMap).map((cat, idx) => {
                 const pct = totalExpenseSum > 0 ? ((cat.amount / totalExpenseSum) * 100).toFixed(1) : '0';
                 return (
-                  <div key={idx} className="p-2 rounded-lg bg-neutral-950 border border-neutral-850 space-y-1">
+                  <div key={idx} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-850 space-y-1.5 shadow-2xs">
                     <div className="flex items-center justify-between text-[11px]">
                       <div className="flex items-center gap-1.5 truncate">
-                        <span style={{ backgroundColor: cat.color }} className="w-2 h-2 rounded-full inline-block shrink-0" />
-                        <span className="font-medium text-white truncate">{cat.name}</span>
-                        <span className="text-[10px] text-neutral-500 font-mono shrink-0">({cat.count})</span>
+                        <span style={{ backgroundColor: cat.color }} className="w-2.5 h-2.5 rounded-full inline-block shrink-0" />
+                        <span className="font-semibold text-slate-900 dark:text-white truncate">{cat.name}</span>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">({cat.count})</span>
                       </div>
-                      <div className="font-mono text-rose-400 font-semibold shrink-0">
-                        -{formatCompactMoney(cat.amount, currency)} <span className="text-neutral-500 text-[10px]">({pct}%)</span>
+                      <div className="font-mono text-rose-600 dark:text-rose-400 font-bold shrink-0">
+                        -{formatCompactMoney(cat.amount, currency)} <span className="text-slate-400 text-[10px]">({pct}%)</span>
                       </div>
                     </div>
-                    <div className="h-1 w-full bg-neutral-850 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div style={{ width: `${pct}%`, backgroundColor: cat.color }} className="h-full rounded-full" />
                     </div>
                   </div>

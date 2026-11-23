@@ -639,12 +639,14 @@ Monthly bills or payment records are not created for new subscribers during thei
       {/* Header with PERIOD Month Quick Filters Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-            <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
             <span>Monthly Subscription Payments</span>
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-0.5 sm:mt-1">
-            Collect subscriber monthly fees, track billing cycles, and auto-sync income to MongoDB Atlas.
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Collect subscriber monthly fees, track billing cycles, and auto-sync income to financial ledgers
           </p>
         </div>
 
@@ -653,86 +655,86 @@ Monthly bills or payment records are not created for new subscribers during thei
           <button
             type="button"
             onClick={() => setShowPaymentForms(!showPaymentForms)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer bg-neutral-900 border-neutral-800 text-neutral-200 hover:text-white hover:border-neutral-700 shadow-xs shrink-0"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs shrink-0"
           >
-            <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
+            <PlusCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>{showPaymentForms ? 'Hide Forms' : '+ Record Payment / Bulk'}</span>
-            {showPaymentForms ? <ChevronUp className="w-3 h-3 text-neutral-400" /> : <ChevronDown className="w-3 h-3 text-neutral-400" />}
+            {showPaymentForms ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
           </button>
 
           {/* PERIOD: Month Pills Filter Strip (Only Months with Real Data) */}
           {periodMonthOptions.length > 0 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none">
               {/* PERIOD Label Badge */}
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-full text-xs font-bold text-indigo-400 font-mono shrink-0 shadow-sm">
-                <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono shrink-0 shadow-xs">
+                <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                 <span>PERIOD:</span>
               </div>
 
-            {/* Month Pills (Only Months with Data) */}
-            {periodMonthOptions.map((mStr) => {
-              const isSelected = selectedMonthFilter === mStr;
-              const { monthName, year } = formatMonthPill(mStr);
-              return (
-                <button
-                  key={mStr}
-                  onClick={() => setSelectedMonthFilter(mStr)}
-                  className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
-                    isSelected
-                      ? 'bg-neutral-900 border border-emerald-500/50 text-white font-bold ring-1 ring-emerald-500/30 shadow-md'
-                      : 'bg-neutral-900/60 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700'
-                  }`}
-                >
-                  <span className="font-bold">{monthName}</span>
-                  <span className="text-[10px] text-neutral-500 font-mono">{year}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+              {/* Month Pills (Only Months with Data) */}
+              {periodMonthOptions.map((mStr) => {
+                const isSelected = selectedMonthFilter === mStr;
+                const { monthName, year } = formatMonthPill(mStr);
+                return (
+                  <button
+                    key={mStr}
+                    onClick={() => setSelectedMonthFilter(mStr)}
+                    className={`px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-400/50 text-emerald-700 dark:text-emerald-400 font-bold shadow-xs'
+                        : 'bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <span className="font-bold">{monthName}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{year}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Expected */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-sm flex items-center justify-between">
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">Total Monthly Dues</p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Monthly Dues</p>
             <p className="text-2xl font-black font-mono text-slate-900 dark:text-white mt-1">
               {formatMoney(totalExpected, currency)}
             </p>
-            <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-0.5">Filtered Records ({filteredPayments.length})</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Filtered Records ({filteredPayments.length})</p>
           </div>
-          <div className="p-3 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
+          <div className="p-3.5 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-2xl text-blue-600 dark:text-blue-400">
             <DollarSign className="w-5 h-5" />
           </div>
         </div>
 
         {/* Total Collected */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-sm flex items-center justify-between">
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">Total Dues Collected</p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Dues Collected</p>
             <p className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">
               {formatMoney(totalCollected, currency)}
             </p>
-            <p className="text-[11px] text-emerald-600/80 dark:text-emerald-500/80 mt-0.5">Synced to Income Ledger</p>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-500/80 mt-1 font-medium">Synced to Income Ledger</p>
           </div>
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400">
+          <div className="p-3.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
 
         {/* Outstanding Dues */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-sm flex items-center justify-between">
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">Outstanding Dues</p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Outstanding Dues</p>
             <p className="text-2xl font-black font-mono text-rose-600 dark:text-rose-400 mt-1">
               {formatMoney(totalOutstanding, currency)}
             </p>
-            <p className="text-[11px] text-rose-500/80 dark:text-rose-400/80 mt-0.5">Pending Subscriber Balance</p>
+            <p className="text-[11px] text-rose-600 dark:text-rose-400/80 mt-1 font-medium">Pending Subscriber Balance</p>
           </div>
-          <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400">
+          <div className="p-3.5 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-2xl text-rose-600 dark:text-rose-400">
             <Clock className="w-5 h-5" />
           </div>
         </div>
@@ -743,466 +745,464 @@ Monthly bills or payment records are not created for new subscribers during thei
         {/* 1. Left Column: Individual Form & Admin Bulk Dues Generator */}
         {showPaymentForms && (
           <div className="xl:col-span-4 space-y-6">
-          {/* Individual Payment Form */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-800 pb-3">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <PlusCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                <span>Record Monthly Payment</span>
-              </h2>
-              <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-md">
-                Auto Income Sync
-              </span>
-            </div>
-
-            {errorMsg && (
-              <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs rounded-xl flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreatePayment} className="space-y-4 text-xs">
-              {/* Customer Dropdown */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-slate-700 dark:text-neutral-300 font-semibold">Select Customer *</label>
-                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-1.5 py-0.5 rounded-md">
-                    Active Subscribers Only
-                  </span>
-                </div>
-                <select
-                  required
-                  value={selectedCustomerId}
-                  onChange={(e) => handleCustomerSelect(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="">-- Choose Registered Active Customer --</option>
-                  {customers
-                    .filter((c) => (c.status || 'ACTIVE') === 'ACTIVE')
-                    .map((c) => {
-                      const cRegMonth = getRegistrationMonth(c.createdAt);
-                      const isRegisteredThisMonth = cRegMonth === currentMonthStr;
-                      return (
-                        <option key={c.id} value={c.id}>
-                          {c.name} (Box: {c.boxNo})
-                          {isRegisteredThisMonth
-                            ? ` • [New - Registered This Month: ${cRegMonth}]`
-                            : cRegMonth
-                            ? ` • [Joined: ${cRegMonth}]`
-                            : ''}
-                        </option>
-                      );
-                    })}
-                </select>
-              </div>
-
-              {/* Box No and Registration Info Display */}
-              {selectedCustomer && (
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-850 space-y-2">
-                  <div className="flex items-center justify-between text-slate-700 dark:text-neutral-300 text-xs">
-                    <span className="text-slate-500 dark:text-neutral-400 font-medium">Assigned Box No:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">{selectedCustomer.boxNo}</span>
-                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
-                        (selectedCustomer.status || 'ACTIVE') === 'ACTIVE'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
-                          : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30'
-                      }`}>
-                        {selectedCustomer.status || 'ACTIVE'}
-                      </span>
-                    </div>
-                  </div>
-                  {selectedCustomerRegMonth && (
-                    <div className="flex items-center justify-between text-[11px] border-t border-slate-200 dark:border-neutral-850 pt-1.5 text-slate-500 dark:text-neutral-400">
-                      <span>Registration Month:</span>
-                      <span className="font-mono font-medium text-slate-800 dark:text-neutral-200 flex items-center gap-1.5">
-                        {formatYearMonthDisplay(selectedCustomerRegMonth)} ({selectedCustomerRegMonth})
-                        {selectedCustomerRegMonth === currentMonthStr && (
-                          <span className="text-[10px] text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 px-1.5 py-0.2 rounded font-sans font-bold">
-                            Current Month
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  )}
-                  {minEligibleMonth && (
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-neutral-400">
-                      <span>Eligible Monthly Bills From:</span>
-                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                        {formatYearMonthDisplay(minEligibleMonth)} ({minEligibleMonth})
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Assigned Cable Package Display */}
-                  <div className="flex items-center justify-between text-[11px] border-t border-slate-200 dark:border-neutral-850 pt-1.5 text-slate-500 dark:text-neutral-400">
-                    <span className="flex items-center gap-1 font-medium">
-                      <Tv className="w-3 h-3 text-emerald-500" />
-                      <span>Assigned TV Package:</span>
-                    </span>
-                    {(() => {
-                      const pkg = getCustomerPackage(selectedCustomer.id || selectedCustomer.boxNo);
-                      const isPrem = pkg.packageId === 'PREMIUM_HD';
-                      const isBasic = pkg.packageId === 'BASIC';
-                      return (
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                          isPrem
-                            ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
-                            : isBasic
-                            ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
-                            : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
-                        }`}>
-                          {isPrem && <Crown className="w-2.5 h-2.5 text-amber-500" />}
-                          <span>{pkg.packageName}</span>
-                          <span className="font-mono text-[9px] opacity-80 font-bold">({formatMoney(pkg.monthlyFee, currency)}/mo)</span>
-                        </span>
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              {/* Payment Month */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-slate-700 dark:text-neutral-300 font-semibold">Payment Month *</label>
-                  {minEligibleMonth && (
-                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono font-semibold">
-                      Earliest: {minEligibleMonth}
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="month"
-                  required
-                  min={minEligibleMonth || undefined}
-                  value={month}
-                  onChange={(e) => setMonth(e.target.value)}
-                  className={`w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none ${
-                    isDuplicateMonth
-                      ? 'border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30'
-                      : isSelectedMonthIneligible
-                      ? 'border-amber-500 focus:border-amber-500 ring-1 ring-amber-500/30'
-                      : 'border-slate-200 dark:border-neutral-800 focus:border-emerald-500'
-                  }`}
-                />
-              </div>
-
-              {/* Duplicate Month Warning Banner */}
-              {isDuplicateMonth && existingDuplicatePayment && (
-                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-500/40 text-rose-800 dark:text-rose-200 space-y-2.5">
-                  <div className="flex items-start gap-2.5">
-                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                    <div className="space-y-1 text-xs flex-1">
-                      <p className="font-bold text-rose-800 dark:text-rose-300">
-                        Monthly Bill Already Exists for {formatYearMonthDisplay(month)} ({month})
-                      </p>
-                      <p className="text-[11px] text-slate-600 dark:text-neutral-300 leading-normal">
-                        A monthly bill for <strong className="text-slate-900 dark:text-white font-semibold">{selectedCustomer?.name}</strong> (Box {selectedCustomer?.boxNo}) is already recorded for this month. Creating duplicate bills for the same month is not allowed.
-                      </p>
-                      
-                    </div>
-                  </div>
-                  
-                </div>
-              )}
-
-              {/* Ineligible Month Warning Banner */}
-              {isSelectedMonthIneligible && (
-                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/40 flex items-start gap-2.5 text-amber-800 dark:text-amber-200">
-                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                  <div className="space-y-1 text-xs">
-                    <p className="font-semibold text-amber-800 dark:text-amber-300">
-                      Ineligible Month: {formatYearMonthDisplay(month)} ({month})
-                    </p>
-                    <p className="text-[11px] text-slate-600 dark:text-neutral-300 leading-normal">
-                      {selectedCustomer?.name} registered in <strong className="text-slate-900 dark:text-white font-medium">{formatYearMonthDisplay(selectedCustomerRegMonth)} ({selectedCustomerRegMonth})</strong>.
-                      Monthly bills or payment records cannot be created for the registration month or any months prior.
-                    </p>
-                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-mono font-semibold">
-                      First eligible billing month is {formatYearMonthDisplay(minEligibleMonth)} ({minEligibleMonth}).
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Financial Dues */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-slate-700 dark:text-neutral-300 font-semibold">Monthly Fee ({currency}) *</label>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 px-1.5 py-0.5 rounded-md shadow-xs">
-                      <Lock className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>Locked (Package)</span>
-                    </span>
-                  </div>
-                  <input
-                    type="number"
-                    step="0.01"
-                    readOnly
-                    disabled
-                    value={monthlyFee}
-                    className="w-full px-3 py-2 bg-slate-100 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-600 dark:text-neutral-400 font-mono cursor-not-allowed select-none opacity-85"
-                    title="Monthly fee is fixed by the customer's TV package and cannot be edited"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">Paid Amount (LKR)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Balance Badge */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 flex items-center justify-between">
-                <span className="text-slate-600 dark:text-neutral-400 font-semibold">Calculated Balance Due:</span>
-                <span className={`font-mono font-bold text-sm ${
-                  calculatedFormBalance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                }`}>
-                  {formatMoney(calculatedFormBalance, currency)}
-                </span>
-              </div>
-
-              {/* Payment Date */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-slate-700 dark:text-neutral-300 font-semibold">Payment Date</label>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 px-1.5 py-0.5 rounded-md shadow-xs">
-                    <Lock className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Locked (Today)</span>
-                  </span>
-                </div>
-                <input
-                  type="date"
-                  readOnly
-                  disabled
-                  value={paymentDate}
-                  className="w-full px-3 py-2 bg-slate-100 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-500 dark:text-neutral-400 font-mono cursor-not-allowed select-none opacity-85"
-                  title="Payment date cannot be edited (automatically recorded with current date)"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting || isSelectedMonthIneligible || isSelectedCustomerInactive || isDuplicateMonth}
-                className={`w-full py-2.5 px-4 text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 ${
-                  isSelectedMonthIneligible || isSelectedCustomerInactive || isDuplicateMonth
-                    ? 'bg-slate-100 dark:bg-neutral-800 text-slate-400 dark:text-neutral-500 cursor-not-allowed border border-slate-200 dark:border-neutral-700'
-                    : 'text-white bg-emerald-600 hover:bg-emerald-500 cursor-pointer active:scale-95'
-                }`}
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>
-                  {isSubmitting
-                    ? 'Recording...'
-                    : isSelectedCustomerInactive
-                    ? 'Customer is Inactive (Only Active Customers Eligible)'
-                    : isSelectedMonthIneligible
-                    ? 'Ineligible Billing Month (Select Next Month)'
-                    : isDuplicateMonth
-                    ? `Bill Already Exists for ${month} (Duplicate Not Allowed)`
-                    : 'Record Monthly Payment'}
-                </span>
-              </button>
-            </form>
-          </div>
-
-          {/* 2. Admin-Only Per-Month Bulk Dues Generator */}
-          {currentUser?.role === 'ADMIN' && (
-            <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-indigo-200 dark:border-indigo-500/30 space-y-4 shadow-sm relative overflow-hidden">
-              {/* Card Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-800 pb-3">
-                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <span>Bulk Create Monthly Bills</span>
+            {/* Individual Payment Form */}
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3.5">
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <PlusCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Record Monthly Payment</span>
                 </h2>
-                <span className="text-[10px] font-mono font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
-                  <span>ADMIN ACCESS ONLY</span>
+                <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                  Auto Sync
                 </span>
               </div>
 
-              <p className="text-xs text-slate-500 dark:text-neutral-400 leading-normal">
-                Auto-create monthly dues for active subscribers for the selected month. <strong className="text-emerald-700 dark:text-emerald-400 font-semibold">Subscribers registered in {bulkMonth} or later are skipped</strong> (monthly billing begins after registration month), and existing bills are skipped.
-              </p>
+              {errorMsg && (
+                <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs rounded-xl flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
-              <form onSubmit={handleBulkCreateMonthlyPayments} className="space-y-4 text-xs">
-                {/* Target Month & Auto Package Pricing */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <form onSubmit={handleCreatePayment} className="space-y-4 text-xs">
+                {/* Customer Dropdown */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold">Select Customer *</label>
+                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-md">
+                      Active Subscribers
+                    </span>
+                  </div>
+                  <select
+                    required
+                    value={selectedCustomerId}
+                    onChange={(e) => handleCustomerSelect(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
+                  >
+                    <option value="">-- Choose Registered Active Customer --</option>
+                    {customers
+                      .filter((c) => (c.status || 'ACTIVE') === 'ACTIVE')
+                      .map((c) => {
+                        const cRegMonth = getRegistrationMonth(c.createdAt);
+                        const isRegisteredThisMonth = cRegMonth === currentMonthStr;
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {c.name} (Box: {c.boxNo})
+                            {isRegisteredThisMonth
+                              ? ` • [New - Registered This Month: ${cRegMonth}]`
+                              : cRegMonth
+                              ? ` • [Joined: ${cRegMonth}]`
+                              : ''}
+                          </option>
+                        );
+                      })}
+                  </select>
+                </div>
+
+                {/* Box No and Registration Info Display */}
+                {selectedCustomer && (
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">Assigned Box No:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">{selectedCustomer.boxNo}</span>
+                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+                          (selectedCustomer.status || 'ACTIVE') === 'ACTIVE'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
+                            : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30'
+                        }`}>
+                          {selectedCustomer.status || 'ACTIVE'}
+                        </span>
+                      </div>
+                    </div>
+                    {selectedCustomerRegMonth && (
+                      <div className="flex items-center justify-between text-[11px] border-t border-slate-200/80 dark:border-slate-800/80 pt-1.5 text-slate-500 dark:text-slate-400">
+                        <span>Registration Month:</span>
+                        <span className="font-mono font-medium text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          {formatYearMonthDisplay(selectedCustomerRegMonth)} ({selectedCustomerRegMonth})
+                          {selectedCustomerRegMonth === currentMonthStr && (
+                            <span className="text-[10px] text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 px-1.5 py-0.2 rounded font-sans font-bold">
+                              Current Month
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {minEligibleMonth && (
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                        <span>Eligible Monthly Bills From:</span>
+                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                          {formatYearMonthDisplay(minEligibleMonth)} ({minEligibleMonth})
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Assigned Cable Package Display */}
+                    <div className="flex items-center justify-between text-[11px] border-t border-slate-200/80 dark:border-slate-800/80 pt-1.5 text-slate-500 dark:text-slate-400">
+                      <span className="flex items-center gap-1 font-medium">
+                        <Tv className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        <span>Assigned TV Package:</span>
+                      </span>
+                      {(() => {
+                        const pkg = getCustomerPackage(selectedCustomer.id || selectedCustomer.boxNo);
+                        const isPrem = pkg.packageId === 'PREMIUM_HD';
+                        const isBasic = pkg.packageId === 'BASIC';
+                        return (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            isPrem
+                              ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
+                              : isBasic
+                              ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+                          }`}>
+                            {isPrem && <Crown className="w-2.5 h-2.5 text-amber-500" />}
+                            <span>{pkg.packageName}</span>
+                            <span className="font-mono text-[9px] opacity-80 font-bold">({formatMoney(pkg.monthlyFee, currency)}/mo)</span>
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment Month */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold">Payment Month *</label>
+                    {minEligibleMonth && (
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono font-semibold">
+                        Earliest: {minEligibleMonth}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="month"
+                    required
+                    min={minEligibleMonth || undefined}
+                    value={month}
+                    onChange={(e) => setMonth(e.target.value)}
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none transition-all ${
+                      isDuplicateMonth
+                        ? 'border-rose-500 focus:border-rose-500 ring-2 ring-rose-500/20'
+                        : isSelectedMonthIneligible
+                        ? 'border-amber-500 focus:border-amber-500 ring-2 ring-amber-500/20'
+                        : 'border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500'
+                    }`}
+                  />
+                </div>
+
+                {/* Duplicate Month Warning Banner */}
+                {isDuplicateMonth && existingDuplicatePayment && (
+                  <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-500/40 text-rose-800 dark:text-rose-200 space-y-2">
+                    <div className="flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                      <div className="space-y-1 text-xs flex-1">
+                        <p className="font-bold text-rose-800 dark:text-rose-300">
+                          Monthly Bill Already Exists for {formatYearMonthDisplay(month)} ({month})
+                        </p>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal">
+                          A monthly bill for <strong className="text-slate-900 dark:text-white font-semibold">{selectedCustomer?.name}</strong> (Box {selectedCustomer?.boxNo}) is already recorded for this month.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ineligible Month Warning Banner */}
+                {isSelectedMonthIneligible && (
+                  <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-500/40 flex items-start gap-2.5 text-amber-800 dark:text-amber-200">
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1 text-xs">
+                      <p className="font-semibold text-amber-800 dark:text-amber-300">
+                        Ineligible Month: {formatYearMonthDisplay(month)} ({month})
+                      </p>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal">
+                        {selectedCustomer?.name} registered in <strong className="text-slate-900 dark:text-white font-medium">{formatYearMonthDisplay(selectedCustomerRegMonth)} ({selectedCustomerRegMonth})</strong>. Monthly bills begin after registration month.
+                      </p>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-mono font-semibold">
+                        First eligible billing month is {formatYearMonthDisplay(minEligibleMonth)} ({minEligibleMonth}).
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Financial Dues */}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-700 dark:text-neutral-300 font-semibold mb-1">Target Month *</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold">Monthly Fee ({currency}) *</label>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 px-1.5 py-0.5 rounded-md shadow-2xs">
+                        <Lock className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Package Rate</span>
+                      </span>
+                    </div>
                     <input
-                      type="month"
-                      required
-                      value={bulkMonth}
-                      onChange={(e) => setBulkMonth(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-indigo-500"
+                      type="number"
+                      step="0.01"
+                      readOnly
+                      disabled
+                      value={monthlyFee}
+                      className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-400 font-mono cursor-not-allowed select-none opacity-85"
+                      title="Monthly fee is fixed by the customer's TV package and cannot be edited"
                     />
                   </div>
+
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-slate-700 dark:text-neutral-300 font-semibold">Package-Based Billing</label>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 px-1.5 py-0.5 rounded-md shadow-xs">
-                        <Tv className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />
-                        <span>Auto-Package Rates</span>
-                      </span>
-                    </div>
-                    <div className="w-full px-3 py-2 bg-slate-100 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-700 dark:text-neutral-300 text-xs flex items-center justify-between">
-                      <span className="text-slate-500 dark:text-neutral-400 font-medium">Applied Fee:</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono text-[11px]">By Assigned TV Package</span>
-                    </div>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Paid Amount ({currency})</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={paidAmount}
+                      onChange={(e) => setPaidAmount(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    />
                   </div>
                 </div>
 
-                {/* Pre-Generation Live Status Box */}
-                <div className="p-3 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-850 rounded-xl space-y-2 text-xs">
-                  <div className="flex items-center justify-between text-slate-500 dark:text-neutral-400 font-sans">
-                    <span className="font-semibold text-slate-700 dark:text-neutral-300">Target Billing Period:</span>
-                    <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold">{formatYearMonthDisplay(bulkMonth)} ({bulkMonth})</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center text-[11px] pt-1.5 border-t border-slate-200 dark:border-neutral-850">
-                    <div className="p-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800">
-                      <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-sans block uppercase font-bold">Active</span>
-                      <span className="font-bold text-slate-900 dark:text-white font-mono">{activeSubscribersList.length}</span>
-                    </div>
-                    <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-neutral-900 border border-emerald-200 dark:border-neutral-800">
-                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-sans block uppercase font-bold">Eligible</span>
-                      <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono">{bulkEstimatedEligibleCount}</span>
-                    </div>
-                    <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-neutral-900 border border-amber-200 dark:border-neutral-800">
-                      <span className="text-[10px] text-amber-800 dark:text-amber-400 font-sans block uppercase font-bold">Excluded (New)</span>
-                      <span className="font-bold text-amber-800 dark:text-amber-400 font-mono">{bulkExcludedNewSubscribers.length}</span>
-                    </div>
-                  </div>
+                {/* Balance Badge */}
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-slate-400 font-semibold">Calculated Balance Due:</span>
+                  <span className={`font-mono font-bold text-sm ${
+                    calculatedFormBalance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                  }`}>
+                    {formatMoney(calculatedFormBalance, currency)}
+                  </span>
+                </div>
 
-                  {bulkEstimatedEligibleCount > 0 && (
-                    <div className="pt-1.5 border-t border-slate-200 dark:border-neutral-850 flex items-center justify-between text-[11px]">
-                      <span className="text-slate-500 dark:text-neutral-400 font-medium">Projected Monthly Revenue:</span>
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                        {formatMoney(bulkProjectedRevenue, currency)}
-                      </span>
-                    </div>
-                  )}
-
-                  {bulkExcludedNewSubscribers.length > 0 && (
-                    <div className="pt-1 text-[11px] text-amber-800 dark:text-amber-300 font-sans flex items-start gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                      <span>
-                        <strong>{bulkExcludedNewSubscribers.length} new subscriber(s)</strong> registered in {bulkMonth} or later will not receive bills for {bulkMonth} (monthly billing starts after registration month).
-                      </span>
-                    </div>
-                  )}
+                {/* Payment Date */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold">Payment Date</label>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 px-1.5 py-0.5 rounded-md shadow-2xs">
+                      <Lock className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Today</span>
+                    </span>
+                  </div>
+                  <input
+                    type="date"
+                    readOnly
+                    disabled
+                    value={paymentDate}
+                    className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 dark:text-slate-400 font-mono cursor-not-allowed select-none opacity-85"
+                    title="Payment date cannot be edited (automatically recorded with current date)"
+                  />
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isBulkSubmitting}
-                  className="w-full py-2.5 px-4 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  disabled={isSubmitting || isSelectedMonthIneligible || isSelectedCustomerInactive || isDuplicateMonth}
+                  className={`w-full py-2.5 px-4 text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 ${
+                    isSelectedMonthIneligible || isSelectedCustomerInactive || isDuplicateMonth
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+                      : 'text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 cursor-pointer active:scale-98'
+                  }`}
                 >
-                  <Zap className="w-4 h-4 text-indigo-200 fill-indigo-200" />
-                  <span>{isBulkSubmitting ? 'Generating Dues...' : 'Bulk Create Monthly Bills'}</span>
+                  <PlusCircle className="w-4 h-4" />
+                  <span>
+                    {isSubmitting
+                      ? 'Recording...'
+                      : isSelectedCustomerInactive
+                      ? 'Customer is Inactive (Only Active Customers Eligible)'
+                      : isSelectedMonthIneligible
+                      ? 'Ineligible Billing Month (Select Next Month)'
+                      : isDuplicateMonth
+                      ? `Bill Already Exists for ${month} (Duplicate Not Allowed)`
+                      : 'Record Monthly Payment'}
+                  </span>
                 </button>
               </form>
-
-              {/* Status Card Overview */}
-              {bulkResultCard && (
-                <div className="p-4 bg-slate-50 dark:bg-neutral-950 border border-emerald-500/40 rounded-xl space-y-3 font-mono text-xs animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-850 pb-2">
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 font-sans text-xs">
-                      <CopyCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span>Bulk Generation Status</span>
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">Period: {bulkResultCard.month}</span>
-                  </div>
-
-                  {/* 4-Column Status Stat Card */}
-                  <div className="grid grid-cols-4 gap-1.5 p-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-850 rounded-lg text-center text-[11px]">
-                    <div>
-                      <span className="text-[10px] text-slate-500 dark:text-neutral-500 block font-sans uppercase font-bold">Active</span>
-                      <span className="font-bold text-slate-900 dark:text-white">{bulkResultCard.totalActiveCustomers}</span>
-                    </div>
-                    <div className="border-x border-slate-200 dark:border-neutral-850 px-0.5">
-                      <span className="text-[10px] block font-sans uppercase text-emerald-700 dark:text-emerald-400 font-bold">Created</span>
-                      <span className="font-bold text-emerald-700 dark:text-emerald-400">+{bulkResultCard.createdCount}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] block font-sans uppercase text-amber-800 dark:text-amber-400 font-bold">New Excluded</span>
-                      <span className="font-bold text-amber-800 dark:text-amber-400">{bulkResultCard.skippedNewRegistrationCount ?? 0}</span>
-                    </div>
-                    <div className="border-l border-slate-200 dark:border-neutral-850 pl-0.5">
-                      <span className="text-[10px] text-slate-500 dark:text-neutral-400 block font-sans uppercase font-bold">Duplicate</span>
-                      <span className="font-bold text-slate-800 dark:text-neutral-300">{bulkResultCard.skippedDuplicateCount ?? 0}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-[11px] text-slate-700 dark:text-neutral-300 space-y-1 font-sans">
-                    <p className="flex justify-between">
-                      <span className="text-slate-500 dark:text-neutral-400">Total Billed Added:</span>
-                      <strong className="text-emerald-700 dark:text-emerald-400 font-mono">{formatMoney(bulkResultCard.totalBilledAmount, currency)}</strong>
-                    </p>
-                  </div>
-
-                  {/* Skipped Duplicates Collapsible Details */}
-                  {bulkResultCard.skippedCount > 0 && (
-                    <div className="pt-2 border-t border-neutral-850 space-y-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setShowSkippedDetails(!showSkippedDetails)}
-                        className="w-full flex items-center justify-between text-[11px] text-amber-400 font-medium hover:underline cursor-pointer"
-                      >
-                        <span>View Skipped Subscribers ({bulkResultCard.skippedCount})</span>
-                        {showSkippedDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                      </button>
-
-                      {showSkippedDetails && (
-                        <div className="max-h-28 overflow-y-auto space-y-1 p-2 bg-neutral-900 border border-neutral-800 rounded-lg text-[10px] font-mono text-neutral-400">
-                          {bulkResultCard.skippedCustomerNames.map((name, idx) => (
-                            <div key={idx} className="flex items-center gap-1 text-neutral-300">
-                              <span className="text-amber-400">•</span>
-                              <span>{name}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
-          )}
-        </div>
+
+            {/* 2. Admin-Only Per-Month Bulk Dues Generator */}
+            {currentUser?.role === 'ADMIN' && (
+              <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/50 space-y-4 shadow-xs relative overflow-hidden">
+                {/* Card Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3.5">
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Bulk Create Monthly Bills</span>
+                  </h2>
+                  <span className="text-[10px] font-mono font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                    <span>ADMIN ONLY</span>
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                  Auto-create monthly dues for active subscribers for the selected month. <strong className="text-emerald-700 dark:text-emerald-400 font-semibold">Subscribers registered in {bulkMonth} or later are skipped</strong> (monthly billing begins after registration month), and existing bills are skipped.
+                </p>
+
+                <form onSubmit={handleBulkCreateMonthlyPayments} className="space-y-4 text-xs">
+                  {/* Target Month & Auto Package Pricing */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Target Month *</label>
+                      <input
+                        type="month"
+                        required
+                        value={bulkMonth}
+                        onChange={(e) => setBulkMonth(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-slate-700 dark:text-slate-300 font-semibold">Package-Based</label>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 px-1.5 py-0.5 rounded-md shadow-2xs">
+                          <Tv className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />
+                          <span>Rates</span>
+                        </span>
+                      </div>
+                      <div className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 text-xs flex items-center justify-between">
+                        <span className="text-slate-500 dark:text-slate-400 font-medium">Applied:</span>
+                        <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono text-[11px]">By Assigned TV Package</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pre-Generation Live Status Box */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 font-sans">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Target Period:</span>
+                      <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold">{formatYearMonthDisplay(bulkMonth)} ({bulkMonth})</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center text-[11px] pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+                      <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-sans block uppercase font-bold">Active</span>
+                        <span className="font-bold text-slate-900 dark:text-white font-mono">{activeSubscribersList.length}</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-emerald-50 dark:bg-slate-900 border border-emerald-200 dark:border-slate-800">
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-sans block uppercase font-bold">Eligible</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono">{bulkEstimatedEligibleCount}</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-amber-50 dark:bg-slate-900 border border-amber-200 dark:border-slate-800">
+                        <span className="text-[10px] text-amber-800 dark:text-amber-400 font-sans block uppercase font-bold">Excluded</span>
+                        <span className="font-bold text-amber-800 dark:text-amber-400 font-mono">{bulkExcludedNewSubscribers.length}</span>
+                      </div>
+                    </div>
+
+                    {bulkEstimatedEligibleCount > 0 && (
+                      <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500 dark:text-slate-400 font-medium">Projected Monthly Revenue:</span>
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          {formatMoney(bulkProjectedRevenue, currency)}
+                        </span>
+                      </div>
+                    )}
+
+                    {bulkExcludedNewSubscribers.length > 0 && (
+                      <div className="pt-1 text-[11px] text-amber-800 dark:text-amber-300 font-sans flex items-start gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                        <span>
+                          <strong>{bulkExcludedNewSubscribers.length} new subscriber(s)</strong> registered in {bulkMonth} or later will not receive bills for {bulkMonth}.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isBulkSubmitting}
+                    className="w-full py-2.5 px-4 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:from-indigo-700 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    <Zap className="w-4 h-4 text-indigo-200 fill-indigo-200" />
+                    <span>{isBulkSubmitting ? 'Generating Dues...' : 'Bulk Create Monthly Bills'}</span>
+                  </button>
+                </form>
+
+                {/* Status Card Overview */}
+                {bulkResultCard && (
+                  <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-emerald-500/40 rounded-xl space-y-3 font-mono text-xs animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                      <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 font-sans text-xs">
+                        <CopyCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Bulk Generation Status</span>
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">Period: {bulkResultCard.month}</span>
+                    </div>
+
+                    {/* 4-Column Status Stat Card */}
+                    <div className="grid grid-cols-4 gap-1.5 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-center text-[11px]">
+                      <div>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans uppercase font-bold">Active</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{bulkResultCard.totalActiveCustomers}</span>
+                      </div>
+                      <div className="border-x border-slate-200 dark:border-slate-800 px-0.5">
+                        <span className="text-[10px] block font-sans uppercase text-emerald-700 dark:text-emerald-400 font-bold">Created</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400">+{bulkResultCard.createdCount}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] block font-sans uppercase text-amber-800 dark:text-amber-400 font-bold">New Excl.</span>
+                        <span className="font-bold text-amber-800 dark:text-amber-400">{bulkResultCard.skippedNewRegistrationCount ?? 0}</span>
+                      </div>
+                      <div className="border-l border-slate-200 dark:border-slate-800 pl-0.5">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans uppercase font-bold">Duplicate</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-300">{bulkResultCard.skippedDuplicateCount ?? 0}</span>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-700 dark:text-slate-300 space-y-1 font-sans">
+                      <p className="flex justify-between">
+                        <span className="text-slate-500 dark:text-slate-400">Total Billed Added:</span>
+                        <strong className="text-emerald-700 dark:text-emerald-400 font-mono">{formatMoney(bulkResultCard.totalBilledAmount, currency)}</strong>
+                      </p>
+                    </div>
+
+                    {/* Skipped Duplicates Collapsible Details */}
+                    {bulkResultCard.skippedCount > 0 && (
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowSkippedDetails(!showSkippedDetails)}
+                          className="w-full flex items-center justify-between text-[11px] text-amber-600 dark:text-amber-400 font-medium hover:underline cursor-pointer"
+                        >
+                          <span>View Skipped Subscribers ({bulkResultCard.skippedCount})</span>
+                          {showSkippedDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+
+                        {showSkippedDetails && (
+                          <div className="max-h-28 overflow-y-auto space-y-1 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            {bulkResultCard.skippedCustomerNames.map((name, idx) => (
+                              <div key={idx} className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                                <span className="text-amber-500">•</span>
+                                <span>{name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {/* 2. Monthly Payments Ledger Table */}
-        <div className={`${showPaymentForms ? 'xl:col-span-8' : 'w-full'} p-4 sm:p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-4 shadow-sm flex flex-col justify-between`}>
+        <div className={`${showPaymentForms ? 'xl:col-span-8' : 'w-full'} p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs flex flex-col justify-between`}>
           <div className="space-y-4">
             {/* Table Header Controls */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 dark:border-neutral-800 pb-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-3.5">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Monthly Payment Ledger ({monthlyPayments.length})</h2>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">Filter by subscriber, month, or payment status</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Filter by subscriber, month, or payment status</p>
               </div>
 
               {/* Filters */}
               <div className="flex flex-wrap items-center gap-2">
                 {/* Search */}
-                <div className="relative w-full sm:w-44">
-                  <Search className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500 absolute left-2.5 top-2.5" />
+                <div className="relative w-full sm:w-48">
+                  <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-3" />
                   <input
                     type="text"
                     placeholder="Search customer/box..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-2 py-1.5 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-lg text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                 </div>
 
@@ -1210,7 +1210,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                 <select
                   value={selectedMonthFilter}
                   onChange={(e) => setSelectedMonthFilter(e.target.value)}
-                  className="px-2.5 py-1.5 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-lg text-xs text-slate-900 dark:text-white font-mono focus:outline-none"
+                  className="px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
                 >
                   <option value="">All Months</option>
                   {availableMonths.map((m) => (
@@ -1221,15 +1221,15 @@ Monthly bills or payment records are not created for new subscribers during thei
                 </select>
 
                 {/* Status Filter Buttons */}
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-neutral-950 p-1 border border-slate-200 dark:border-neutral-800 rounded-lg">
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800 rounded-xl">
                   {(['ALL', 'PAID', 'PARTIAL', 'UNPAID'] as const).map((st) => (
                     <button
                       key={st}
                       onClick={() => setStatusFilter(st)}
-                      className={`px-2 py-0.5 text-[11px] rounded font-semibold transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-[10.5px] rounded-lg font-semibold transition-all cursor-pointer ${
                         statusFilter === st
                           ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                          : 'text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-200'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                     >
                       {st}
@@ -1242,7 +1242,7 @@ Monthly bills or payment records are not created for new subscribers during thei
             {/* Mobile Cards View (block md:hidden) - Native App Style Accordion */}
             <div className="block md:hidden space-y-3">
               {filteredPayments.length === 0 ? (
-                <div className="p-6 text-center text-slate-400 dark:text-neutral-500 text-xs bg-slate-50 dark:bg-neutral-950 rounded-xl border border-slate-200 dark:border-neutral-800">
+                <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
                   No monthly payment records match the current filters.
                 </div>
               ) : (
@@ -1256,12 +1256,12 @@ Monthly bills or payment records are not created for new subscribers during thei
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ type: 'spring', damping: 26, stiffness: 300 }}
                       key={pmt.id}
-                      className="p-4 space-y-3.5 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-2xl shadow-sm transition-all hover:border-slate-300 dark:hover:border-neutral-700"
+                      className="p-4 space-y-3.5 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs transition-all hover:border-slate-300 dark:hover:border-slate-700"
                     >
                       {/* Header: Tap to toggle accordion */}
                       <div
                         onClick={() => togglePaymentExpand(pmt.id)}
-                        className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-neutral-800/80 pb-3 cursor-pointer select-none"
+                        className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3 cursor-pointer select-none"
                       >
                         <div className="space-y-1.5 flex-1 min-w-0">
                           <div className="flex items-center flex-wrap gap-2">
@@ -1284,9 +1284,9 @@ Monthly bills or payment records are not created for new subscribers during thei
 
                           {/* Month & Package Pill Badges */}
                           <div className="flex items-center flex-wrap gap-2 pt-0.5">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 text-xs font-mono font-semibold shadow-2xs">
-                              <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400 shrink-0" />
-                              <span>Billing Month: {pmt.month}</span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-mono font-semibold shadow-2xs">
+                              <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                              <span>Month: {pmt.month}</span>
                             </span>
 
                             {(() => {
@@ -1316,14 +1316,14 @@ Monthly bills or payment records are not created for new subscribers during thei
 
                         {/* Box Number Pill & Accordion Indicator */}
                         <div className="shrink-0 flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-lg text-xs font-mono font-bold text-slate-800 dark:text-neutral-200 shadow-2xs">
-                            <Box className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-400" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                            <Box className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                             <span>Box: {pmt.boxNo || '-'}</span>
                           </span>
                           <motion.div
                             animate={{ rotate: isExpanded ? 180 : 0 }}
                             transition={{ duration: 0.2 }}
-                            className="p-1 rounded-md text-slate-400 dark:text-neutral-500 hover:text-slate-600 dark:hover:text-neutral-300"
+                            className="p-1 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                           >
                             <ChevronDown className="w-4 h-4" />
                           </motion.div>
@@ -1340,22 +1340,22 @@ Monthly bills or payment records are not created for new subscribers during thei
                             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
                             className="overflow-hidden space-y-2 text-xs"
                           >
-                            <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950/80 border border-slate-200 dark:border-neutral-800/80 space-y-2">
+                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 space-y-2">
                               {cust?.address && (
-                                <div className="flex items-start justify-between text-slate-600 dark:text-neutral-400">
+                                <div className="flex items-start justify-between text-slate-600 dark:text-slate-400">
                                   <span className="font-medium shrink-0">Address:</span>
-                                  <span className="text-right font-medium text-slate-800 dark:text-neutral-200 max-w-[200px]">{cust.address}</span>
+                                  <span className="text-right font-medium text-slate-800 dark:text-slate-200 max-w-[200px]">{cust.address}</span>
                                 </div>
                               )}
                               {pmt.paymentDate && (
-                                <div className="flex items-center justify-between text-slate-600 dark:text-neutral-400">
+                                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                                   <span className="font-medium">Payment Date:</span>
-                                  <span className="font-mono text-slate-800 dark:text-neutral-200">{pmt.paymentDate.split('T')[0]}</span>
+                                  <span className="font-mono text-slate-800 dark:text-slate-200">{pmt.paymentDate.split('T')[0]}</span>
                                 </div>
                               )}
                               {cust?.phoneNo && (
-                                <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/80 dark:border-neutral-800/80">
-                                  <span className="font-medium text-slate-600 dark:text-neutral-400">Direct Actions:</span>
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+                                  <span className="font-medium text-slate-600 dark:text-slate-400">Direct Actions:</span>
                                   <div className="flex items-center gap-2">
                                     <a
                                       href={`tel:${cust.phoneNo}`}
@@ -1380,8 +1380,8 @@ Monthly bills or payment records are not created for new subscribers during thei
                       {/* Financial Metrics 3-Column Color Cards */}
                       <div className="grid grid-cols-3 gap-2 font-mono">
                         {/* MONTHLY FEE TILE */}
-                        <div className="p-2.5 bg-slate-50 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-center space-y-0.5 shadow-2xs">
-                          <span className="text-[10px] text-slate-500 dark:text-neutral-400 font-sans block uppercase font-bold tracking-wide">Monthly Fee</span>
+                        <div className="p-2.5 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl text-center space-y-0.5 shadow-2xs">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans block uppercase font-bold tracking-wide">Monthly Fee</span>
                           <span className="text-slate-900 dark:text-white font-extrabold text-xs sm:text-sm block">{formatMoney(pmt.monthlyFee, currency)}</span>
                         </div>
 
@@ -1404,7 +1404,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                         </div>
                       </div>
 
-                      {/* Perfectly Aligned Action Buttons Grid */}
+                      {/* Aligned Action Buttons Grid */}
                       <div className="flex flex-col gap-2 pt-1">
                         {/* Top Row Primary Actions */}
                         <div className="grid grid-cols-2 gap-2">
@@ -1412,7 +1412,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                             <motion.button
                               whileTap={{ scale: 0.95 }}
                               onClick={() => handleOpenPayBalance(pmt)}
-                              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md"
+                              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
                             >
                               <CreditCard className="w-3.5 h-3.5 text-white" />
                               <span>Pay Balance</span>
@@ -1437,11 +1437,11 @@ Monthly bills or payment records are not created for new subscribers during thei
                         </div>
 
                         {/* Bottom Row Secondary Actions */}
-                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-neutral-800/80">
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
                           <motion.button
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handlePrintMonthlyBill(pmt)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 border border-slate-200 dark:border-neutral-700 text-slate-800 dark:text-neutral-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
                           >
                             <Printer className="w-3.5 h-3.5 text-slate-600 dark:text-emerald-400" />
                             <span>Print Bill</span>
@@ -1484,54 +1484,54 @@ Monthly bills or payment records are not created for new subscribers during thei
                 const customerSelect = document.querySelector<HTMLSelectElement>('select');
                 if (customerSelect) customerSelect.focus();
               }}
-              className="fixed bottom-20 right-4 z-30 md:hidden w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 flex items-center justify-center shadow-lg shadow-emerald-500/40 border-2 border-white dark:border-neutral-900 cursor-pointer"
+              className="fixed bottom-20 right-4 z-30 md:hidden w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/40 border-2 border-white dark:border-slate-900 cursor-pointer"
               title="Add Monthly Bill"
             >
               <PlusCircle className="w-5 h-5 stroke-[2.3]" />
             </motion.button>
 
             {/* Desktop Table View (hidden md:block) */}
-            <div className="hidden md:block rounded-xl border border-slate-200 dark:border-neutral-800 overflow-hidden bg-white dark:bg-neutral-950 shadow-xs">
+            <div className="hidden md:block rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 dark:bg-neutral-900 border-b border-slate-200 dark:border-neutral-800 text-slate-600 dark:text-neutral-400 font-bold text-[11px] uppercase tracking-wider">
+                  <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
                     <tr>
-                      <th className="px-3.5 py-3">Customer</th>
-                      <th className="px-3 py-3">Box No</th>
-                      <th className="px-3 py-3">Month</th>
-                      <th className="px-3 py-3 text-center">Package</th>
-                      <th className="px-3 py-3 text-right">Fee</th>
-                      <th className="px-3 py-3 text-right">Paid</th>
-                      <th className="px-3 py-3 text-right">Balance</th>
-                      <th className="px-3 py-3 text-center">Status</th>
-                      <th className="px-3.5 py-3 text-right">Actions</th>
+                      <th className="px-4 py-3.5">Customer</th>
+                      <th className="px-4 py-3.5">Box No</th>
+                      <th className="px-4 py-3.5">Month</th>
+                      <th className="px-4 py-3.5 text-center">Package</th>
+                      <th className="px-4 py-3.5 text-right">Fee</th>
+                      <th className="px-4 py-3.5 text-right">Paid</th>
+                      <th className="px-4 py-3.5 text-right">Balance</th>
+                      <th className="px-4 py-3.5 text-center">Status</th>
+                      <th className="px-4 py-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-neutral-800/80">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                     {filteredPayments.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="px-3 py-10 text-center text-slate-400 dark:text-neutral-500">
+                        <td colSpan={9} className="px-4 py-10 text-center text-slate-400 dark:text-slate-500">
                           No monthly payment records match the current filters.
                         </td>
                       </tr>
                     ) : (
                       filteredPayments.map((pmt) => (
-                        <tr key={pmt.id} className="hover:bg-slate-50/80 dark:hover:bg-neutral-900/60 transition-colors">
-                          <td className="px-3.5 py-3 font-bold text-sm text-slate-900 dark:text-white leading-snug">
+                        <tr key={pmt.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="px-4 py-3.5 font-bold text-sm text-slate-900 dark:text-white leading-snug">
                             {pmt.customerName}
                           </td>
-                          <td className="px-3 py-3 font-mono whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700/80 rounded-md text-xs font-bold text-slate-800 dark:text-neutral-200 shadow-2xs">
-                              <Box className="w-3 h-3 text-slate-500 dark:text-neutral-400" />
+                          <td className="px-4 py-3.5 font-mono whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
+                              <Box className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                               <span>{pmt.boxNo || '-'}</span>
                             </span>
                           </td>
-                          <td className="px-3 py-3 font-mono whitespace-nowrap">
-                            <span className="inline-block px-2.5 py-0.5 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-md text-xs font-bold text-slate-700 dark:text-neutral-300 shadow-2xs">
+                          <td className="px-4 py-3.5 font-mono whitespace-nowrap">
+                            <span className="inline-block px-2.5 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 shadow-2xs">
                               {pmt.month}
                             </span>
                           </td>
-                          <td className="px-3 py-3 text-center whitespace-nowrap">
+                          <td className="px-4 py-3.5 text-center whitespace-nowrap">
                             {(() => {
                               const fallbackPkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
                               const pkgName = pmt.packageName || fallbackPkg.packageName;
@@ -1540,7 +1540,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                               const isBasic = pkgId === 'BASIC';
                               const isFree = pkgId === 'FREE' || pmt.monthlyFee === 0;
                               return (
-                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-full border ${
                                   isPrem
                                     ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
                                     : isBasic
@@ -1555,14 +1555,14 @@ Monthly bills or payment records are not created for new subscribers during thei
                               );
                             })()}
                           </td>
-                          <td className="px-3 py-3 text-right font-mono text-slate-900 dark:text-neutral-100 font-bold whitespace-nowrap text-xs">
+                          <td className="px-4 py-3.5 text-right font-mono text-slate-900 dark:text-slate-100 font-bold whitespace-nowrap text-xs">
                             {formatMoney(pmt.monthlyFee, currency)}
                           </td>
-                          <td className="px-3 py-3 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap text-xs">
+                          <td className="px-4 py-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap text-xs">
                             {formatMoney(pmt.paidAmount, currency)}
                           </td>
-                          <td className="px-3 py-3 text-right font-mono font-bold whitespace-nowrap text-xs">
-                            <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border inline-block ${
+                          <td className="px-4 py-3.5 text-right font-mono font-bold whitespace-nowrap text-xs">
+                            <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border inline-block ${
                               pmt.balanceAmount === 0
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
                                 : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30 font-extrabold'
@@ -1570,8 +1570,8 @@ Monthly bills or payment records are not created for new subscribers during thei
                               {formatMoney(pmt.balanceAmount, currency)}
                             </span>
                           </td>
-                          <td className="px-3 py-3 text-center whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
+                          <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold rounded-full border ${
                               pmt.status === 'PAID'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
                                 : pmt.status === 'PARTIAL'
@@ -1584,12 +1584,12 @@ Monthly bills or payment records are not created for new subscribers during thei
                               {pmt.status}
                             </span>
                           </td>
-                          <td className="px-3.5 py-3 text-right whitespace-nowrap">
+                          <td className="px-4 py-3.5 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1.5">
                               {pmt.balanceAmount > 0 && (
                                 <button
                                   onClick={() => handleOpenPayBalance(pmt)}
-                                  className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-[11px] font-semibold transition-colors cursor-pointer shadow-xs shrink-0"
+                                  className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer shadow-xs shrink-0"
                                   title="Pay Balance"
                                 >
                                   <CreditCard className="w-3 h-3" />
@@ -1599,7 +1599,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                               {onViewHistory && pmt.customerId && (
                                 <button
                                   onClick={() => onViewHistory(pmt.customerId)}
-                                  className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60 rounded-md transition-colors cursor-pointer shrink-0"
+                                  className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60 rounded-lg transition-colors cursor-pointer shrink-0"
                                   title="View Customer Payment History"
                                 >
                                   <History className="w-3.5 h-3.5" />
@@ -1607,14 +1607,14 @@ Monthly bills or payment records are not created for new subscribers during thei
                               )}
                               <button
                                 onClick={() => handlePrintMonthlyBill(pmt)}
-                                className="p-1.5 bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 hover:bg-slate-200 dark:hover:bg-neutral-700 border border-slate-200 dark:border-neutral-700 rounded-md transition-colors cursor-pointer shrink-0"
+                                className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer shrink-0"
                                 title="Print Bill / Receipt"
                               >
-                                <Printer className="w-3.5 h-3.5 text-slate-700 dark:text-neutral-300" />
+                                <Printer className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
                               </button>
                               <button
                                 onClick={() => handleOpenEdit(pmt)}
-                                className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-md transition-colors cursor-pointer shrink-0"
+                                className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
                                 title="Edit Record"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -1622,7 +1622,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                               {currentUser?.role !== 'STAFF' && (
                                 <button
                                   onClick={() => handleDelete(pmt.id, pmt.customerName, pmt.month)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-neutral-800 rounded-md transition-colors cursor-pointer shrink-0"
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
                                   title="Delete Record (Admin Only)"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1640,11 +1640,11 @@ Monthly bills or payment records are not created for new subscribers during thei
           </div>
 
           {/* Footer Ledger Bar */}
-          <div className="pt-4 border-t border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-neutral-400 gap-2">
-            <span>Showing: <strong className="text-white font-mono">{filteredPayments.length}</strong> payments</span>
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2">
+            <span>Showing: <strong className="text-slate-900 dark:text-white font-mono">{filteredPayments.length}</strong> payments</span>
             <div className="flex items-center gap-4 font-mono text-[11px]">
-              <span>Collected: <strong className="text-emerald-400">{formatMoney(totalCollected, currency)}</strong></span>
-              <span>Pending: <strong className="text-amber-400">{formatMoney(totalOutstanding, currency)}</strong></span>
+              <span>Collected: <strong className="text-emerald-600 dark:text-emerald-400">{formatMoney(totalCollected, currency)}</strong></span>
+              <span>Pending: <strong className="text-amber-600 dark:text-amber-400">{formatMoney(totalOutstanding, currency)}</strong></span>
             </div>
           </div>
         </div>
@@ -1663,7 +1663,7 @@ Monthly bills or payment records are not created for new subscribers during thei
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setEditingPayment(null)}
-              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
             />
 
             {/* Bottom Sheet on Mobile / Centered Modal on Desktop */}
@@ -1672,34 +1672,34 @@ Monthly bills or payment records are not created for new subscribers during thei
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="relative w-full md:max-w-md rounded-t-3xl md:rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto z-10"
+              className="relative w-full md:max-w-md rounded-t-3xl md:rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto z-10"
             >
               {/* Native Mobile Pull Handle */}
-              <div className="md:hidden w-12 h-1.5 rounded-full bg-slate-300 dark:bg-neutral-700 mx-auto -mt-1 mb-2" />
+              <div className="md:hidden w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-2" />
 
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                 <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Edit2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                  <Edit2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Edit Monthly Payment Record</span>
                 </h2>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setEditingPayment(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-md transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </motion.button>
               </div>
 
               <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                   <p className="font-bold text-slate-900 dark:text-white text-sm">{editingPayment.customerName}</p>
-                  <p className="text-xs text-slate-500 dark:text-neutral-400 font-mono mt-0.5">Box No: <span className="font-bold text-emerald-600 dark:text-emerald-400">{editingPayment.boxNo}</span></p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">Box No: <span className="font-bold text-emerald-600 dark:text-emerald-400">{editingPayment.boxNo}</span></p>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-slate-600 dark:text-neutral-400 font-medium">Month *</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-slate-600 dark:text-slate-400 font-medium">Month *</label>
                     {editMinEligibleMonth && (
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">
                         Earliest: {editMinEligibleMonth}
@@ -1712,12 +1712,12 @@ Monthly bills or payment records are not created for new subscribers during thei
                     min={editMinEligibleMonth || undefined}
                     value={editMonth}
                     onChange={(e) => setEditMonth(e.target.value)}
-                    className={`w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-950 border rounded-xl text-slate-900 dark:text-white font-mono ${
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none transition-all ${
                       isEditDuplicateMonth
-                        ? 'border-rose-500/60 ring-1 ring-rose-500/30'
+                        ? 'border-rose-500 focus:border-rose-500 ring-2 ring-rose-500/20'
                         : isEditMonthIneligible
-                        ? 'border-amber-500/60 ring-1 ring-amber-500/30'
-                        : 'border-slate-200 dark:border-neutral-800'
+                        ? 'border-amber-500 focus:border-amber-500 ring-2 ring-amber-500/20'
+                        : 'border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500'
                     }`}
                   />
                 </div>
@@ -1729,7 +1729,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                       <p className="font-bold text-rose-900 dark:text-rose-300">
                         Duplicate Month: {editMonth}
                       </p>
-                      <p className="text-slate-600 dark:text-neutral-300">
+                      <p className="text-slate-600 dark:text-slate-300">
                         A monthly payment record for this subscriber already exists for {editMonth}.
                       </p>
                     </div>
@@ -1743,7 +1743,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                       <p className="font-bold text-amber-900 dark:text-amber-300">
                         Cannot set month to {editMonth}
                       </p>
-                      <p className="text-slate-600 dark:text-neutral-300">
+                      <p className="text-slate-600 dark:text-slate-300">
                         Subscriber registered in {editRegMonth}. Billing begins from {editMinEligibleMonth}.
                       </p>
                     </div>
@@ -1752,11 +1752,11 @@ Monthly bills or payment records are not created for new subscribers during thei
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-slate-600 dark:text-neutral-400 font-medium">Monthly Fee ({currency})</label>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-neutral-400 bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 px-1.5 py-0.5 rounded shadow-xs">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-slate-600 dark:text-slate-400 font-medium">Monthly Fee ({currency})</label>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded shadow-2xs">
                         <Lock className="w-2.5 h-2.5 text-slate-500" />
-                        <span>Fixed (Package)</span>
+                        <span>Fixed</span>
                       </span>
                     </div>
                     <input
@@ -1765,26 +1765,26 @@ Monthly bills or payment records are not created for new subscribers during thei
                       readOnly
                       disabled
                       value={editMonthlyFee}
-                      className="w-full px-3 py-2 bg-slate-100 dark:bg-neutral-950/70 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-600 dark:text-neutral-400 font-mono cursor-not-allowed select-none opacity-85"
+                      className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-400 font-mono cursor-not-allowed select-none opacity-85"
                       title="Monthly fee is fixed by the customer's TV package and cannot be edited"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-600 dark:text-neutral-400 font-medium mb-1">Paid Amount (LKR)</label>
+                    <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Paid Amount ({currency})</label>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       value={editPaidAmount}
                       onChange={(e) => setEditPaidAmount(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                     />
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-neutral-400 font-medium">Updated Balance Amount:</span>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-slate-400 font-medium">Updated Balance Amount:</span>
                   <span className={`font-mono font-bold text-sm ${
                     calculatedEditBalance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
                   }`}>
@@ -1793,21 +1793,21 @@ Monthly bills or payment records are not created for new subscribers during thei
                 </div>
 
                 <div>
-                  <label className="block text-slate-600 dark:text-neutral-400 font-medium mb-1">Payment Date</label>
+                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Payment Date</label>
                   <input
                     type="date"
                     value={editPaymentDate}
                     onChange={(e) => setEditPaymentDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-2.5 pt-2">
                   <motion.button
                     type="button"
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setEditingPayment(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white font-medium"
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
                   >
                     Cancel
                   </motion.button>
@@ -1815,10 +1815,10 @@ Monthly bills or payment records are not created for new subscribers during thei
                     type="submit"
                     whileTap={{ scale: 0.95 }}
                     disabled={isEditMonthIneligible || isEditDuplicateMonth}
-                    className={`px-5 py-2 rounded-xl font-bold ${
+                    className={`px-5 py-2 rounded-xl font-bold transition-all cursor-pointer ${
                       isEditMonthIneligible || isEditDuplicateMonth
-                        ? 'bg-slate-200 dark:bg-neutral-800 text-slate-400 dark:text-neutral-500 cursor-not-allowed'
-                        : 'bg-emerald-500 text-neutral-950 hover:bg-emerald-400 shadow-md shadow-emerald-500/20'
+                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-xs'
                     }`}
                   >
                     Save Changes
@@ -1843,7 +1843,7 @@ Monthly bills or payment records are not created for new subscribers during thei
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setPayBalancePayment(null)}
-              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
             />
 
             {/* Bottom Sheet on Mobile / Centered Modal on Desktop */}
@@ -1852,41 +1852,41 @@ Monthly bills or payment records are not created for new subscribers during thei
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="relative w-full md:max-w-md rounded-t-3xl md:rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto z-10"
+              className="relative w-full md:max-w-md rounded-t-3xl md:rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto z-10"
             >
               {/* Native Mobile Pull Handle */}
-              <div className="md:hidden w-12 h-1.5 rounded-full bg-slate-300 dark:bg-neutral-700 mx-auto -mt-1 mb-2" />
+              <div className="md:hidden w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-2" />
 
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                 <div>
                   <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                    <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>Pay Monthly Dues Balance</span>
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {payBalancePayment.customerName} (<span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{payBalancePayment.month}</span>)
                   </p>
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setPayBalancePayment(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-md transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </motion.button>
               </div>
 
               <form onSubmit={handleConfirmPayBalance} className="space-y-4 text-xs">
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 space-y-2">
-                  <div className="flex justify-between text-slate-600 dark:text-neutral-400">
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Monthly Fee:</span>
                     <span className="font-mono font-bold text-slate-900 dark:text-white">{formatMoney(payBalancePayment.monthlyFee, currency)}</span>
                   </div>
-                  <div className="flex justify-between text-slate-600 dark:text-neutral-400">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Already Paid:</span>
                     <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(payBalancePayment.paidAmount, currency)}</span>
                   </div>
-                  <div className="flex justify-between font-bold border-t border-slate-200 dark:border-neutral-800 pt-2 text-rose-600 dark:text-amber-400">
+                  <div className="flex justify-between font-bold border-t border-slate-200 dark:border-slate-800 pt-2 text-rose-600 dark:text-rose-400">
                     <span>Remaining Balance Due:</span>
                     <span className="font-mono text-sm">{formatMoney(payBalancePayment.balanceAmount, currency)}</span>
                   </div>
@@ -1894,7 +1894,7 @@ Monthly bills or payment records are not created for new subscribers during thei
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-slate-600 dark:text-neutral-400 font-medium">Payment Amount (LKR) *</label>
+                    <label className="block text-slate-600 dark:text-slate-400 font-medium">Payment Amount ({currency}) *</label>
                     <button
                       type="button"
                       onClick={() => setPayAmount(payBalancePayment.balanceAmount.toString())}
@@ -1911,16 +1911,16 @@ Monthly bills or payment records are not created for new subscribers during thei
                     required
                     value={payAmount}
                     onChange={(e) => setPayAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 rounded-xl text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:border-emerald-500 font-bold"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-2.5 pt-2">
                   <motion.button
                     type="button"
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setPayBalancePayment(null)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white font-medium"
+                    className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
                   >
                     Cancel
                   </motion.button>
@@ -1928,7 +1928,7 @@ Monthly bills or payment records are not created for new subscribers during thei
                     type="submit"
                     disabled={isPaying}
                     whileTap={{ scale: 0.95 }}
-                    className="px-5 py-2.5 rounded-xl bg-emerald-500 font-bold text-neutral-950 hover:bg-emerald-400 flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20"
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>{isPaying ? 'Processing...' : 'Confirm Payment'}</span>

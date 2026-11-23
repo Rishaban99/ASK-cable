@@ -211,7 +211,7 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
       if (inc.tags.some((t) => t === currentCustomer.id)) return true;
     }
 
-    // 2. Box number match in description (e.g. "(Box: 2)" or "Box: 2")
+    // 2. Box number match in description
     if (boxNo && boxNo !== '-') {
       const boxPattern = new RegExp(`\\bbox[:\\s-]*${boxNo}\\b`, 'i');
       if (boxPattern.test(desc) || desc.includes(`(box: ${boxNo})`) || desc.includes(`box ${boxNo}`)) {
@@ -219,7 +219,7 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
       }
     }
 
-    // 3. Customer name match in description (e.g. "Eramaiyya manoj")
+    // 3. Customer name match in description
     if (custName && custName.length >= 2 && desc.includes(custName)) {
       return true;
     }
@@ -484,40 +484,45 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
 
   return (
     <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
-      {/* FIRST SECTION: Top Search & Customer Selection Hero Banner */}
-      <div className="bg-neutral-900 border border-neutral-800 p-5 sm:p-6 rounded-xl shadow-xl space-y-4">
+      {/* Top Search & Customer Selection Hero Banner */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <History className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
-              <span>Customer Payment History & Ledger</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-              Search by subscriber name, box number, NIC, or phone number to view details and payment records.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-xs">
+              <History className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Customer History & Ledger</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Search by subscriber name, box number, NIC, or phone number to view details and payment records.
+              </p>
+            </div>
           </div>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-bold text-emerald-400 self-start md:self-auto">
-            <UserCheck className="w-4 h-4 text-emerald-400" />
+
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 self-start md:self-auto shadow-xs">
+            <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Subscribers: {customers.length}</span>
           </div>
         </div>
 
         {/* Dual Search Input & Dropdown Selector */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2 border-t border-neutral-800/80">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
           {/* Quick Search Input */}
           <div className="relative md:col-span-6">
-            <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             <input
               type="text"
               placeholder="Search by Name, Box No, NIC, or Phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-9 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs font-semibold text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50 shadow-inner"
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 shadow-inner"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-neutral-400 hover:text-white text-xs font-bold px-1 rounded"
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-bold px-1 rounded cursor-pointer"
                 title="Clear Search"
               >
                 ✕
@@ -527,11 +532,11 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
 
           {/* Customer Dropdown Select */}
           <div className="relative md:col-span-6">
-            <UserIcon className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
+            <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             <select
               value={selectedCustId}
               onChange={(e) => handleCustChange(e.target.value)}
-              className="w-full pl-10 pr-8 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer shadow-inner"
+              className="w-full pl-10 pr-8 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 cursor-pointer shadow-inner"
             >
               {customers.length === 0 ? (
                 <option value="">No customers available</option>
@@ -550,10 +555,10 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
       </div>
 
       {!currentCustomer ? (
-        <div className="p-12 text-center bg-neutral-900/50 border border-neutral-800 rounded-xl space-y-3">
-          <UserIcon className="w-12 h-12 text-neutral-600 mx-auto" />
-          <h3 className="text-base font-semibold text-white">No Customer Selected</h3>
-          <p className="text-xs text-neutral-400 max-w-md mx-auto">
+        <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-3 shadow-xs">
+          <UserIcon className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto" />
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">No Customer Selected</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             Please register customer records first or select an existing customer from the dropdown above to view their card and complete payment history.
           </p>
         </div>
@@ -562,20 +567,20 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
           {/* Top Section: Detailed Customer Card */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* 1. Customer Details Profile Card */}
-            <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-5 shadow-xl">
-              <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
+            <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-5 shadow-xs">
+              <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                       {currentCustomer.name}
                     </h2>
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-extrabold rounded-full ${
                         (currentCustomer.status || 'ACTIVE') === 'ACTIVE'
-                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                          ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
                           : (currentCustomer.status || 'ACTIVE') === 'INACTIVE'
-                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                          : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                          ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
+                          : 'bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
                       }`}
                     >
                       <span
@@ -592,7 +597,7 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-500/35 rounded-xl text-xs font-mono font-extrabold text-emerald-800 dark:text-emerald-300 shadow-xs">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/35 rounded-xl text-xs font-mono font-extrabold text-emerald-800 dark:text-emerald-300 shadow-xs">
                       <Box className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>Box: {currentCustomer.boxNo}</span>
                     </span>
@@ -603,66 +608,66 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
               {/* Colorful Contact Details Badges */}
               <div className="grid grid-cols-1 gap-2 text-xs">
                 {/* NIC No Badge (Sky Blue) */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20">
                   <span className="flex items-center gap-1.5 font-bold text-sky-800 dark:text-sky-300">
                     <ShieldCheck className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                     <span>NIC No:</span>
                   </span>
-                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white">
+                  <span className="font-mono font-extrabold text-slate-900 dark:text-white">
                     {currentCustomer.nicNo || 'N/A'}
                   </span>
                 </div>
 
                 {/* Phone No Badge (Emerald) */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
                   <span className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
                     <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span>Phone No:</span>
                   </span>
-                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white">
+                  <span className="font-mono font-extrabold text-slate-900 dark:text-white">
                     {currentCustomer.phoneNo || 'N/A'}
                   </span>
                 </div>
 
                 {/* Address Badge (Purple) */}
-                <div className="flex items-start justify-between p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 gap-2">
+                <div className="flex items-start justify-between p-2.5 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 gap-2">
                   <span className="flex items-center gap-1.5 font-bold text-purple-800 dark:text-purple-300 shrink-0">
                     <MapPin className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                     <span>Address:</span>
                   </span>
-                  <span className="font-medium text-neutral-900 dark:text-white text-right break-words max-w-[200px] sm:max-w-none">
+                  <span className="font-medium text-slate-900 dark:text-white text-right break-words max-w-[200px] sm:max-w-none">
                     {currentCustomer.address || 'N/A'}
                   </span>
                 </div>
 
                 {/* Registered Date Badge (Amber) */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
                   <span className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
                     <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                     <span>Registered Date:</span>
                   </span>
-                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white">
+                  <span className="font-mono font-extrabold text-slate-900 dark:text-white">
                     {currentCustomer.createdAt ? currentCustomer.createdAt.split('T')[0] : 'N/A'}
                   </span>
                 </div>
               </div>
 
               {/* Action Buttons: Total Bill & Monthly Bill */}
-              <div className="pt-3 border-t border-neutral-800 grid grid-cols-2 gap-2">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
                 <button
                   onClick={handlePrintTotalBill}
-                  className="py-2 px-2.5 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-300 font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="py-2.5 px-3 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                   title="Print Grand Total Bill Statement"
                 >
-                  <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                  <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Total Bill</span>
                 </button>
                 <button
                   onClick={handlePrintMonthlyBillSummary}
-                  className="py-2 px-2.5 bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/25 text-indigo-300 font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="py-2.5 px-3 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 text-indigo-800 dark:text-indigo-300 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                   title="Print Monthly Bills Summary"
                 >
-                  <Printer className="w-3.5 h-3.5 text-indigo-400" />
+                  <Printer className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                   <span>Monthly Bill</span>
                 </button>
               </div>
@@ -671,24 +676,24 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
             {/* 2. Financial Overview Stat Cards (Right 2 Cols) */}
             <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Card 1: Registration Connection Fee */}
-              <div className="p-5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-3 shadow-xl flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-neutral-400 font-medium">Box Connection Fee</span>
-                    <Tag className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Box Connection Fee</span>
+                    <Tag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <p className="text-xl font-bold font-mono text-white mt-2">
+                  <p className="text-xl font-black font-mono text-slate-900 dark:text-white mt-2">
                     {formatMoney(regTotal, currency)}
                   </p>
                 </div>
-                <div className="pt-3 border-t border-neutral-850 text-[11px] font-mono space-y-1">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-mono space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Paid:</span>
-                    <span className="text-emerald-400 font-semibold">{formatMoney(regPaid, currency)}</span>
+                    <span className="text-slate-500 dark:text-slate-400">Paid:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(regPaid, currency)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Balance:</span>
-                    <span className={regBalance > 0 ? 'text-amber-400 font-bold' : 'text-neutral-400'}>
+                    <span className="text-slate-500 dark:text-slate-400">Balance:</span>
+                    <span className={regBalance > 0 ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-400'}>
                       {formatMoney(regBalance, currency)}
                     </span>
                   </div>
@@ -696,40 +701,40 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
               </div>
 
               {/* Card 2: Total Monthly Payments */}
-              <div className="p-5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-3 shadow-xl flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-neutral-400 font-medium">Monthly Bills Total</span>
-                    <Calendar className="w-4 h-4 text-indigo-400" />
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Monthly Bills Total</span>
+                    <Calendar className="w-4 h-4 text-indigo-500" />
                   </div>
-                  <p className="text-xl font-bold font-mono text-white mt-1">
+                  <p className="text-xl font-black font-mono text-slate-900 dark:text-white mt-1">
                     {formatMoney(monthlyBilledSum, currency)}
                   </p>
 
                   {/* Month-by-Month Dues List */}
                   {customerMonthlyPayments.length > 0 ? (
                     <div className="mt-3 space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                      <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Monthly List Breakdown ({customerMonthlyPayments.length})
                       </p>
                       {customerMonthlyPayments.map((pmt) => (
                         <div
                           key={pmt.id}
-                          className="p-1.5 rounded bg-neutral-950 border border-neutral-850 flex items-center justify-between text-[11px] font-mono"
+                          className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] font-mono"
                         >
                           <div>
-                            <span className="font-semibold text-white">{formatMonthLabel(pmt.month)}</span>
-                            <span className="text-[10px] text-neutral-400 ml-1">({pmt.month})</span>
+                            <span className="font-semibold text-slate-900 dark:text-white">{formatMonthLabel(pmt.month)}</span>
+                            <span className="text-[10px] text-slate-500 ml-1">({pmt.month})</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-neutral-200">{formatMoney(pmt.monthlyFee, currency)}</span>
+                            <span className="text-slate-700 dark:text-slate-200">{formatMoney(pmt.monthlyFee, currency)}</span>
                             <span
                               className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${
                                 pmt.status === 'PAID'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
                                   : pmt.status === 'PARTIAL'
-                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                  : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                  ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
+                                  : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
                               }`}
                             >
                               {pmt.status}
@@ -739,18 +744,18 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[11px] text-neutral-500 mt-2 italic">No monthly bills recorded yet.</p>
+                    <p className="text-[11px] text-slate-400 mt-2 italic">No monthly bills recorded yet.</p>
                   )}
                 </div>
 
-                <div className="pt-3 border-t border-neutral-850 text-[11px] font-mono space-y-1">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-mono space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Paid Months ({customerMonthlyPayments.filter(p => p.status === 'PAID').length}):</span>
-                    <span className="text-emerald-400 font-semibold">{formatMoney(monthlyPaidSum, currency)}</span>
+                    <span className="text-slate-500 dark:text-slate-400">Paid Months ({customerMonthlyPayments.filter(p => p.status === 'PAID').length}):</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(monthlyPaidSum, currency)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Monthly Dues:</span>
-                    <span className={monthlyBalanceSum > 0 ? 'text-amber-400 font-bold' : 'text-neutral-400'}>
+                    <span className="text-slate-500 dark:text-slate-400">Monthly Dues:</span>
+                    <span className={monthlyBalanceSum > 0 ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-400'}>
                       {formatMoney(monthlyBalanceSum, currency)}
                     </span>
                   </div>
@@ -758,26 +763,26 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
               </div>
 
               {/* Card 3: Grand Total Outstanding Balance */}
-              <div className="p-5 rounded-xl bg-neutral-900 border border-neutral-800 space-y-3 shadow-xl flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-neutral-400 font-medium">Grand Balance Due</span>
-                    <CreditCard className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Grand Balance Due</span>
+                    <CreditCard className="w-4 h-4 text-amber-500" />
                   </div>
-                  <p className={`text-xl font-bold font-mono mt-2 ${
-                    grandTotalBalance === 0 ? 'text-emerald-400' : 'text-amber-400'
+                  <p className={`text-xl font-black font-mono mt-2 ${
+                    grandTotalBalance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
                   }`}>
                     {formatMoney(grandTotalBalance, currency)}
                   </p>
                 </div>
-                <div className="pt-3 border-t border-neutral-850 text-[11px] font-mono space-y-1">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-mono space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Total Billed:</span>
-                    <span className="text-white">{formatMoney(grandTotalBilled, currency)}</span>
+                    <span className="text-slate-500 dark:text-slate-400">Total Billed:</span>
+                    <span className="text-slate-900 dark:text-white">{formatMoney(grandTotalBilled, currency)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-neutral-400">Total Paid:</span>
-                    <span className="text-emerald-400 font-semibold">{formatMoney(grandTotalPaid, currency)}</span>
+                    <span className="text-slate-500 dark:text-slate-400">Total Paid:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(grandTotalPaid, currency)}</span>
                   </div>
                 </div>
               </div>
@@ -785,15 +790,15 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
           </div>
 
           {/* Sub-Navigation: Switch between All History, Transactions Log, and Billing Ledger */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-neutral-900 border border-neutral-800 p-3 rounded-xl shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3 rounded-2xl shadow-xs">
             <div className="flex items-center flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setHistoryViewTab('ALL')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   historyViewTab === 'ALL'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs font-bold'
-                    : 'text-neutral-400 hover:text-white bg-neutral-950 border border-neutral-800'
+                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/40 shadow-xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800'
                 }`}
               >
                 All History View
@@ -801,63 +806,63 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
               <button
                 type="button"
                 onClick={() => setHistoryViewTab('TRANSACTIONS')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   historyViewTab === 'TRANSACTIONS'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs font-bold'
-                    : 'text-neutral-400 hover:text-white bg-neutral-950 border border-neutral-800'
+                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/40 shadow-xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800'
                 }`}
               >
-                <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Payment Transactions Log ({customerIncomes.length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setHistoryViewTab('LEDGER')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   historyViewTab === 'LEDGER'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs font-bold'
-                    : 'text-neutral-400 hover:text-white bg-neutral-950 border border-neutral-800'
+                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/40 shadow-xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800'
                 }`}
               >
-                <History className="w-3.5 h-3.5 text-indigo-400" />
+                <History className="w-3.5 h-3.5 text-indigo-500" />
                 <span>Billing Ledger ({historyItems.length})</span>
               </button>
             </div>
-            <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 self-end sm:self-auto">
+            <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400 self-end sm:self-auto">
               <span>Total Inflows:</span>
-              <span className="text-emerald-400 font-bold">+{formatMoney(totalCollectedSum, currency)}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">+{formatMoney(totalCollectedSum, currency)}</span>
             </div>
           </div>
 
-          {/* SECTION: Payment Transactions Log (Timestamped Payments - Second Image UI) */}
+          {/* SECTION: Payment Transactions Log */}
           {(historyViewTab === 'ALL' || historyViewTab === 'TRANSACTIONS') && (
-            <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-800 pb-3">
+            <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div>
-                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>Payment Transactions Log ({customerIncomes.length} Records)</span>
                   </h3>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Individual payments collected with exact date & time logs and receipt vouchers
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <div className="relative w-full sm:w-64">
-                    <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-2.5" />
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type="text"
                       placeholder="Search description, method..."
                       value={txSearchQuery}
                       onChange={(e) => setTxSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-7 py-1.5 bg-neutral-950 border border-neutral-800 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50"
+                      className="w-full pl-9 pr-7 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
                     />
                     {txSearchQuery && (
                       <button
                         type="button"
                         onClick={() => setTxSearchQuery('')}
-                        className="absolute right-2.5 top-1.5 text-neutral-400 hover:text-white text-xs font-bold"
+                        className="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-bold"
                       >
                         ✕
                       </button>
@@ -866,10 +871,10 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                 </div>
               </div>
 
-              {/* Mobile Cards View for Transactions (block md:hidden) */}
+              {/* Mobile Cards View for Transactions */}
               <div className="block md:hidden space-y-3">
                 {filteredCustomerIncomes.length === 0 ? (
-                  <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-950 rounded-xl border border-neutral-800">
+                  <div className="p-6 text-center text-slate-400 dark:text-slate-500 text-xs bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
                     {txSearchQuery
                       ? `No payment transactions match "${txSearchQuery}".`
                       : 'No payment transaction records found for this subscriber.'}
@@ -880,40 +885,40 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                     return (
                       <div
                         key={inc.id}
-                        className="p-4 space-y-3 bg-neutral-950 border border-neutral-800 rounded-2xl shadow-md transition-all"
+                        className="p-4 space-y-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs transition-all"
                       >
-                        <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-2.5">
+                        <div className="flex items-start justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-2.5">
                           <div className="space-y-1">
-                            <h4 className="font-bold text-white text-sm leading-tight">{inc.description}</h4>
-                            <div className="flex items-center flex-wrap gap-2 pt-0.5 text-[11px] font-mono text-neutral-400">
-                              <span className="inline-flex items-center gap-1 text-neutral-300">
-                                <Calendar className="w-3 h-3 text-neutral-400" />
+                            <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-tight">{inc.description}</h4>
+                            <div className="flex items-center flex-wrap gap-2 pt-0.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                              <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                                <Calendar className="w-3 h-3 text-slate-400" />
                                 {dateDisplay}
                               </span>
                               {timeDisplay && (
-                                <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
-                                  <Clock className="w-3 h-3 text-emerald-400/80" />
+                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                                  <Clock className="w-3 h-3 text-emerald-500" />
                                   {timeDisplay}
                                 </span>
                               )}
                               <span>•</span>
                               <span>
-                                Method: <span className="text-neutral-200 font-semibold">{inc.paymentMethod || 'CASH'}</span>
+                                Method: <span className="text-slate-800 dark:text-slate-200 font-semibold">{inc.paymentMethod || 'CASH'}</span>
                               </span>
                             </div>
                           </div>
-                          <span className="font-mono font-bold text-emerald-400 text-sm px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg shrink-0">
+                          <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 text-sm px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl shrink-0">
                             +{formatMoney(inc.amount, currency)}
                           </span>
                         </div>
 
                         <div className="flex items-center justify-between gap-2 pt-0.5">
                           <span
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold"
                             style={{
-                              backgroundColor: `${inc.categoryColor || '#10B981'}20`,
-                              color: inc.categoryColor || '#10B981',
-                              border: `1px solid ${inc.categoryColor || '#10B981'}40`,
+                              backgroundColor: `${inc.categoryColor || '#10B981'}15`,
+                              color: inc.categoryColor || '#059669',
+                              border: `1px solid ${inc.categoryColor || '#10B981'}30`,
                             }}
                           >
                             <Tag className="w-3 h-3 shrink-0" />
@@ -923,10 +928,10 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handlePrintIncomeBill(inc)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg text-xs font-medium transition-colors cursor-pointer shadow-xs"
                             title="Print Receipt"
                           >
-                            <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                            <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                             <span>Receipt</span>
                           </button>
                         </div>
@@ -935,19 +940,19 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                   })
                 )}
 
-                <div className="p-3.5 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center justify-between text-xs text-neutral-400 font-mono shadow-sm">
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono shadow-inner">
                   <span>Total Payments Collected:</span>
-                  <span className="font-bold text-emerald-400 text-sm">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
                     +{formatMoney(totalCollectedSum, currency)}
                   </span>
                 </div>
               </div>
 
-              {/* Desktop Table View for Transactions (hidden md:block) - Matching Second Image UI */}
-              <div className="hidden md:block rounded-lg bg-neutral-950 border border-neutral-800 overflow-hidden">
+              {/* Desktop Table View for Transactions */}
+              <div className="hidden md:block rounded-xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono">
+                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-mono">
                       <tr>
                         <th className="px-4 py-3">Date & Time</th>
                         <th className="px-4 py-3">Description</th>
@@ -957,10 +962,10 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                         <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-850">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                       {filteredCustomerIncomes.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">
+                          <td colSpan={6} className="px-4 py-8 text-center text-slate-400 dark:text-slate-500">
                             {txSearchQuery
                               ? `No payment transactions match "${txSearchQuery}".`
                               : 'No payment transaction records found for this subscriber.'}
@@ -970,55 +975,55 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                         filteredCustomerIncomes.map((inc) => {
                           const { dateDisplay, timeDisplay } = formatTransactionDateTime(inc);
                           return (
-                            <tr key={inc.id} className="hover:bg-neutral-900/60 transition-colors">
+                            <tr key={inc.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/60 transition-colors">
                               <td className="px-4 py-3">
                                 <div className="flex flex-col">
-                                  <span className="font-mono text-neutral-200 font-medium flex items-center gap-1.5">
-                                    <Calendar className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                                  <span className="font-mono text-slate-800 dark:text-slate-200 font-medium flex items-center gap-1.5">
+                                    <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                     <span>{dateDisplay}</span>
                                   </span>
                                   {timeDisplay ? (
-                                    <span className="font-mono text-[11px] text-emerald-400 flex items-center gap-1 mt-0.5 font-semibold">
-                                      <Clock className="w-3 h-3 text-emerald-400/80 shrink-0" />
+                                    <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5 font-semibold">
+                                      <Clock className="w-3 h-3 text-emerald-500 shrink-0" />
                                       <span>{timeDisplay}</span>
                                     </span>
                                   ) : (
-                                    <span className="font-mono text-[10px] text-neutral-500 mt-0.5">Recorded on date</span>
+                                    <span className="font-mono text-[10px] text-slate-400 mt-0.5">Recorded on date</span>
                                   )}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 font-medium text-white">
+                              <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
                                 {inc.description}
                               </td>
                               <td className="px-4 py-3">
                                 <span
                                   className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-medium"
                                   style={{
-                                    backgroundColor: `${inc.categoryColor || '#10B981'}20`,
-                                    color: inc.categoryColor || '#10B981',
-                                    border: `1px solid ${inc.categoryColor || '#10B981'}40`,
+                                    backgroundColor: `${inc.categoryColor || '#10B981'}15`,
+                                    color: inc.categoryColor || '#059669',
+                                    border: `1px solid ${inc.categoryColor || '#10B981'}30`,
                                   }}
                                 >
                                   <Tag className="w-3 h-3 shrink-0" />
                                   <span>{inc.categoryName || 'Customer Cable Payments'}</span>
                                 </span>
                               </td>
-                              <td className="px-4 py-3 font-mono text-neutral-300">
-                                <span className="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[11px]">
+                              <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">
+                                <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px]">
                                   {inc.paymentMethod || 'CASH'}
                                 </span>
                               </td>
-                              <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400 text-sm">
+                              <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
                                 +{formatMoney(inc.amount, currency)}
                               </td>
                               <td className="px-4 py-3 text-right">
                                 <button
                                   type="button"
                                   onClick={() => handlePrintIncomeBill(inc)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white rounded text-[11px] font-medium transition-colors cursor-pointer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded text-[11px] font-medium transition-colors cursor-pointer shadow-xs"
                                   title="Print Receipt"
                                 >
-                                  <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                                  <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                   <span>Receipt</span>
                                 </button>
                               </td>
@@ -1035,277 +1040,277 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
 
           {/* Bottom Section: Payment History Ledger Table */}
           {(historyViewTab === 'ALL' || historyViewTab === 'LEDGER') && (
-            <div className="p-6 rounded-xl bg-neutral-900 border border-neutral-800 space-y-4 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-800 pb-3">
-              <div>
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <History className="w-4 h-4 text-emerald-400" />
-                  <span>Payment History Ledger ({historyItems.length} Records)</span>
-                </h3>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  Complete sequence of box setup connection payments and monthly billing cycles
-                </p>
-              </div>
-
-              {/* Filter Tabs */}
-              <div className="flex items-center gap-1 bg-neutral-950 p-1 border border-neutral-800 rounded-md">
-                {(['ALL', 'REGISTRATION', 'MONTHLY', 'UNPAID'] as const).map((filterKey) => (
-                  <button
-                    key={filterKey}
-                    onClick={() => setHistoryFilter(filterKey)}
-                    className={`px-3 py-1 text-[11px] rounded font-medium transition-colors ${
-                      historyFilter === filterKey
-                        ? 'bg-emerald-400 text-neutral-950 font-bold'
-                        : 'text-neutral-400 hover:text-neutral-200'
-                    }`}
-                  >
-                    {filterKey === 'ALL'
-                      ? 'All Payments'
-                      : filterKey === 'REGISTRATION'
-                      ? 'Registration'
-                      : filterKey === 'MONTHLY'
-                      ? 'Monthly Bills'
-                      : 'Unpaid Dues'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Mobile Cards View (block md:hidden) - Perfectly Aligned */}
-            <div className="block md:hidden space-y-3">
-              {filteredHistoryItems.length === 0 ? (
-                <div className="p-6 text-center text-neutral-500 text-xs bg-neutral-950 rounded-xl border border-neutral-800">
-                  No payment history records found matching filter "{historyFilter}".
+            <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <History className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Payment History Ledger ({historyItems.length} Records)</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Complete sequence of box setup connection payments and monthly billing cycles
+                  </p>
                 </div>
-              ) : (
-                filteredHistoryItems.map((item) => (
-                  <div key={item.id} className="p-4 space-y-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-md transition-all">
-                    {/* Header: Title + Type & Status Badges */}
-                    <div className="flex items-start justify-between gap-2 border-b border-neutral-800/80 pb-3">
-                      <div className="space-y-1">
-                        <h3 className="font-bold text-white text-base leading-tight">{item.title}</h3>
-                        <div className="flex items-center flex-wrap gap-2 pt-0.5">
-                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded font-mono ${
-                            item.itemType === 'REGISTRATION'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                              : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                          }`}>
-                            {item.itemType}
-                          </span>
-                          <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded ${
-                            item.status === 'PAID'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                              : item.status === 'PARTIAL'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                          }`}>
-                            {item.status}
-                          </span>
-                        </div>
-                        <p className="text-[11px] font-mono text-neutral-400">Date/Period: {item.periodOrDate}</p>
-                      </div>
 
-                      <div className="shrink-0">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-neutral-950 border border-neutral-800 rounded-lg text-xs font-mono font-bold text-emerald-400 shadow-xs">
-                          <Box className="w-3 h-3 text-neutral-500" />
-                          <span>{item.boxNo || '-'}</span>
-                        </span>
-                      </div>
-                    </div>
+                {/* Filter Tabs */}
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800 rounded-xl shadow-inner">
+                  {(['ALL', 'REGISTRATION', 'MONTHLY', 'UNPAID'] as const).map((filterKey) => (
+                    <button
+                      key={filterKey}
+                      onClick={() => setHistoryFilter(filterKey)}
+                      className={`px-3 py-1 text-[11px] rounded-lg font-medium transition-all cursor-pointer ${
+                        historyFilter === filterKey
+                          ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {filterKey === 'ALL'
+                        ? 'All Payments'
+                        : filterKey === 'REGISTRATION'
+                        ? 'Registration'
+                        : filterKey === 'MONTHLY'
+                        ? 'Monthly Bills'
+                        : 'Unpaid Dues'}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                    {/* Financial Metrics 3-Column Card */}
-                    <div className="grid grid-cols-3 gap-2 p-3 bg-neutral-950 rounded-xl border border-neutral-800 text-center font-mono text-xs">
-                      <div className="space-y-0.5">
-                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Fee / Total</span>
-                        <span className="text-neutral-200 font-semibold block">{formatMoney(item.totalOrFee, currency)}</span>
-                      </div>
-                      <div className="space-y-0.5 border-x border-neutral-850 px-1">
-                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Paid</span>
-                        <span className="text-emerald-400 font-semibold block">{formatMoney(item.paidAmount, currency)}</span>
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[10px] text-neutral-400 font-sans block uppercase font-medium tracking-wide">Balance</span>
-                        <span className={`font-bold block ${item.balanceAmount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                          {formatMoney(item.balanceAmount, currency)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Perfectly Aligned Action Buttons Grid */}
-                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/60">
-                      {item.balanceAmount > 0 ? (
-                        <button
-                          onClick={() => handleOpenPayBalance(item)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Pay Balance</span>
-                        </button>
-                      ) : (
-                        <div className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-medium font-mono">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Fully Paid</span>
-                        </div>
-                      )}
-
-                      <button
-                        onClick={() => handlePrintHistoryItemBill(item)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-neutral-950 border border-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-800 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-xs"
-                      >
-                        <Printer className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Print Bill</span>
-                      </button>
-                    </div>
+              {/* Mobile Cards View */}
+              <div className="block md:hidden space-y-3">
+                {filteredHistoryItems.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400 dark:text-slate-500 text-xs bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    No payment history records found matching filter "{historyFilter}".
                   </div>
-                ))
-              )}
-            </div>
-
-            {/* Desktop Table View (hidden md:block) */}
-            <div className="hidden md:block rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-900 border-b border-neutral-800 text-neutral-400 font-mono">
-                    <tr>
-                      <th className="px-4 py-3">Description / Period</th>
-                      <th className="px-4 py-3">Type</th>
-                      <th className="px-4 py-3">Date</th>
-                      <th className="px-4 py-3 text-right">Fee / Total</th>
-                      <th className="px-4 py-3 text-right">Paid Amount</th>
-                      <th className="px-4 py-3 text-right">Balance</th>
-                      <th className="px-4 py-3 text-center">Status</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-850">
-                    {filteredHistoryItems.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="px-4 py-10 text-center text-neutral-500">
-                          No payment history records found matching filter "{historyFilter}".
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredHistoryItems.map((item) => (
-                        <tr key={item.id} className="hover:bg-neutral-900/60 transition-colors">
-                          <td className="px-4 py-3">
-                            <p className="font-semibold text-white">{item.title}</p>
-                            <p className="text-[11px] font-mono text-neutral-400">Box: {item.boxNo}</p>
-                          </td>
-                          <td className="px-4 py-3 font-mono">
-                            <span
-                              className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${
-                                item.itemType === 'REGISTRATION'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                  : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                              }`}
-                            >
+                ) : (
+                  filteredHistoryItems.map((item) => (
+                    <div key={item.id} className="p-4 space-y-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs transition-all">
+                      {/* Header: Title + Type & Status Badges */}
+                      <div className="flex items-start justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-3">
+                        <div className="space-y-1">
+                          <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{item.title}</h3>
+                          <div className="flex items-center flex-wrap gap-2 pt-0.5">
+                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-lg font-mono ${
+                              item.itemType === 'REGISTRATION'
+                                ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                : 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
+                            }`}>
                               {item.itemType}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-neutral-300">
-                            {item.periodOrDate}
-                          </td>
-                          <td className="px-4 py-3 text-right font-mono text-neutral-300">
-                            {formatMoney(item.totalOrFee, currency)}
-                          </td>
-                          <td className="px-4 py-3 text-right font-mono font-medium text-emerald-400">
-                            {formatMoney(item.paidAmount, currency)}
-                          </td>
-                          <td className="px-4 py-3 text-right font-mono font-bold">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[11px] ${
-                                item.balanceAmount === 0
-                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                              }`}
-                            >
-                              {formatMoney(item.balanceAmount, currency)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center font-mono">
-                            <span
-                              className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${
-                                item.status === 'PAID'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                  : item.status === 'PARTIAL'
-                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                  : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                              }`}
-                            >
+                            <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg ${
+                              item.status === 'PAID'
+                                ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                : item.status === 'PARTIAL'
+                                ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
+                                : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
+                            }`}>
                               {item.status}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {item.balanceAmount > 0 && (
-                                <button
-                                  onClick={() => handleOpenPayBalance(item)}
-                                  className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
-                                  title="Pay Balance"
-                                >
-                                  <CreditCard className="w-3 h-3" />
-                                  <span>Pay Balance</span>
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handlePrintHistoryItemBill(item)}
-                                className="flex items-center gap-1 px-2 py-1 bg-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-700 rounded text-[11px] font-medium transition-colors cursor-pointer shrink-0"
-                                title="Print Receipt"
-                              >
-                                <Printer className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>Bill</span>
-                              </button>
-                            </div>
+                          </div>
+                          <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">Date/Period: {item.periodOrDate}</p>
+                        </div>
+
+                        <div className="shrink-0">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 shadow-xs">
+                            <Box className="w-3 h-3 text-slate-400" />
+                            <span>{item.boxNo || '-'}</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Financial Metrics 3-Column Card */}
+                      <div className="grid grid-cols-3 gap-2 p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-center font-mono text-xs shadow-xs">
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans block uppercase font-medium tracking-wide">Fee / Total</span>
+                          <span className="text-slate-800 dark:text-slate-200 font-semibold block">{formatMoney(item.totalOrFee, currency)}</span>
+                        </div>
+                        <div className="space-y-0.5 border-x border-slate-100 dark:border-slate-800 px-1">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans block uppercase font-medium tracking-wide">Paid</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold block">{formatMoney(item.paidAmount, currency)}</span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans block uppercase font-medium tracking-wide">Balance</span>
+                          <span className={`font-bold block ${item.balanceAmount === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {formatMoney(item.balanceAmount, currency)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons Grid */}
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/80 dark:border-slate-800">
+                        {item.balanceAmount > 0 ? (
+                          <button
+                            onClick={() => handleOpenPayBalance(item)}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                          >
+                            <CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Pay Balance</span>
+                          </button>
+                        ) : (
+                          <div className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-medium font-mono">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Fully Paid</span>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={() => handlePrintHistoryItemBill(item)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-xs"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Print Bill</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-950 shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-mono">
+                      <tr>
+                        <th className="px-4 py-3">Description / Period</th>
+                        <th className="px-4 py-3">Type</th>
+                        <th className="px-4 py-3">Date</th>
+                        <th className="px-4 py-3 text-right">Fee / Total</th>
+                        <th className="px-4 py-3 text-right">Paid Amount</th>
+                        <th className="px-4 py-3 text-right">Balance</th>
+                        <th className="px-4 py-3 text-center">Status</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                      {filteredHistoryItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="px-4 py-10 text-center text-slate-400 dark:text-slate-500">
+                            No payment history records found matching filter "{historyFilter}".
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        filteredHistoryItems.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/60 transition-colors">
+                            <td className="px-4 py-3">
+                              <p className="font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                              <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">Box: {item.boxNo}</p>
+                            </td>
+                            <td className="px-4 py-3 font-mono">
+                              <span
+                                className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${
+                                  item.itemType === 'REGISTRATION'
+                                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                    : 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
+                                }`}
+                              >
+                                {item.itemType}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">
+                              {item.periodOrDate}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-slate-700 dark:text-slate-300">
+                              {formatMoney(item.totalOrFee, currency)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400">
+                              {formatMoney(item.paidAmount, currency)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono font-bold">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[11px] ${
+                                  item.balanceAmount === 0
+                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30'
+                                    : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30'
+                                }`}
+                              >
+                                {formatMoney(item.balanceAmount, currency)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center font-mono">
+                              <span
+                                className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${
+                                  item.status === 'PAID'
+                                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                    : item.status === 'PARTIAL'
+                                    ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
+                                    : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
+                                }`}
+                              >
+                                {item.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {item.balanceAmount > 0 && (
+                                  <button
+                                    onClick={() => handleOpenPayBalance(item)}
+                                    className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer shrink-0 shadow-xs"
+                                    title="Pay Balance"
+                                  >
+                                    <CreditCard className="w-3 h-3" />
+                                    <span>Pay Balance</span>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handlePrintHistoryItemBill(item)}
+                                  className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-[11px] font-medium transition-colors cursor-pointer shrink-0 shadow-xs"
+                                  title="Print Receipt"
+                                >
+                                  <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                  <span>Bill</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
           )}
         </>
       )}
 
       {/* PAY BALANCE MODAL */}
       {payBalanceTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-xl bg-neutral-900 border border-neutral-800 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-emerald-400" />
+                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Pay Balance Amount</span>
                 </h2>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  {payBalanceTarget.title} (Box: <span className="font-mono text-emerald-400">{payBalanceTarget.boxNo}</span>)
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {payBalanceTarget.title} (Box: <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{payBalanceTarget.boxNo}</span>)
                 </p>
               </div>
-              <button onClick={() => setPayBalanceTarget(null)} className="text-neutral-400 hover:text-white">
+              <button onClick={() => setPayBalanceTarget(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleConfirmPayBalance} className="space-y-4 text-xs">
-              <div className="p-3 rounded-lg bg-neutral-950 border border-neutral-800 space-y-1.5 font-mono">
-                <div className="flex justify-between text-neutral-400">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5 font-mono shadow-inner">
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>Total Amount:</span>
-                  <span className="text-white">{formatMoney(payBalanceTarget.totalAmount, currency)}</span>
+                  <span className="text-slate-900 dark:text-white font-semibold">{formatMoney(payBalanceTarget.totalAmount, currency)}</span>
                 </div>
-                <div className="flex justify-between text-neutral-400">
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>Already Paid:</span>
-                  <span className="text-emerald-400">{formatMoney(payBalanceTarget.paidAmount, currency)}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(payBalanceTarget.paidAmount, currency)}</span>
                 </div>
-                <div className="flex justify-between font-bold border-t border-neutral-850 pt-1.5 text-amber-400">
+                <div className="flex justify-between font-bold border-t border-slate-200 dark:border-slate-800 pt-1.5 text-amber-600 dark:text-amber-400">
                   <span>Current Balance Due:</span>
                   <span className="text-sm">{formatMoney(payBalanceTarget.balanceAmount, currency)}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-neutral-400 font-medium mb-1">Payment Amount (LKR) *</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Payment Amount (LKR) *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1314,22 +1319,22 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                   required
                   value={payAmount}
                   onChange={(e) => setPayAmount(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-md text-white font-mono text-sm focus:outline-none focus:border-emerald-500/50"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:border-emerald-500 shadow-xs font-bold"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setPayBalanceTarget(null)}
-                  className="px-3 py-1.5 rounded bg-neutral-800 text-neutral-300 hover:text-white"
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isPaying}
-                  className="px-4 py-1.5 rounded bg-emerald-400 font-semibold text-neutral-950 hover:bg-emerald-300"
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-sm shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
                 >
                   {isPaying ? 'Processing...' : 'Confirm Payment'}
                 </button>
