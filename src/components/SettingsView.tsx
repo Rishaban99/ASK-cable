@@ -57,10 +57,10 @@ import {
   Clock,
   Copy,
   X,
-  XCircle,
   Printer,
   Bluetooth,
   Loader2,
+  CheckCircle,
 } from 'lucide-react';
 import {
   pairAndSaveBluetoothPrinter,
@@ -173,7 +173,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const [privilegeSaveStatus, setPrivilegeSaveStatus] = useState<string | null>(null);
 
-  // System Profile State (Company Name, Contacts, 80mm Receipt Header stored in DB)
+  // System Profile State
   const [profile, setProfile] = useState<SystemProfile>(() => {
     try {
       const saved = localStorage.getItem('ask_cable_system_profile');
@@ -200,12 +200,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [newRole, setNewRole] = useState<'ADMIN' | 'STAFF'>('STAFF');
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
-  // Active Tab in Settings Page (defaults to 'printer' for staff)
+  // Active Tab in Settings Page
   const [activeTab, setActiveTab] = useState<'privileges' | 'users' | 'system' | 'sms' | 'printer'>(() => {
     return currentUser.role === 'STAFF' ? 'printer' : 'privileges';
   });
 
-  // SMS Gateway State (Notify.lk Integration)
+  // SMS Gateway State
   const [smsSettings, setSmsSettings] = useState<SmsSettings>(() => {
     try {
       const saved = localStorage.getItem('ask_cable_sms_settings');
@@ -226,11 +226,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isSendingTestSms, setIsSendingTestSms] = useState(false);
   const [testSmsResult, setTestSmsResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
 
-  // SMS Account Balance State (Notify.lk live balance)
+  // SMS Account Balance State
   const [smsBalance, setSmsBalance] = useState<SmsBalanceResponse | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
-  // SMS Logs State (Historical SMS Dispatches)
+  // SMS Logs State
   const [smsLogs, setSmsLogs] = useState<SmsLogEntry[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [logsFilterType, setLogsFilterType] = useState<string>('ALL');
@@ -240,7 +240,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isClearingLogs, setIsClearingLogs] = useState(false);
   const [copiedLogId, setCopiedLogId] = useState<string | null>(null);
 
-  // Thermal Printer State (Bluetooth 1-Click One-Time Pairing)
+  // Thermal Printer State
   const [savedPrinter, setSavedPrinter] = useState<SavedPrinterInfo>(() => getSavedPrinterInfo());
   const [isPairingPrinter, setIsPairingPrinter] = useState(false);
   const [isTestingPrinter, setIsTestingPrinter] = useState(false);
@@ -311,7 +311,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     } catch {}
   };
 
-  // Load Users & Privileges & System Profile & SMS Settings from DB
   const fetchUsers = async () => {
     setIsLoadingUsers(true);
     try {
@@ -485,7 +484,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   }, [logsFilterType, logsFilterStatus, isAdmin]);
 
-  // Save SMS Settings to DB
   const handleSaveSmsSettings = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSavingSms(true);
@@ -512,7 +510,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  // Reset SMS Template to Default
   const handleResetSmsTemplate = () => {
     if (templateTab === 'payment') {
       setSmsSettings((prev) => ({
@@ -529,7 +526,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  // Send Live Test SMS via Notify.lk
   const handleSendTestSms = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testPhone.trim()) {
@@ -568,7 +564,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  // Save System Profile to DB
   const handleSaveProfile = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSavingProfile(true);
@@ -595,7 +590,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  // Reset System Profile to Factory Defaults
   const handleResetProfile = () => {
     setConfirmModalConfig({
       isOpen: true,
@@ -618,7 +612,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     });
   };
 
-  // Save Privileges to DB
   const savePrivilegesToDb = async (updated: StaffPrivileges, successMsg: string) => {
     setPrivileges(updated);
     try {
@@ -666,7 +659,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     savePrivilegesToDb(DEFAULT_STAFF_PRIVILEGES, 'Reset to default staff privileges in DB');
   };
 
-  // Add User Handler
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setUserError(null);
@@ -706,7 +698,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  // Confirm Modal State
   const [confirmModalConfig, setConfirmModalConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -721,7 +712,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onConfirm: () => {},
   });
 
-  // Delete User Handler
   const handleDeleteUser = (userToDelete: User) => {
     if (userToDelete.username.toLowerCase() === currentUser.username.toLowerCase()) {
       const msg = 'You cannot delete your own active account!';
@@ -753,16 +743,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     });
   };
 
-  // Access Guard (Staff and Admin permitted)
   if (currentUser.role !== 'ADMIN' && currentUser.role !== 'STAFF') {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 mb-4 shadow-sm">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 mb-4 shadow-sm">
           <Shield className="h-8 w-8" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Access Restricted</h2>
         <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto text-sm">
-          You do not have permission to access Settings.
+          You do not have permission to access System Settings.
         </p>
       </div>
     );
@@ -770,29 +759,42 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   return (
     <div className="mx-auto max-w-7xl px-3 sm:px-6 py-4 sm:py-6 space-y-6">
-      {/* Header & Mobile-Responsive Tab Bar */}
-      <div className="space-y-4 border-b border-slate-200/80 dark:border-slate-800 pb-4">
-        {/* Title and Description */}
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0 shadow-xs">
-            {isAdmin ? <Settings className="w-5 h-5 sm:w-6 sm:h-6" /> : <Printer className="w-5 h-5 sm:w-6 sm:h-6" />}
+      {/* Top Banner & Tab Navigation */}
+      <div className="erp-card p-5 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3 rounded-2xl bg-blue-600/10 dark:bg-blue-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0">
+              {isAdmin ? <Settings className="w-6 h-6" /> : <Printer className="w-6 h-6" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="badge-status badge-royal text-[10px]">
+                  {isAdmin ? 'ENTERPRISE ADMINISTRATION' : 'STAFF HARDWARE TERMINAL'}
+                </span>
+                <span className="badge-status badge-teal text-[10px]">v2.6 Live</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
+                {isAdmin ? 'System & Hardware Settings' : 'Bluetooth Thermal Receipt Printer'}
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                {isAdmin
+                  ? 'Manage operator privileges, credentials, brand profile, SMS gateway, and Bluetooth thermal printers.'
+                  : '1-Click Bluetooth ESC/POS printer pairing and thermal roll width configuration.'}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
-              {isAdmin ? 'System & Hardware Settings' : 'Bluetooth Thermal Receipt Printer'}
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 sm:line-clamp-none">
-              {isAdmin
-                ? 'Manage Staff privileges, user accounts, brand profile, SMS gateway & thermal printers.'
-                : '1-Click Bluetooth printer pairing and roll width settings for mobile receipt printing.'}
-            </p>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="badge-status badge-neutral font-mono text-[11px]">
+              User: <strong className="text-slate-900 dark:text-white font-bold">{currentUser.username}</strong> ({currentUser.role})
+            </span>
           </div>
         </div>
 
-        {/* Tab Switcher - Shown for Admin who has multiple tabs */}
+        {/* Tab Switcher */}
         {visibleTabs.length > 1 && (
-          <div className="-mx-3 sm:mx-0 px-3 sm:px-0">
-            <div className="flex items-center gap-2 overflow-x-auto py-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800">
+            <div className="flex items-center gap-2 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {visibleTabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -800,24 +802,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer whitespace-nowrap ${
                       isActive
-                        ? 'text-emerald-700 dark:text-white bg-white dark:bg-slate-800 shadow-sm border border-slate-200/80 dark:border-slate-700'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100/70 dark:bg-slate-900/60 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 border border-transparent'
+                        ? 'text-white bg-blue-600 dark:bg-blue-600 shadow-md shadow-blue-500/20'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800'
                     }`}
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="settings-active-tab-indicator"
-                        className="absolute inset-0 bg-emerald-50/80 dark:bg-emerald-500/10 rounded-xl border border-emerald-500/30"
-                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                      />
-                    )}
-                    <span className="relative z-10 flex items-center gap-2">
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`} />
-                      <span className="hidden sm:inline font-bold">{tab.label}</span>
-                      <span className="sm:hidden font-bold">{tab.shortLabel}</span>
-                    </span>
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.shortLabel}</span>
                   </button>
                 );
               })}
@@ -826,33 +819,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         )}
       </div>
 
-      {/* Notifications (Admin only) */}
+      {/* Notifications */}
       {isAdmin && smsStatus && (
-        <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-medium shadow-xs animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center gap-2.5 p-3.5 bg-teal-500/10 border border-teal-500/30 text-teal-800 dark:text-teal-300 rounded-xl text-xs font-semibold shadow-xs">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400" />
           <span>{smsStatus}</span>
         </div>
       )}
       {isAdmin && profileStatus && (
-        <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-medium shadow-xs animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center gap-2.5 p-3.5 bg-blue-500/10 border border-blue-500/30 text-blue-800 dark:text-blue-300 rounded-xl text-xs font-semibold shadow-xs">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
           <span>{profileStatus}</span>
         </div>
       )}
       {isAdmin && privilegeSaveStatus && (
-        <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-medium shadow-xs animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center gap-2.5 p-3.5 bg-teal-500/10 border border-teal-500/30 text-teal-800 dark:text-teal-300 rounded-xl text-xs font-semibold shadow-xs">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400" />
           <span>{privilegeSaveStatus}</span>
         </div>
       )}
       {isAdmin && userSuccess && (
-        <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-medium shadow-xs animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center gap-2.5 p-3.5 bg-teal-500/10 border border-teal-500/30 text-teal-800 dark:text-teal-300 rounded-xl text-xs font-semibold shadow-xs">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400" />
           <span>{userSuccess}</span>
         </div>
       )}
       {isAdmin && userError && (
-        <div className="flex items-center gap-2.5 p-3.5 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-300 rounded-xl text-xs font-medium shadow-xs animate-fade-in">
+        <div className="flex items-center gap-2.5 p-3.5 bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-300 rounded-xl text-xs font-semibold shadow-xs">
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
           <span>{userError}</span>
         </div>
@@ -863,26 +856,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================================= */}
       {isAdmin && activeTab === 'privileges' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <div className="erp-card p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <div className="flex items-center gap-2">
+                <span className="badge-status badge-royal text-[10px]">SECURITY ACCESS MATRIX</span>
+              </div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 mt-1">
+                <UserCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Staff Role Page Privileges
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Grant or restrict access to specific ERP modules for the <strong className="text-indigo-600 dark:text-indigo-400 font-semibold">STAFF</strong> role. Changes synchronize instantly across active sessions.
+                Toggle access rights for the <strong className="text-blue-600 dark:text-blue-400 font-semibold">STAFF</strong> role across all core modules. Synchronizes instantly in real-time.
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={handleGrantAll}
-                className="px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors shadow-2xs cursor-pointer"
+                className="px-3.5 py-2 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-xl transition-all cursor-pointer shadow-xs"
               >
-                Enable All Pages
+                Enable All Modules
               </button>
               <button
                 onClick={handleResetDefaults}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 rounded-xl transition-all cursor-pointer shadow-xs"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset Defaults</span>
@@ -898,64 +894,66 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               return (
                 <div
                   key={page.id}
-                  className={`p-5 rounded-2xl border transition-all duration-200 ${
+                  className={`erp-card p-5 transition-all duration-200 flex flex-col justify-between ${
                     isAllowed
-                      ? 'bg-white dark:bg-slate-900 border-emerald-200/90 dark:border-emerald-500/30 shadow-xs hover:border-emerald-400 dark:hover:border-emerald-500/50'
-                      : 'bg-slate-50/70 dark:bg-slate-950/60 border-slate-200/80 dark:border-slate-800/80 opacity-80 hover:opacity-100'
+                      ? 'border-blue-500/40 dark:border-blue-500/30 shadow-sm'
+                      : 'opacity-70 dark:opacity-60 bg-slate-50/50 dark:bg-slate-950/40'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`p-2.5 rounded-xl ${
-                          isAllowed
-                            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-500/30'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{page.label}</h3>
-                        <span
-                          className={`inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2 py-0.5 rounded-full mt-1 ${
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`p-2.5 rounded-xl ${
                             isAllowed
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                              : 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
+                              ? 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
                           }`}
                         >
-                          {isAllowed ? (
-                            <>
-                              <Unlock className="w-2.5 h-2.5" /> Staff Allowed
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="w-2.5 h-2.5" /> Restricted
-                            </>
-                          )}
-                        </span>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white">{page.label}</h3>
+                          <span
+                            className={`badge-status text-[10px] mt-1 ${
+                              isAllowed ? 'badge-success' : 'badge-danger'
+                            }`}
+                          >
+                            {isAllowed ? (
+                              <>
+                                <Unlock className="w-2.5 h-2.5" /> Staff Allowed
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-2.5 h-2.5" /> Restricted
+                              </>
+                            )}
+                          </span>
+                        </div>
                       </div>
+
+                      {/* Interactive Switch */}
+                      <button
+                        onClick={() => handleTogglePrivilege(page.id)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          isAllowed ? 'bg-blue-600 dark:bg-blue-500' : 'bg-slate-300 dark:bg-slate-700'
+                        }`}
+                        role="switch"
+                        aria-checked={isAllowed}
+                        title={`Click to ${isAllowed ? 'revoke' : 'grant'} Staff access to ${page.label}`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                            isAllowed ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
                     </div>
 
-                    {/* Interactive Privilege Toggle */}
-                    <button
-                      onClick={() => handleTogglePrivilege(page.id)}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        isAllowed ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}
-                      role="switch"
-                      aria-checked={isAllowed}
-                      title={`Click to ${isAllowed ? 'revoke' : 'grant'} Staff access to ${page.label}`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                          isAllowed ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-sans mt-2">
+                      {page.description}
+                    </p>
                   </div>
-
-                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-sans">{page.description}</p>
                 </div>
               );
             })}
@@ -968,19 +966,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================================= */}
       {isAdmin && activeTab === 'users' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <div className="erp-card p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="flex items-center gap-2">
+                <span className="badge-status badge-royal text-[10px]">AUTHENTICATION & ROLES</span>
+                <span className="badge-status badge-neutral text-[10px]">{users.length} Total Users</span>
+              </div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 mt-1">
+                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 User Accounts & Access Credentials
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Create and manage operator logins and administrative system credentials.
+                Manage operator logins, staff credentials, and administrative accounts.
               </p>
             </div>
             <button
               onClick={() => setIsAddUserOpen(!isAddUserOpen)}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-xs self-start sm:self-auto cursor-pointer"
+              className="btn-primary flex items-center gap-2 self-start sm:self-auto text-xs"
             >
               <Plus className="w-4 h-4" />
               <span>Add New User</span>
@@ -989,9 +991,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {/* Add User Modal / Form */}
           {isAddUserOpen && (
-            <form onSubmit={handleCreateUser} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-emerald-500/30 shadow-md space-y-4 animate-fade-in">
+            <form onSubmit={handleCreateUser} className="erp-card p-6 border-blue-500/40 shadow-lg space-y-4 animate-fade-in">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <Plus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 Create New System User Account
               </h3>
 
@@ -1004,7 +1006,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value)}
                     placeholder="e.g. john_staff"
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className="erp-input w-full font-mono text-xs"
                   />
                 </div>
                 <div>
@@ -1015,7 +1017,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="e.g. John Doe"
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className="erp-input w-full text-xs"
                   />
                 </div>
                 <div>
@@ -1026,7 +1028,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter password"
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    className="erp-input w-full font-mono text-xs"
                   />
                 </div>
                 <div>
@@ -1034,7 +1036,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as any)}
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium cursor-pointer"
+                    className="erp-input w-full text-xs font-medium cursor-pointer"
                   >
                     <option value="STAFF">STAFF (Operator)</option>
                     <option value="ADMIN">ADMIN (Full Access)</option>
@@ -1053,7 +1055,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmittingUser}
-                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="btn-primary text-xs"
                 >
                   {isSubmittingUser ? 'Creating...' : 'Create Account'}
                 </button>
@@ -1062,83 +1064,85 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           )}
 
           {/* User Table */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 dark:bg-slate-950/80 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800 text-[11px]">
-                <tr>
-                  <th className="px-5 py-3.5">User</th>
-                  <th className="px-5 py-3.5">Username</th>
-                  <th className="px-5 py-3.5">Role & Permissions</th>
-                  <th className="px-5 py-3.5">Created Date</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300">
-                {isLoadingUsers ? (
+          <div className="erp-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="erp-table w-full">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-slate-400">
-                      <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
-                        <span>Loading user accounts...</span>
-                      </div>
-                    </td>
+                    <th>User</th>
+                    <th>Username</th>
+                    <th>Role & Permissions</th>
+                    <th>Created Date</th>
+                    <th className="text-right">Actions</th>
                   </tr>
-                ) : users.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-5 py-10 text-center text-slate-400">
-                      No users found.
-                    </td>
-                  </tr>
-                ) : (
-                  users.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="px-5 py-3.5 font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-extrabold text-xs uppercase shrink-0">
-                          {u.name ? u.name.charAt(0) : u.username.charAt(0)}
+                </thead>
+                <tbody>
+                  {isLoadingUsers ? (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-10 text-center text-slate-400">
+                        <div className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                          <span>Loading user accounts...</span>
                         </div>
-                        <div>
-                          <div className="font-bold text-slate-900 dark:text-white">{u.name || u.username}</div>
-                          {u.username.toLowerCase() === currentUser.username.toLowerCase() && (
-                            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">(Active Session)</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 font-mono text-slate-500 dark:text-slate-400 text-xs">{u.username}</td>
-                      <td className="px-5 py-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold ${
-                            u.role === 'ADMIN'
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                              : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
-                          }`}
-                        >
-                          {u.role === 'ADMIN' ? (
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          ) : (
-                            <UserCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                          )}
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs">
-                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'System Default'}
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        {u.username.toLowerCase() !== currentUser.username.toLowerCase() && (
-                          <button
-                            onClick={() => handleDeleteUser(u)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                            title="Delete User Account"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-10 text-center text-slate-400">
+                        No users found.
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map((u) => (
+                      <tr key={u.id}>
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-extrabold text-xs uppercase shrink-0">
+                              {u.name ? u.name.charAt(0) : u.username.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 dark:text-white">{u.name || u.username}</div>
+                              {u.username.toLowerCase() === currentUser.username.toLowerCase() && (
+                                <span className="text-[10px] font-mono text-teal-600 dark:text-teal-400 font-semibold">(Active Session)</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="font-mono text-xs">{u.username}</td>
+                        <td>
+                          <span
+                            className={`badge-status text-[10px] ${
+                              u.role === 'ADMIN' ? 'badge-royal' : 'badge-teal'
+                            }`}
+                          >
+                            {u.role === 'ADMIN' ? (
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                            ) : (
+                              <UserCheck className="w-3.5 h-3.5" />
+                            )}
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                          {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'System Default'}
+                        </td>
+                        <td className="text-right">
+                          {u.username.toLowerCase() !== currentUser.username.toLowerCase() && (
+                            <button
+                              onClick={() => handleDeleteUser(u)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                              title="Delete User Account"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1148,14 +1152,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================================= */}
       {isAdmin && activeTab === 'system' && (
         <div className="space-y-6">
-          {/* Header Banner */}
-          <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          <div className="erp-card p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+              <div className="p-3 rounded-2xl bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/20 text-teal-600 dark:text-teal-400 shrink-0">
                 <Building2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                <div className="flex items-center gap-2">
+                  <span className="badge-status badge-teal text-[10px]">NETWORK BRANDING</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight mt-1">
                   Company System Profile & 80mm Receipt Header
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -1165,7 +1171,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-mono font-medium">
+              <span className="badge-status badge-success text-xs font-mono">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>{isLoadingProfile ? 'Loading from DB...' : 'SQLite DB Synchronized'}</span>
               </span>
@@ -1174,12 +1180,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {/* Form & Live Preview Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Column: Form Fields */}
+            {/* Form Fields */}
             <form onSubmit={handleSaveProfile} className="lg:col-span-7 space-y-5">
               {/* Card 1: Brand Identity */}
-              <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs space-y-4">
+              <div className="erp-card p-5 space-y-4">
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <Tv className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <Tv className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Company & Brand Identity
                   </h4>
@@ -1196,7 +1202,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       value={profile.companyName}
                       onChange={(e) => setProfile({ ...profile, companyName: e.target.value })}
                       placeholder="e.g. ASK CABLE TV NETWORK"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                      className="erp-input w-full font-bold text-xs"
                     />
                     <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
                       Prints on top of all 80mm POS slips and statement reports.
@@ -1213,16 +1219,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       value={profile.tagline}
                       onChange={(e) => setProfile({ ...profile, tagline: e.target.value })}
                       placeholder="e.g. Cable TV Subscriptions & Services"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                      className="erp-input w-full text-xs"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Card 2: Contact Information */}
-              <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs space-y-4">
+              <div className="erp-card p-5 space-y-4">
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <Phone className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                  <Phone className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Support Contacts & Address
                   </h4>
@@ -1240,7 +1246,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         value={profile.phone}
                         onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                         placeholder="e.g. +94 77 123 4567"
-                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-mono"
+                        className="erp-input w-full font-mono text-xs"
                       />
                     </div>
 
@@ -1254,7 +1260,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         value={profile.email}
                         onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                         placeholder="e.g. support@askcable.lk"
-                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-mono"
+                        className="erp-input w-full font-mono text-xs"
                       />
                     </div>
                   </div>
@@ -1268,16 +1274,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       value={profile.address || ''}
                       onChange={(e) => setProfile({ ...profile, address: e.target.value })}
                       placeholder="e.g. Main Street, Nanu Oya"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="erp-input w-full text-xs"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Card 3: 80mm Receipt Customization */}
-              <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs space-y-4">
+              <div className="erp-card p-5 space-y-4">
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <Receipt className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                  <Receipt className="w-4 h-4 text-amber-500" />
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     80mm Receipt Slip Customization
                   </h4>
@@ -1293,7 +1299,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       value={profile.receiptFooter || ''}
                       onChange={(e) => setProfile({ ...profile, receiptFooter: e.target.value })}
                       placeholder="e.g. Thank you for subscribing to ASK Cable!"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="erp-input w-full text-xs"
                     />
                   </div>
 
@@ -1306,7 +1312,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       value={profile.receiptNotice || ''}
                       onChange={(e) => setProfile({ ...profile, receiptNotice: e.target.value })}
                       placeholder=" • System Validated"
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="erp-input w-full text-xs"
                     />
                   </div>
                 </div>
@@ -1326,7 +1332,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="submit"
                   disabled={isSavingProfile}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                  className="btn-primary flex items-center gap-2 text-xs"
                 >
                   <Save className="w-4 h-4" />
                   <span>{isSavingProfile ? 'Saving to Database...' : 'Save System Profile to DB'}</span>
@@ -1336,15 +1342,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             {/* Right Column: Live 80mm Thermal Receipt Preview */}
             <div className="lg:col-span-5 space-y-4">
-              <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs space-y-3.5">
+              <div className="erp-card p-5 space-y-3.5">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                       Live 80mm Slip Preview
                     </h4>
                   </div>
-                  <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">Continuous Roll</span>
+                  <span className="badge-status badge-neutral text-[10px] font-mono">Continuous Roll</span>
                 </div>
 
                 <p className="text-[11.5px] text-slate-500 dark:text-slate-400">
@@ -1374,10 +1380,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     )}
                   </div>
 
-                  {/* Dashed line */}
                   <div className="border-t border-dashed border-neutral-400 my-1.5" />
 
-                  {/* Sample content */}
                   <div className="text-center my-0.5">
                     <span className="inline-block px-2 py-0.5 text-[9px] font-black uppercase bg-black text-white rounded-xs">
                       *** SAMPLE 80MM RECEIPT ***
@@ -1401,10 +1405,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Dashed line */}
                   <div className="border-t border-dashed border-neutral-400 my-1.5" />
 
-                  {/* Sample total */}
                   <div className="space-y-0.5 text-[10px]">
                     <div className="flex justify-between font-bold text-neutral-800">
                       <span>TOTAL BILLED:</span>
@@ -1422,10 +1424,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Dashed line */}
                   <div className="border-t border-dashed border-neutral-400 my-1.5" />
 
-                  {/* Dynamic Footer */}
                   <div className="text-center text-[8px] text-neutral-700 space-y-0.5 pt-1">
                     <p className="font-bold text-black">
                       {profile.receiptFooter || 'Thank you for subscribing to ASK Cable!'}
@@ -1437,8 +1437,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/20 text-xs text-slate-700 dark:text-slate-300 space-y-1">
-                  <p className="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
+                <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                  <p className="font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
                     <span>✓</span> Instant Receipt Sync
                   </p>
                   <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed font-sans">
@@ -1456,15 +1456,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================================= */}
       {isAdmin && activeTab === 'sms' && (
         <div className="space-y-6">
-          {/* Top Section: Gateway Master Card & Account Balance Card */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            {/* Gateway Master Card & Toggle (8 Columns) */}
-            <div className="lg:col-span-7 xl:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+            {/* Gateway Master Card & Toggle */}
+            <div className="lg:col-span-7 xl:col-span-8 erp-card p-6 flex flex-col justify-between">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
                   <div className={`p-3.5 rounded-2xl border shrink-0 ${
                     smsSettings.enabled
-                      ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                      ? 'bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/30 text-blue-600 dark:text-blue-400'
                       : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500'
                   }`}>
                     <MessageSquare className="w-6 h-6" />
@@ -1474,20 +1473,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                         Notify.lk SMS Gateway
                       </h2>
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                        smsSettings.enabled
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                      <span className={`badge-status text-[11px] ${
+                        smsSettings.enabled ? 'badge-success' : 'badge-neutral'
                       }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${smsSettings.enabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${smsSettings.enabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
                         {smsSettings.enabled ? 'Automatic Dispatch Active' : 'Automatic Dispatch Disabled'}
                       </span>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400 text-[10px] font-mono border border-blue-200">
+                      <span className="badge-status badge-royal text-[10px]">
                         Sri Lanka Telco Gateway
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed font-sans">
-                      When enabled, whenever a payment is collected in <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Payment Collection</span> or <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Monthly Payment</span>, an instant SMS receipt will be automatically delivered to the customer&apos;s mobile number.
+                      When enabled, whenever a payment is collected in <span className="text-blue-600 dark:text-blue-400 font-semibold">Payment Collection</span> or <span className="text-blue-600 dark:text-blue-400 font-semibold">Monthly Payment</span>, an instant SMS receipt will be automatically delivered to the customer&apos;s mobile number.
                     </p>
                   </div>
                 </div>
@@ -1501,7 +1498,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={() => setSmsSettings(prev => ({ ...prev, enabled: !prev.enabled }))}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      smsSettings.enabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
+                      smsSettings.enabled ? 'bg-blue-600 dark:bg-blue-500' : 'bg-slate-300 dark:bg-slate-700'
                     }`}
                     role="switch"
                     aria-checked={smsSettings.enabled}
@@ -1517,18 +1514,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             {/* Account Balance Card */}
-            <div className="lg:col-span-5 xl:col-span-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs flex flex-col justify-between relative transition-all">
-              {/* Header */}
+            <div className="lg:col-span-5 xl:col-span-4 erp-card p-6 flex flex-col justify-between relative transition-all">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-slate-900 dark:text-white">
                     Account Balance
                   </span>
                   {smsBalance && (
-                    <span className={`inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                      smsBalance.active
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
-                        : 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20'
+                    <span className={`badge-status text-[10px] ${
+                      smsBalance.active ? 'badge-success' : 'badge-danger'
                     }`}>
                       {smsBalance.active ? 'ACTIVE' : 'INACTIVE'}
                     </span>
@@ -1543,25 +1537,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
                     title="Refresh Live SMS Balance from Notify.lk"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingBalance ? 'animate-spin text-emerald-500' : ''}`} />
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingBalance ? 'animate-spin text-blue-500' : ''}`} />
                   </button>
 
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 relative border border-slate-200/60 dark:border-slate-700/60 shadow-xs">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-xs">
                     <Mail className="w-5 h-5 stroke-[1.8]" />
-                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Big bold balance */}
+              {/* Balance */}
               <div className="my-3">
                 {isLoadingBalance && !smsBalance ? (
                   <div className="h-10 w-28 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-xl" />
                 ) : (
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-sans">
+                    <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-mono">
                       {smsBalance?.balance !== undefined ? smsBalance.balance.toLocaleString() : '—'}
                     </span>
                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -1571,10 +1562,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 )}
               </div>
 
-              {/* Footer: As of Timestamp */}
               <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-1.5 truncate">
-                  <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                <div className="flex items-center gap-1.5 truncate font-mono text-[11px]">
+                  <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span className="truncate">
                     {smsBalance?.checkedAt
                       ? `As of ${formatLogDateTime(smsBalance.checkedAt)}`
@@ -1585,22 +1575,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
 
-          {/* Main Grid: Settings & Test Console */}
+          {/* Credentials and Template */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left 7 Columns: Credentials and Template */}
             <div className="lg:col-span-7 space-y-6">
               {/* Credentials Card */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+              <div className="erp-card p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
-                    <Key className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Key className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">API Credentials</h3>
                   </div>
                   <a
                     href="https://app.notify.lk"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
+                    className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold"
                   >
                     <span>Open Notify.lk Dashboard</span>
                     <ExternalLink className="w-3 h-3" />
@@ -1608,7 +1597,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* User ID */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <Hash className="w-3.5 h-3.5 text-slate-400" />
@@ -1620,14 +1608,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="e.g. 21800"
                       value={smsSettings.userId}
                       onChange={(e) => setSmsSettings(prev => ({ ...prev, userId: e.target.value.trim() }))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="erp-input w-full font-mono text-xs"
                     />
                     <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
                       Numeric User ID found in your Notify.lk profile.
                     </p>
                   </div>
 
-                  {/* Sender ID */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
@@ -1638,7 +1625,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => setSmsSettings(prev => ({ ...prev, senderId: 'NotifyDEMO' }))}
-                          className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline font-bold cursor-pointer"
+                          className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
                         >
                           Use &quot;NotifyDEMO&quot;
                         </button>
@@ -1649,14 +1636,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="NotifyDEMO"
                       value={smsSettings.senderId}
                       onChange={(e) => setSmsSettings(prev => ({ ...prev, senderId: e.target.value.trim() }))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="erp-input w-full font-mono text-xs"
                     />
                     <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight">
-                      Use <button type="button" onClick={() => setSmsSettings(prev => ({ ...prev, senderId: 'NotifyDEMO' }))} className="font-mono text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer">NotifyDEMO</button> for free trial testing. Custom names require TRCSL registration.
+                      Use <button type="button" onClick={() => setSmsSettings(prev => ({ ...prev, senderId: 'NotifyDEMO' }))} className="font-mono text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">NotifyDEMO</button> for free trial testing.
                     </p>
                   </div>
 
-                  {/* API Key */}
                   <div className="sm:col-span-2 space-y-1.5">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
@@ -1687,32 +1673,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="Paste your 32-character Notify.lk API Key here..."
                       value={smsSettings.apiKey}
                       onChange={(e) => setSmsSettings(prev => ({ ...prev, apiKey: e.target.value.trim() }))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="erp-input w-full font-mono text-xs"
                     />
-                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                      Keep this private. Stored securely in your local database.
-                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Message Template Card */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+              <div className="erp-card p-6 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
-                    <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Receipt className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">Automated SMS Templates</h3>
                   </div>
 
                   <div className="flex items-center gap-2 self-start sm:self-auto">
-                    {/* Template Switcher Tabs */}
                     <div className="flex items-center bg-slate-100 dark:bg-slate-950 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px]">
                       <button
                         type="button"
                         onClick={() => setTemplateTab('payment')}
                         className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                           templateTab === 'payment'
-                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                            ? 'bg-blue-600 text-white shadow-xs'
                             : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
@@ -1723,7 +1705,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         onClick={() => setTemplateTab('registration')}
                         className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                           templateTab === 'registration'
-                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                            ? 'bg-blue-600 text-white shadow-xs'
                             : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
@@ -1749,7 +1731,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                         Monthly Payment SMS Template (Sent upon payment collection)
                       </label>
-                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono font-bold bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-500/20">
+                      <span className="badge-status badge-teal text-[10px]">
                         Counter & Monthly Ledger
                       </span>
                     </div>
@@ -1757,11 +1739,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       rows={4}
                       value={smsSettings.paymentSmsTemplate}
                       onChange={(e) => setSmsSettings(prev => ({ ...prev, paymentSmsTemplate: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs leading-relaxed text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-y"
+                      className="erp-input w-full text-xs leading-relaxed resize-y"
                       placeholder="Enter payment SMS template..."
                     />
 
-                    {/* Dynamic Variable Chips for Payment */}
                     <div className="space-y-1.5 pt-1">
                       <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                         Click any tag below to insert into template:
@@ -1785,7 +1766,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 paymentSmsTemplate: `${prev.paymentSmsTemplate} ${chip.token}`,
                               }));
                             }}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold cursor-pointer transition-colors"
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-mono text-blue-600 dark:text-blue-400 font-bold cursor-pointer transition-colors"
                             title={`Insert ${chip.desc}`}
                           >
                             {chip.token}
@@ -1800,7 +1781,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                         Customer Registration Welcome SMS (Sent on new subscriber sign-up)
                       </label>
-                      <span className="text-[10px] text-blue-700 dark:text-blue-400 font-mono font-bold bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-500/20">
+                      <span className="badge-status badge-royal text-[10px]">
                         Customer Registration Form
                       </span>
                     </div>
@@ -1808,11 +1789,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       rows={4}
                       value={smsSettings.registrationSmsTemplate || DEFAULT_SMS_SETTINGS.registrationSmsTemplate}
                       onChange={(e) => setSmsSettings(prev => ({ ...prev, registrationSmsTemplate: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs leading-relaxed text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-y"
+                      className="erp-input w-full text-xs leading-relaxed resize-y"
                       placeholder="Enter customer registration welcome SMS template..."
                     />
 
-                    {/* Dynamic Variable Chips for Registration */}
                     <div className="space-y-1.5 pt-1">
                       <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                         Click any tag below to insert into template:
@@ -1837,7 +1817,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 registrationSmsTemplate: `${prev.registrationSmsTemplate || DEFAULT_SMS_SETTINGS.registrationSmsTemplate} ${chip.token}`,
                               }));
                             }}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold cursor-pointer transition-colors"
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-mono text-blue-600 dark:text-blue-400 font-bold cursor-pointer transition-colors"
                             title={`Insert ${chip.desc}`}
                           >
                             {chip.token}
@@ -1849,7 +1829,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 )}
               </div>
 
-              {/* Save Button Bar */}
+              {/* Save Button */}
               <div className="flex items-center justify-between pt-2">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                   Settings are immediately persisted to the SQLite database.
@@ -1858,7 +1838,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   type="button"
                   onClick={handleSaveSmsSettings}
                   disabled={isSavingSms}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                  className="btn-primary flex items-center gap-2 text-xs"
                 >
                   <Save className="w-4 h-4" />
                   <span>{isSavingSms ? 'Saving Settings...' : 'Save SMS Settings'}</span>
@@ -1866,23 +1846,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
-            {/* Right 5 Columns: Live Mobile Screen Preview & Test Console */}
+            {/* Smartphone Mockup & Test Console */}
             <div className="lg:col-span-5 space-y-6">
-              {/* Live Smartphone Screen Preview */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+              {/* Smartphone Mockup */}
+              <div className="erp-card p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Smartphone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">Customer Mobile Preview</h3>
                   </div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono font-bold">
+                  <span className="badge-status badge-neutral text-[10px] font-mono">
                     {templateTab === 'payment' ? 'Payment Slip' : 'Welcome SMS'}
                   </span>
                 </div>
 
-                {/* Smartphone Mockup */}
                 <div className="bg-slate-100 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-md relative overflow-hidden">
-                  {/* Phone Header Bar */}
                   <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2 mb-3 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -1893,8 +1871,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <span>Today • Just Now</span>
                   </div>
 
-                  {/* SMS Bubble */}
-                  <div className="p-4 bg-white dark:bg-slate-850 rounded-2xl rounded-tl-sm text-slate-800 dark:text-slate-100 text-xs leading-relaxed border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+                  <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl rounded-tl-sm text-slate-800 dark:text-slate-100 text-xs leading-relaxed border border-slate-200/80 dark:border-slate-800 shadow-xs">
                     <p className="whitespace-pre-wrap font-sans text-[11.5px]">
                       {templateTab === 'payment'
                         ? (smsSettings.paymentSmsTemplate || DEFAULT_SMS_SETTINGS.paymentSmsTemplate)
@@ -1917,29 +1894,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </p>
                   </div>
 
-                  {/* Metric Chips */}
-                  <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400">
+                  <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400">
                     <span>
                       Length:{' '}
                       <strong className="text-slate-900 dark:text-white font-mono">
                         {((templateTab === 'payment' ? smsSettings.paymentSmsTemplate : smsSettings.registrationSmsTemplate) || '').length} chars
                       </strong>
                     </span>
-                    <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-                      <span>✓</span> Standard GSM-7
+                    <span className="badge-status badge-teal text-[10px]">
+                      Standard GSM-7
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Live Test SMS Delivery Console */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+              {/* Test Console */}
+              <div className="erp-card p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
-                    <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Send className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">Send Live Test SMS</h3>
                   </div>
-                  <span className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-500/20">
+                  <span className="badge-status badge-teal text-[10px]">
                     Verify Gateway
                   </span>
                 </div>
@@ -1955,7 +1931,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="e.g. 0771234567 or 94771234567"
                       value={testPhone}
                       onChange={(e) => setTestPhone(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="erp-input w-full font-mono text-xs"
                     />
                   </div>
 
@@ -1967,25 +1943,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       type="text"
                       value={testMessage}
                       onChange={(e) => setTestMessage(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                      className="erp-input w-full text-xs"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={isSendingTestSms || !testPhone.trim()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                    className="btn-primary w-full flex items-center justify-center gap-2 text-xs py-2.5"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>{isSendingTestSms ? 'Transmitting to Notify.lk...' : 'Send Live Test SMS Now'}</span>
                   </button>
 
-                  {/* Test Result Message Box */}
                   {testSmsResult && (
                     <div className={`p-4 rounded-xl border text-xs leading-relaxed animate-fade-in ${
                       testSmsResult.success
-                        ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
-                        : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-300'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-300'
                     }`}>
                       <div className="flex items-start gap-3">
                         {testSmsResult.success ? (
@@ -2007,7 +1982,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                   toast.success('Sender ID updated to NotifyDEMO and saved to database!');
                                 });
                               }}
-                              className="mt-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                              className="mt-1.5 btn-primary text-xs"
                             >
                               Set Sender ID to &quot;NotifyDEMO&quot; &amp; Save
                             </button>
@@ -2018,7 +1993,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   )}
                 </form>
 
-                {/* Helpful Hints Card */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 space-y-1.5">
                   <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-bold">
                     <Info className="w-3.5 h-3.5 text-blue-500" />
@@ -2032,14 +2006,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
 
-          {/* ========================================================================= */}
-          {/* SMS DISPATCH LOGS & DELIVERY HISTORY                                      */}
-          {/* ========================================================================= */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
-            {/* Header */}
+          {/* SMS Dispatch Logs & History */}
+          <div className="erp-card p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3.5">
-                <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+                <div className="p-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0">
                   <History className="w-5 h-5" />
                 </div>
                 <div>
@@ -2047,7 +2018,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight">
                       SMS Dispatch Logs &amp; Delivery History
                     </h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-mono font-bold">
+                    <span className="badge-status badge-neutral font-mono text-[11px]">
                       {smsLogs.length} Records
                     </span>
                   </div>
@@ -2057,7 +2028,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
 
-              {/* Action buttons */}
               <div className="flex items-center gap-2 self-start sm:self-auto">
                 <button
                   type="button"
@@ -2066,7 +2036,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                   title="Refresh SMS Logs"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingLogs ? 'animate-spin text-emerald-500' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingLogs ? 'animate-spin text-blue-500' : ''}`} />
                   <span>Refresh</span>
                 </button>
 
@@ -2075,7 +2045,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={handleClearSmsLogs}
                     disabled={isClearingLogs}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-700 dark:text-rose-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                     title="Clear All SMS Logs"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -2085,9 +2055,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
-            {/* Filters & Search Row */}
+            {/* Filter and Search Bar */}
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-              {/* Search Bar */}
               <div className="relative flex-1">
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -2098,7 +2067,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     setLogsSearchTerm(e.target.value);
                     fetchLogs({ search: e.target.value });
                   }}
-                  className="w-full pl-10 pr-8 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="erp-input w-full pl-10 pr-8 py-2 text-xs"
                 />
                 {logsSearchTerm && (
                   <button
@@ -2114,9 +2083,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 )}
               </div>
 
-              {/* Filter Dropdowns */}
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Type Filter */}
                 <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5">
                   <Filter className="w-3.5 h-3.5 text-slate-400" />
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Type:</span>
@@ -2132,7 +2099,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </select>
                 </div>
 
-                {/* Status Filter */}
                 <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5">
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Status:</span>
                   <select
@@ -2151,7 +2117,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {/* Logs List Table */}
             {isLoadingLogs && smsLogs.length === 0 ? (
               <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
-                <RefreshCw className="w-6 h-6 animate-spin text-emerald-500" />
+                <RefreshCw className="w-6 h-6 animate-spin text-blue-500" />
                 <p className="text-xs text-slate-400">Loading SMS dispatch records...</p>
               </div>
             ) : smsLogs.length === 0 ? (
@@ -2168,46 +2134,38 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             ) : (
               <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="erp-table w-full">
                   <thead>
-                    <tr className="bg-slate-50/80 dark:bg-slate-950/80 border-b border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px]">
-                      <th className="py-3 px-3.5">Date &amp; Time</th>
-                      <th className="py-3 px-3.5">Type</th>
-                      <th className="py-3 px-3.5">Recipient &amp; Customer</th>
-                      <th className="py-3 px-3.5">Message Content</th>
-                      <th className="py-3 px-3.5">Sender ID</th>
-                      <th className="py-3 px-3.5">Status</th>
-                      <th className="py-3 px-3.5 text-right">Actions</th>
+                    <tr>
+                      <th>Date &amp; Time</th>
+                      <th>Type</th>
+                      <th>Recipient &amp; Customer</th>
+                      <th>Message Content</th>
+                      <th>Sender ID</th>
+                      <th>Status</th>
+                      <th className="text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                  <tbody>
                     {smsLogs.map((log) => {
                       const isDelivered = log.status === 'DELIVERED';
                       return (
-                        <tr
-                          key={log.id}
-                          className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
-                        >
-                          {/* Timestamp */}
-                          <td className="py-3 px-3.5 whitespace-nowrap font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                        <tr key={log.id}>
+                          <td className="whitespace-nowrap font-mono text-[11px] text-slate-500 dark:text-slate-400">
                             {formatLogDateTime(log.createdAt)}
                           </td>
-
-                          {/* Type */}
-                          <td className="py-3 px-3.5 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border ${
+                          <td className="whitespace-nowrap">
+                            <span className={`badge-status text-[10px] ${
                               log.type === 'PAYMENT'
-                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
+                                ? 'badge-teal'
                                 : log.type === 'REGISTRATION'
-                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/30'
-                                : 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border-purple-200 dark:border-purple-500/30'
+                                ? 'badge-royal'
+                                : 'badge-neutral'
                             }`}>
                               {log.type === 'PAYMENT' ? 'Payment Slip' : log.type === 'REGISTRATION' ? 'Welcome SMS' : 'Test SMS'}
                             </span>
                           </td>
-
-                          {/* Recipient & Customer */}
-                          <td className="py-3 px-3.5 whitespace-nowrap">
+                          <td className="whitespace-nowrap">
                             <div className="flex flex-col">
                               <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">
                                 {log.recipientPhone}
@@ -2219,31 +2177,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               )}
                             </div>
                           </td>
-
-                          {/* Message snippet */}
-                          <td className="py-3 px-3.5 max-w-xs truncate text-[11.5px] text-slate-600 dark:text-slate-300">
+                          <td className="max-w-xs truncate text-[11.5px]">
                             <span
                               title={log.message}
-                              className="cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 font-medium"
+                              className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 font-medium"
                               onClick={() => setSelectedLogForModal(log)}
                             >
                               {log.message}
                             </span>
                           </td>
-
-                          {/* Sender ID */}
-                          <td className="py-3 px-3.5 whitespace-nowrap font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                          <td className="whitespace-nowrap font-mono text-[11px] text-slate-500 dark:text-slate-400">
                             {log.senderId || 'NotifyDEMO'}
                           </td>
-
-                          {/* Status */}
-                          <td className="py-3 px-3.5 whitespace-nowrap">
+                          <td className="whitespace-nowrap">
                             <span
                               title={log.gatewayResponse || ''}
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border ${
-                                isDelivered
-                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
-                                  : 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200 dark:border-rose-500/30'
+                              className={`badge-status text-[10.5px] ${
+                                isDelivered ? 'badge-success' : 'badge-danger'
                               }`}
                             >
                               {isDelivered ? (
@@ -2254,9 +2204,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               <span>{isDelivered ? 'Delivered' : 'Failed'}</span>
                             </span>
                           </td>
-
-                          {/* Actions */}
-                          <td className="py-3 px-3.5 whitespace-nowrap text-right">
+                          <td className="whitespace-nowrap text-right">
                             <div className="flex items-center justify-end gap-1">
                               <button
                                 type="button"
@@ -2269,11 +2217,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleCopyMessage(log.message, log.id)}
-                                className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                                 title="Copy SMS Message Text"
                               >
                                 {copiedLogId === log.id ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                  <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                                 ) : (
                                   <Copy className="w-3.5 h-3.5" />
                                 )}
@@ -2296,13 +2244,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================================= */}
       {(isStaff || activeTab === 'printer') && (
         <div className="space-y-6">
-          {/* Top Banner Card: Bluetooth Thermal Printer Status */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-7 shadow-xs space-y-6">
+          <div className="erp-card p-6 sm:p-7 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
               <div className="flex items-start gap-4">
                 <div className={`p-3.5 rounded-2xl border shrink-0 ${
                   savedPrinter.name
-                    ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                    ? 'bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/30 text-blue-600 dark:text-blue-400'
                     : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500'
                 }`}>
                   <Printer className="w-6 h-6" />
@@ -2312,12 +2259,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                       Bluetooth Thermal Receipt Printer
                     </h2>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                      savedPrinter.name
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
-                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                    <span className={`badge-status text-[11px] ${
+                      savedPrinter.name ? 'badge-success' : 'badge-neutral'
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${savedPrinter.name ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-500'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${savedPrinter.name ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
                       {savedPrinter.name ? '1-Click Auto Reconnect Ready' : 'No Default Printer Paired'}
                     </span>
                   </div>
@@ -2327,7 +2272,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
 
-              {/* Action Buttons Header */}
+              {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 {savedPrinter.name ? (
                   <>
@@ -2339,12 +2284,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     >
                       {isTestingPrinter ? (
                         <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600 dark:text-emerald-400" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 dark:text-blue-400" />
                           <span>Printing Test...</span>
                         </>
                       ) : (
                         <>
-                          <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <Printer className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                           <span>Test Print Slip</span>
                         </>
                       )}
@@ -2352,7 +2297,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={handleForgetPrinter}
-                      className="flex items-center justify-center gap-1 px-3 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                      className="flex items-center justify-center gap-1 px-3 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                       title="Unpair saved printer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -2364,7 +2309,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={handlePairPrinter}
                     disabled={isPairingPrinter}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                    className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2 text-xs py-2.5"
                   >
                     {isPairingPrinter ? (
                       <>
@@ -2389,7 +2334,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Paired Device</span>
                   <p className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <span>{savedPrinter.name}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 text-[10px] font-mono font-bold">
+                    <span className="badge-status badge-success text-[10px]">
                       DEFAULT
                     </span>
                   </p>
@@ -2406,8 +2351,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       onClick={() => handlePrinterPaperSizeChange(58)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         printerPaperSize === 58
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                       }`}
                     >
                       58mm (Mini)
@@ -2417,8 +2362,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       onClick={() => handlePrinterPaperSizeChange(80)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         printerPaperSize === 80
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                       }`}
                     >
                       80mm (POS)
@@ -2436,7 +2381,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="button"
                     onClick={handlePairPrinter}
                     disabled={isPairingPrinter}
-                    className="mt-1.5 flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
+                    className="mt-1.5 flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
                   >
                     <RefreshCw className="w-3 h-3" />
                     <span>Re-Pair / Select Another</span>
@@ -2445,7 +2390,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             ) : (
               <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-xs">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
                   <Bluetooth className="w-6 h-6" />
                 </div>
                 <div>
@@ -2458,7 +2403,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   type="button"
                   onClick={handlePairPrinter}
                   disabled={isPairingPrinter}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                  className="btn-primary inline-flex items-center gap-2 text-xs py-2.5 px-5"
                 >
                   {isPairingPrinter ? (
                     <>
@@ -2476,33 +2421,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
           </div>
 
-          {/* Paper Size & How It Works Instructions */}
+          {/* Instructions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Step 1 */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-2 shadow-xs">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
+            <div className="erp-card p-5 space-y-2">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">
                 1
               </div>
               <h4 className="text-sm font-bold text-slate-900 dark:text-white">புளூடூத்தில் Pair செய்யுங்கள்</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
-                உங்கள் பிரிண்டரை ஆன் செய்து மொபைல் / கணினியின் Bluetooth Settings-ல் இணைத்துக் கொள்ளுங்கள் (Default PIN: <code className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">0000</code> அல்லது <code className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">1234</code>).
+                உங்கள் பிரிண்டரை ஆன் செய்து மொபைல் / கணினியின் Bluetooth Settings-ல் இணைத்துக் கொள்ளுங்கள் (Default PIN: <code className="text-blue-600 dark:text-blue-400 font-mono font-bold">0000</code> அல்லது <code className="text-blue-600 dark:text-blue-400 font-mono font-bold">1234</code>).
               </p>
             </div>
 
-            {/* Step 2 */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-2 shadow-xs">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
+            <div className="erp-card p-5 space-y-2">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">
                 2
               </div>
               <h4 className="text-sm font-bold text-slate-900 dark:text-white">செட்டிங்ஸில் ஒருமுறை இணைக்கவும்</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
-                மேலே உள்ள <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">Pair Bluetooth Printer</strong> பட்டனை அழுத்தி பிரிண்டரைத் தேர்ந்தெடுங்கள். அது தானாகவே Default Printer-ஆக சேமிக்கப்படும்.
+                மேலே உள்ள <strong className="text-blue-600 dark:text-blue-400 font-semibold">Pair Bluetooth Printer</strong> பட்டனை அழுத்தி பிரிண்டரைத் தேர்ந்தெடுங்கள். அது தானாகவே Default Printer-ஆக சேமிக்கப்படும்.
               </p>
             </div>
 
-            {/* Step 3 */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-2 shadow-xs">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
+            <div className="erp-card p-5 space-y-2">
+              <div className="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold text-xs">
                 3
               </div>
               <h4 className="text-sm font-bold text-slate-900 dark:text-white">1-கிளிக் நேரடி பிரிண்ட்</h4>
@@ -2517,11 +2459,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* SMS Log Details Modal */}
       {selectedLogForModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-            {/* Modal Header */}
+          <div className="erp-card w-full max-w-lg p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400 border border-blue-500/20">
                   <Receipt className="w-4 h-4" />
                 </div>
                 <div>
@@ -2542,7 +2483,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             </div>
 
-            {/* Quick Meta Grid */}
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
                 <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">Recipient Mobile</span>
@@ -2559,10 +2499,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
                 <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">Delivery Status</span>
                 <div className="flex items-center gap-1.5 pt-0.5">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                    selectedLogForModal.status === 'DELIVERED'
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
-                      : 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200 dark:border-rose-500/30'
+                  <span className={`badge-status text-[11px] ${
+                    selectedLogForModal.status === 'DELIVERED' ? 'badge-success' : 'badge-danger'
                   }`}>
                     {selectedLogForModal.status === 'DELIVERED' ? 'DELIVERED' : 'FAILED'}
                   </span>
@@ -2573,7 +2511,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
-            {/* Full Message Text Card */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -2582,19 +2519,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => handleCopyMessage(selectedLogForModal.message, selectedLogForModal.id)}
-                  className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer font-semibold"
+                  className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer font-semibold"
                 >
                   <Copy className="w-3 h-3" />
                   <span>{copiedLogId === selectedLogForModal.id ? 'Copied!' : 'Copy Text'}</span>
                 </button>
               </div>
 
-              <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs leading-relaxed font-sans whitespace-pre-wrap selection:bg-emerald-500/20 max-h-48 overflow-y-auto">
+              <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 text-xs leading-relaxed font-sans whitespace-pre-wrap selection:bg-blue-500/20 max-h-48 overflow-y-auto">
                 {selectedLogForModal.message}
               </div>
             </div>
 
-            {/* Gateway Response details if available */}
             {selectedLogForModal.gatewayResponse && (
               <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Notify.lk Gateway Response:</span>
@@ -2604,7 +2540,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             )}
 
-            {/* Modal Actions */}
             <div className="pt-2 flex items-center justify-end">
               <button
                 type="button"
@@ -2617,6 +2552,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
       )}
+
       <ConfirmModal
         isOpen={confirmModalConfig.isOpen}
         onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}

@@ -445,17 +445,17 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
           ========================================================================= */}
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto print:hidden animate-fade-in">
         {/* Container Card */}
-        <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
+        <div className="erp-card w-full max-w-md overflow-hidden flex flex-col max-h-[96vh] shadow-2xl">
           {/* Modal Header */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+              <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400">
                 <Printer className="w-4 h-4 shrink-0" />
               </div>
               <div className="min-w-0">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight flex items-center gap-1.5">
                   <span>Thermal Bill Printer</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
+                  <span className="badge-status badge-royal font-mono text-[10px]">
                     {paperWidth}mm
                   </span>
                 </h3>
@@ -484,7 +484,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
                   onClick={() => handlePaperWidthChange(58)}
                   className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                     paperWidth === 58
-                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -495,7 +495,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
                   onClick={() => handlePaperWidthChange(80)}
                   className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                     paperWidth === 80
-                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -507,7 +507,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
             <button
               type="button"
               onClick={() => setShowGuide(!showGuide)}
-              className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+              className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
             >
               <HelpCircle className="w-3.5 h-3.5" />
               <span>{showGuide ? 'Hide Help' : 'Printer Help'}</span>
@@ -618,7 +618,7 @@ export const BillPrintModal: React.FC<BillPrintModalProps> = ({
                 type="button"
                 onClick={() => handleDirectBluetoothPrint(false)}
                 disabled={isBluetoothPrinting}
-                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="btn-primary flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-bold disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isBluetoothPrinting ? (
                   <>

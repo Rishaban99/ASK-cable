@@ -1,31 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Customer, MonthlyPayment, IncomeRecord, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
-import { BillPrintModal, BillData } from './BillPrintModal.js';
 import { useToast } from './Toast.js';
+import { BillPrintModal, BillData } from './BillPrintModal.js';
 import {
   History,
   Search,
-  UserCheck,
-  CreditCard,
+  User as UserIcon,
+  Users,
+  Box,
+  ShieldCheck,
   Phone,
   MapPin,
-  Box,
   Calendar,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
   Printer,
-  FileText,
-  DollarSign,
+  Tv,
+  CreditCard,
+  Clock,
+  CheckCircle2,
+  Banknote,
+  AlertTriangle,
   ArrowRight,
-  ShieldCheck,
-  User as UserIcon,
-  Tag,
-  Edit2
+  Filter,
 } from 'lucide-react';
+import { getCustomerPackage } from '../utils/packageManager.js';
 
-interface CustomerHistoryViewProps {
+export interface CustomerHistoryViewProps {
   customers: Customer[];
   monthlyPayments: MonthlyPayment[];
   incomes?: IncomeRecord[];
@@ -42,1223 +42,565 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
   incomes = [],
   currency,
   onRefreshData,
-  currentUser,
-  selectedCustomerId: initialSelectedId,
+  selectedCustomerId,
   onSelectCustomer,
 }) => {
   const toast = useToast();
-  const [selectedCustId, setSelectedCustId] = useState<string>(initialSelectedId || (customers[0]?.id || ''));
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const [activeCustomerId, setActiveCustomerId] = useState<string>(
+    selectedCustomerId || customers[0]?.id || ''
+  );
   const [searchQuery, setSearchQuery] = useState('');
-  const [historyFilter, setHistoryFilter] = useState<'ALL' | 'REGISTRATION' | 'MONTHLY' | 'UNPAID'>('ALL');
-  const [historyViewTab, setHistoryViewTab] = useState<'ALL' | 'TRANSACTIONS' | 'LEDGER'>('ALL');
-  const [txSearchQuery, setTxSearchQuery] = useState('');
+  const [activeFilterTab, setActiveFilterTab] = useState<'ALL' | 'REGISTRATION' | 'MONTHLY' | 'UNPAID'>('ALL');
 
   // Pay Balance Modal States
-  const [payBalanceTarget, setPayBalanceTarget] = useState<{
-    type: 'CUSTOMER' | 'MONTHLY';
-    id: string;
-    name: string;
-    boxNo: string;
-    totalAmount: number;
-    paidAmount: number;
-    balanceAmount: number;
-    title: string;
-  } | null>(null);
-
+  const [payTargetItem, setPayTargetItem] = useState<any | null>(null);
   const [payAmount, setPayAmount] = useState('');
   const [isPaying, setIsPaying] = useState(false);
 
-  // Bill Printing Modal States
+  // Bill Print Modal States
   const [activeBillData, setActiveBillData] = useState<BillData | null>(null);
   const [isBillModalOpen, setIsBillModalOpen] = useState(false);
 
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  const formatMonthLabel = (mStr?: string) => {
-    if (!mStr) return '';
-    const [year, month] = mStr.split('-');
-    if (!year || !month) return mStr;
-    const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
-    return date.toLocaleString('default', { month: 'short', year: 'numeric' });
-  };
-
-  // Synchronize when initialSelectedId changes
   useEffect(() => {
-    if (initialSelectedId) {
-      setSelectedCustId(initialSelectedId);
-    } else if (!selectedCustId && customers.length > 0) {
-      setSelectedCustId(customers[0].id);
+    if (selectedCustomerId) {
+      setActiveCustomerId(selectedCustomerId);
+    } else if (!activeCustomerId && customers.length > 0) {
+      setActiveCustomerId(customers[0].id);
     }
-  }, [initialSelectedId, customers]);
+  }, [selectedCustomerId, customers]);
 
-  const handleCustChange = (id: string) => {
-    setSelectedCustId(id);
-    if (onSelectCustomer) {
-      onSelectCustomer(id);
-    }
+  const handleSelectCust = (id: string) => {
+    setActiveCustomerId(id);
+    if (onSelectCustomer) onSelectCustomer(id);
   };
 
-  // Currently selected customer object
-  const currentCustomer = customers.find((c) => c.id === selectedCustId);
+  const selectedCustomer = useMemo(
+    () => customers.find((c) => c.id === activeCustomerId) || customers[0],
+    [customers, activeCustomerId]
+  );
 
-  // Filtered customer options for search box
-  const filteredCustomerOptions = customers.filter((c) => {
-    if (!searchQuery) return true;
+  const filteredCustomerList = useMemo(() => {
+    if (!searchQuery) return customers;
     const q = searchQuery.toLowerCase();
-    return (
-      c.name.toLowerCase().includes(q) ||
-      c.boxNo.toLowerCase().includes(q) ||
-      c.nicNo.toLowerCase().includes(q) ||
-      c.phoneNo.toLowerCase().includes(q)
+    return customers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.boxNo.toLowerCase().includes(q) ||
+        c.phoneNo.toLowerCase().includes(q) ||
+        c.nicNo.toLowerCase().includes(q)
     );
-  });
+  }, [customers, searchQuery]);
 
-  // Get all monthly payments for current customer
-  const customerMonthlyPayments = monthlyPayments.filter((p) => {
-    if (!currentCustomer) return false;
-    return (
-      p.customerId === currentCustomer.id ||
-      (p.boxNo && p.boxNo.toLowerCase() === currentCustomer.boxNo.toLowerCase()) ||
-      (p.customerName && p.customerName.toLowerCase() === currentCustomer.name.toLowerCase())
+  // Monthly bills for selected customer
+  const customerMonthlyBills = useMemo(() => {
+    if (!selectedCustomer) return [];
+    return monthlyPayments.filter(
+      (p) =>
+        p.customerId === selectedCustomer.id ||
+        (p.boxNo && p.boxNo.toLowerCase() === selectedCustomer.boxNo.toLowerCase()) ||
+        (p.customerName && p.customerName.toLowerCase() === selectedCustomer.name.toLowerCase())
     );
-  });
+  }, [monthlyPayments, selectedCustomer]);
 
-  // Calculate totals for current customer
-  const regTotal = currentCustomer?.totalAmount || 0;
-  const regPaid = currentCustomer?.paidAmount || 0;
-  const regBalance = currentCustomer?.balanceAmount || 0;
+  // Lifetime financial summary calculations
+  const regTotal = selectedCustomer?.totalAmount || 0;
+  const regPaid = selectedCustomer?.paidAmount || 0;
+  const regBalance = selectedCustomer?.balanceAmount || 0;
 
-  const monthlyBilledSum = customerMonthlyPayments.reduce((sum, p) => sum + p.monthlyFee, 0);
-  const monthlyPaidSum = customerMonthlyPayments.reduce((sum, p) => sum + p.paidAmount, 0);
-  const monthlyBalanceSum = customerMonthlyPayments.reduce((sum, p) => sum + p.balanceAmount, 0);
+  const monthlyBilledTotal = customerMonthlyBills.reduce((acc, p) => acc + (p.monthlyFee || 0), 0);
+  const monthlyPaidTotal = customerMonthlyBills.reduce((acc, p) => acc + (p.paidAmount || 0), 0);
+  const monthlyBalanceTotal = customerMonthlyBills.reduce((acc, p) => acc + (p.balanceAmount || 0), 0);
 
-  const grandTotalBilled = regTotal + monthlyBilledSum;
-  const grandTotalPaid = regPaid + monthlyPaidSum;
-  const grandTotalBalance = regBalance + monthlyBalanceSum;
+  const lifetimeBilled = regTotal + monthlyBilledTotal;
+  const lifetimePaid = regPaid + monthlyPaidTotal;
+  const lifetimeOutstanding = regBalance + monthlyBalanceTotal;
 
-  // Construct combined ledger items for history timeline table
-  interface CombinedHistoryItem {
-    id: string;
-    itemType: 'REGISTRATION' | 'MONTHLY';
-    title: string;
-    periodOrDate: string;
-    rawDate: string;
-    boxNo: string;
-    totalOrFee: number;
-    paidAmount: number;
-    balanceAmount: number;
-    status: 'PAID' | 'PARTIAL' | 'UNPAID';
-    rawObject: Customer | MonthlyPayment;
-  }
+  // Build unified itemized ledger
+  const unifiedLedgerItems = useMemo(() => {
+    const items: {
+      id: string;
+      itemType: 'REGISTRATION' | 'MONTHLY';
+      title: string;
+      periodOrDate: string;
+      rawDate: string;
+      boxNo: string;
+      totalOrFee: number;
+      paidAmount: number;
+      balanceAmount: number;
+      status: 'PAID' | 'PARTIAL' | 'UNPAID';
+      rawObject: any;
+    }[] = [];
 
-  const historyItems: CombinedHistoryItem[] = [];
-
-  // Add Registration Fee entry
-  if (currentCustomer) {
-    historyItems.push({
-      id: `reg-${currentCustomer.id}`,
-      itemType: 'REGISTRATION',
-      title: 'Customer Registration & Box Setup Fee',
-      periodOrDate: currentCustomer.createdAt ? currentCustomer.createdAt.split('T')[0] : 'Initial Registration',
-      rawDate: currentCustomer.createdAt || new Date().toISOString(),
-      boxNo: currentCustomer.boxNo,
-      totalOrFee: currentCustomer.totalAmount,
-      paidAmount: currentCustomer.paidAmount,
-      balanceAmount: currentCustomer.balanceAmount,
-      status: currentCustomer.balanceAmount === 0 ? 'PAID' : currentCustomer.paidAmount > 0 ? 'PARTIAL' : 'UNPAID',
-      rawObject: currentCustomer,
-    });
-  }
-
-  // Add Monthly Payment entries
-  customerMonthlyPayments.forEach((pmt) => {
-    historyItems.push({
-      id: `pmt-${pmt.id}`,
-      itemType: 'MONTHLY',
-      title: `Monthly Subscription Fee (${pmt.month})`,
-      periodOrDate: pmt.month,
-      rawDate: pmt.paymentDate || pmt.createdAt || new Date().toISOString(),
-      boxNo: pmt.boxNo,
-      totalOrFee: pmt.monthlyFee,
-      paidAmount: pmt.paidAmount,
-      balanceAmount: pmt.balanceAmount,
-      status: pmt.status,
-      rawObject: pmt,
-    });
-  });
-
-  // Sort history newest first
-  historyItems.sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
-
-  // Filter history items by selected filter tab
-  const filteredHistoryItems = historyItems.filter((item) => {
-    if (historyFilter === 'REGISTRATION') return item.itemType === 'REGISTRATION';
-    if (historyFilter === 'MONTHLY') return item.itemType === 'MONTHLY';
-    if (historyFilter === 'UNPAID') return item.balanceAmount > 0;
-    return true;
-  });
-
-  // Filter all income transactions belonging to currentCustomer
-  const customerIncomes = (incomes || []).filter((inc) => {
-    if (!currentCustomer) return false;
-    const desc = (inc.description || '').toLowerCase();
-    const custName = (currentCustomer.name || '').trim().toLowerCase();
-    const boxNo = (currentCustomer.boxNo || '').trim().toLowerCase();
-
-    // 1. Tag matches box number or customer id
-    if (inc.tags && Array.isArray(inc.tags)) {
-      if (boxNo && boxNo !== '-' && inc.tags.some((t) => t.toLowerCase() === boxNo)) return true;
-      if (inc.tags.some((t) => t === currentCustomer.id)) return true;
+    if (selectedCustomer) {
+      items.push({
+        id: `reg-${selectedCustomer.id}`,
+        itemType: 'REGISTRATION',
+        title: 'Customer Registration & Box Setup Fee',
+        periodOrDate: selectedCustomer.createdAt ? selectedCustomer.createdAt.split('T')[0] : 'Initial Registration',
+        rawDate: selectedCustomer.createdAt || new Date().toISOString(),
+        boxNo: selectedCustomer.boxNo,
+        totalOrFee: selectedCustomer.totalAmount,
+        paidAmount: selectedCustomer.paidAmount,
+        balanceAmount: selectedCustomer.balanceAmount,
+        status:
+          selectedCustomer.balanceAmount === 0
+            ? 'PAID'
+            : selectedCustomer.paidAmount > 0
+            ? 'PARTIAL'
+            : 'UNPAID',
+        rawObject: selectedCustomer,
+      });
     }
 
-    // 2. Box number match in description
-    if (boxNo && boxNo !== '-') {
-      const boxPattern = new RegExp(`\\bbox[:\\s-]*${boxNo}\\b`, 'i');
-      if (boxPattern.test(desc) || desc.includes(`(box: ${boxNo})`) || desc.includes(`box ${boxNo}`)) {
-        return true;
-      }
-    }
+    customerMonthlyBills.forEach((p) => {
+      items.push({
+        id: `pmt-${p.id}`,
+        itemType: 'MONTHLY',
+        title: `Monthly Subscription Fee (${p.month})`,
+        periodOrDate: p.month,
+        rawDate: p.paymentDate || p.createdAt || new Date().toISOString(),
+        boxNo: p.boxNo,
+        totalOrFee: p.monthlyFee,
+        paidAmount: p.paidAmount,
+        balanceAmount: p.balanceAmount,
+        status: p.status,
+        rawObject: p,
+      });
+    });
 
-    // 3. Customer name match in description
-    if (custName && custName.length >= 2 && desc.includes(custName)) {
+    items.sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
+    return items;
+  }, [selectedCustomer, customerMonthlyBills]);
+
+  const filteredLedgerItems = useMemo(() => {
+    return unifiedLedgerItems.filter((item) => {
+      if (activeFilterTab === 'REGISTRATION') return item.itemType === 'REGISTRATION';
+      if (activeFilterTab === 'MONTHLY') return item.itemType === 'MONTHLY';
+      if (activeFilterTab === 'UNPAID') return item.balanceAmount > 0;
       return true;
-    }
-
-    return false;
-  });
-
-  // Sort customer incomes: newest first
-  const sortedCustomerIncomes = [...customerIncomes].sort((a, b) => {
-    const tA = a.createdAt ? new Date(a.createdAt).getTime() : (a.date ? new Date(a.date).getTime() : 0);
-    const tB = b.createdAt ? new Date(b.createdAt).getTime() : (b.date ? new Date(b.date).getTime() : 0);
-    return tB - tA;
-  });
-
-  // Filtered customer incomes by search query
-  const filteredCustomerIncomes = sortedCustomerIncomes.filter((inc) => {
-    if (!txSearchQuery) return true;
-    const q = txSearchQuery.toLowerCase();
-    return (
-      (inc.description || '').toLowerCase().includes(q) ||
-      (inc.paymentMethod || '').toLowerCase().includes(q) ||
-      (inc.categoryName || '').toLowerCase().includes(q) ||
-      (inc.date || '').includes(q)
-    );
-  });
-
-  const totalCollectedSum = customerIncomes.reduce((sum, inc) => sum + (inc.amount || 0), 0);
-
-  const formatTransactionDateTime = (inc: IncomeRecord) => {
-    let dateDisplay = inc.date || '';
-    let timeDisplay = '';
-
-    if (inc.createdAt) {
-      try {
-        const dt = new Date(inc.createdAt);
-        if (!isNaN(dt.getTime())) {
-          if (!dateDisplay) {
-            dateDisplay = dt.toISOString().split('T')[0];
-          }
-          timeDisplay = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-        }
-      } catch {}
-    }
-
-    if (!dateDisplay) {
-      dateDisplay = 'N/A';
-    }
-
-    return { dateDisplay, timeDisplay };
-  };
-
-  const handlePrintIncomeBill = (inc: IncomeRecord) => {
-    if (!currentCustomer) return;
-    const desc = inc.description || '';
-    const monthMatch = desc.match(/\((\d{4}-\d{2})\)/);
-    const monthStr = monthMatch ? monthMatch[1] : undefined;
-    const { dateDisplay, timeDisplay } = formatTransactionDateTime(inc);
-
-    setActiveBillData({
-      type: monthStr ? 'MONTHLY' : 'CUSTOMER',
-      billNo: `RCPT-${currentCustomer.boxNo || 'BOX'}-${inc.id.slice(-6).toUpperCase()}`,
-      date: dateDisplay !== 'N/A' ? dateDisplay : todayStr,
-      customerName: currentCustomer.name,
-      nicNo: currentCustomer.nicNo,
-      phoneNo: currentCustomer.phoneNo,
-      address: currentCustomer.address,
-      boxNo: currentCustomer.boxNo,
-      month: monthStr,
-      totalOrFeeAmount: inc.amount,
-      paidAmount: inc.amount,
-      balanceAmount: 0,
-      status: 'PAID',
-      paymentDate: timeDisplay ? `${dateDisplay} ${timeDisplay}` : (dateDisplay !== 'N/A' ? dateDisplay : todayStr),
     });
-    setIsBillModalOpen(true);
-  };
+  }, [unifiedLedgerItems, activeFilterTab]);
 
-  // Bill Printing Handlers
-  const handlePrintHistoryItemBill = (item: CombinedHistoryItem) => {
-    if (!currentCustomer) return;
+  // Print item receipt
+  const handlePrintItem = (item: (typeof unifiedLedgerItems)[0]) => {
+    if (!selectedCustomer) return;
     if (item.itemType === 'REGISTRATION') {
       setActiveBillData({
         type: 'CUSTOMER',
-        billNo: `CUST-${currentCustomer.boxNo}-${todayStr.replace(/-/g, '')}`,
-        date: currentCustomer.createdAt ? currentCustomer.createdAt.split('T')[0] : todayStr,
-        customerName: currentCustomer.name,
-        nicNo: currentCustomer.nicNo,
-        phoneNo: currentCustomer.phoneNo,
-        address: currentCustomer.address,
-        boxNo: currentCustomer.boxNo,
-        totalOrFeeAmount: currentCustomer.totalAmount,
-        paidAmount: currentCustomer.paidAmount,
-        balanceAmount: currentCustomer.balanceAmount,
-        status: currentCustomer.balanceAmount === 0 ? 'PAID' : 'PARTIAL',
-        paymentDate: currentCustomer.createdAt ? currentCustomer.createdAt.split('T')[0] : todayStr,
+        billNo: `CUST-${selectedCustomer.boxNo}-${todayStr.replace(/-/g, '')}`,
+        date: selectedCustomer.createdAt ? selectedCustomer.createdAt.split('T')[0] : todayStr,
+        customerName: selectedCustomer.name,
+        nicNo: selectedCustomer.nicNo,
+        phoneNo: selectedCustomer.phoneNo,
+        address: selectedCustomer.address,
+        boxNo: selectedCustomer.boxNo,
+        totalOrFeeAmount: selectedCustomer.totalAmount,
+        paidAmount: selectedCustomer.paidAmount,
+        balanceAmount: selectedCustomer.balanceAmount,
+        status: selectedCustomer.balanceAmount === 0 ? 'PAID' : 'PARTIAL',
+        paymentDate: selectedCustomer.createdAt ? selectedCustomer.createdAt.split('T')[0] : todayStr,
       });
     } else {
-      const pmt = item.rawObject as MonthlyPayment;
+      const p = item.rawObject as MonthlyPayment;
       setActiveBillData({
         type: 'MONTHLY',
-        billNo: `BILL-${pmt.boxNo}-${pmt.month.replace('-', '')}`,
-        date: pmt.paymentDate ? pmt.paymentDate.split('T')[0] : todayStr,
-        customerName: currentCustomer.name,
-        nicNo: currentCustomer.nicNo,
-        phoneNo: currentCustomer.phoneNo,
-        address: currentCustomer.address,
-        boxNo: pmt.boxNo,
-        month: pmt.month,
-        totalOrFeeAmount: pmt.monthlyFee,
-        paidAmount: pmt.paidAmount,
-        balanceAmount: pmt.balanceAmount,
-        status: pmt.status,
-        paymentDate: pmt.paymentDate ? pmt.paymentDate.split('T')[0] : todayStr,
+        billNo: `BILL-${p.boxNo}-${p.month.replace('-', '')}`,
+        date: p.paymentDate ? p.paymentDate.split('T')[0] : todayStr,
+        customerName: selectedCustomer.name,
+        nicNo: selectedCustomer.nicNo,
+        phoneNo: selectedCustomer.phoneNo,
+        address: selectedCustomer.address,
+        boxNo: p.boxNo,
+        month: p.month,
+        totalOrFeeAmount: p.monthlyFee,
+        paidAmount: p.paidAmount,
+        balanceAmount: p.balanceAmount,
+        status: p.status,
+        paymentDate: p.paymentDate ? p.paymentDate.split('T')[0] : todayStr,
       });
     }
     setIsBillModalOpen(true);
   };
 
-  // Print Comprehensive Grand Total Bill Statement
-  const handlePrintTotalBill = () => {
-    if (!currentCustomer) return;
+  // Print Complete Customer Statement (All lifetime items or dues only)
+  const handlePrintFullStatement = (duesOnly = false) => {
+    if (!selectedCustomer) return;
 
-    let items = [
+    let itemsToInclude = [
       {
         description: 'Box Connection & Setup Fee',
         amount: regTotal,
         paidAmount: regPaid,
         balanceAmount: regBalance,
-        dateOrPeriod: currentCustomer.createdAt ? currentCustomer.createdAt.split('T')[0] : todayStr,
+        dateOrPeriod: selectedCustomer.createdAt ? selectedCustomer.createdAt.split('T')[0] : todayStr,
       },
-      ...customerMonthlyPayments.map((pmt) => ({
-        description: `Monthly Subscription (${pmt.month})`,
-        amount: pmt.monthlyFee,
-        paidAmount: pmt.paidAmount,
-        balanceAmount: pmt.balanceAmount,
-        dateOrPeriod: pmt.paymentDate || pmt.month,
+      ...customerMonthlyBills.map((p) => ({
+        description: `Monthly Subscription (${p.month})`,
+        amount: p.monthlyFee,
+        paidAmount: p.paidAmount,
+        balanceAmount: p.balanceAmount,
+        dateOrPeriod: p.paymentDate || p.month,
       })),
     ];
 
-    // Exclude fully paid items (balanceAmount = 0 / status = PAID) whenever pending dues exist
-    const hasPendingDues = items.some((item) => item.balanceAmount > 0);
-    if (hasPendingDues) {
-      items = items.filter((item) => item.balanceAmount > 0);
+    if (duesOnly) {
+      itemsToInclude = itemsToInclude.filter((i) => i.balanceAmount > 0);
     }
 
-    const filteredTotalAmount = items.reduce((sum, item) => sum + item.amount, 0);
-    const filteredPaidAmount = items.reduce((sum, item) => sum + item.paidAmount, 0);
-    const filteredBalanceAmount = items.reduce((sum, item) => sum + item.balanceAmount, 0);
+    const totalAmt = itemsToInclude.reduce((sum, i) => sum + i.amount, 0);
+    const paidAmt = itemsToInclude.reduce((sum, i) => sum + i.paidAmount, 0);
+    const balAmt = itemsToInclude.reduce((sum, i) => sum + i.balanceAmount, 0);
 
     setActiveBillData({
       type: 'TOTAL',
-      billNo: `TOT-${currentCustomer.boxNo}-${todayStr.replace(/-/g, '')}`,
+      billNo: `STMT-${selectedCustomer.boxNo}-${todayStr.replace(/-/g, '')}`,
       date: todayStr,
-      customerName: currentCustomer.name,
-      nicNo: currentCustomer.nicNo,
-      phoneNo: currentCustomer.phoneNo,
-      address: currentCustomer.address,
-      boxNo: currentCustomer.boxNo,
-      totalOrFeeAmount: filteredTotalAmount,
-      paidAmount: filteredPaidAmount,
-      balanceAmount: filteredBalanceAmount,
-      status: filteredBalanceAmount === 0 ? 'PAID' : 'PARTIAL',
+      customerName: selectedCustomer.name,
+      nicNo: selectedCustomer.nicNo,
+      phoneNo: selectedCustomer.phoneNo,
+      address: selectedCustomer.address,
+      boxNo: selectedCustomer.boxNo,
+      totalOrFeeAmount: totalAmt,
+      paidAmount: paidAmt,
+      balanceAmount: balAmt,
+      status: balAmt === 0 ? 'PAID' : 'PARTIAL',
       paymentDate: todayStr,
-      items,
+      items: itemsToInclude,
     });
     setIsBillModalOpen(true);
   };
 
-  // Print Monthly Bills Summary Statement
-  const handlePrintMonthlyBillSummary = () => {
-    if (!currentCustomer) return;
-
-    if (customerMonthlyPayments.length === 0) {
-      toast.error('No monthly bills recorded yet for this customer.');
-      return;
-    }
-
-    let items = customerMonthlyPayments.map((pmt) => ({
-      description: `Monthly Subscription (${pmt.month})`,
-      amount: pmt.monthlyFee,
-      paidAmount: pmt.paidAmount,
-      balanceAmount: pmt.balanceAmount,
-      dateOrPeriod: pmt.paymentDate || pmt.month,
-    }));
-
-    // Exclude fully paid items (balanceAmount = 0 / status = PAID) whenever pending dues exist
-    const hasPendingDues = items.some((item) => item.balanceAmount > 0);
-    if (hasPendingDues) {
-      items = items.filter((item) => item.balanceAmount > 0);
-    }
-
-    const filteredTotalAmount = items.reduce((sum, item) => sum + item.amount, 0);
-    const filteredPaidAmount = items.reduce((sum, item) => sum + item.paidAmount, 0);
-    const filteredBalanceAmount = items.reduce((sum, item) => sum + item.balanceAmount, 0);
-
-    setActiveBillData({
-      type: 'MONTHLY',
-      billNo: `MTH-${currentCustomer.boxNo}-${todayStr.replace(/-/g, '')}`,
-      date: todayStr,
-      customerName: currentCustomer.name,
-      nicNo: currentCustomer.nicNo,
-      phoneNo: currentCustomer.phoneNo,
-      address: currentCustomer.address,
-      boxNo: currentCustomer.boxNo,
-      totalOrFeeAmount: filteredTotalAmount,
-      paidAmount: filteredPaidAmount,
-      balanceAmount: filteredBalanceAmount,
-      status: filteredBalanceAmount === 0 ? 'PAID' : 'PARTIAL',
-      paymentDate: todayStr,
-      items,
-    });
-    setIsBillModalOpen(true);
-  };
-
-  // Open Pay Balance Modal
-  const handleOpenPayBalance = (item: CombinedHistoryItem) => {
-    setPayBalanceTarget({
-      type: item.itemType === 'REGISTRATION' ? 'CUSTOMER' : 'MONTHLY',
-      id: item.itemType === 'REGISTRATION' ? (item.rawObject as Customer).id : (item.rawObject as MonthlyPayment).id,
-      name: currentCustomer?.name || '',
-      boxNo: item.boxNo,
-      totalAmount: item.totalOrFee,
-      paidAmount: item.paidAmount,
-      balanceAmount: item.balanceAmount,
-      title: item.title,
-    });
-    setPayAmount(item.balanceAmount.toString());
-  };
-
-  // Confirm Pay Balance Submit
+  // Pay single ledger item balance
   const handleConfirmPayBalance = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!payBalanceTarget) return;
+    if (!payTargetItem || !selectedCustomer) return;
     const addPay = parseFloat(payAmount);
     if (isNaN(addPay) || addPay <= 0) {
-      toast.error('Please enter a valid payment amount.');
+      toast.error('Please enter a valid positive payment amount.');
       return;
     }
 
     setIsPaying(true);
     try {
-      const newPaidAmount = payBalanceTarget.paidAmount + addPay;
-      if (payBalanceTarget.type === 'CUSTOMER') {
-        await api.updateCustomer(payBalanceTarget.id, { paidAmount: newPaidAmount });
+      if (payTargetItem.itemType === 'REGISTRATION') {
+        const newPaid = selectedCustomer.paidAmount + addPay;
+        await api.updateCustomer(selectedCustomer.id, { paidAmount: newPaid });
       } else {
-        await api.updateMonthlyPayment(payBalanceTarget.id, {
-          paidAmount: newPaidAmount,
-          paymentDate: todayStr,
-        });
+        const p = payTargetItem.rawObject as MonthlyPayment;
+        const newPaid = p.paidAmount + addPay;
+        await api.updateMonthlyPayment(p.id, { paidAmount: newPaid, paymentDate: todayStr });
       }
 
-      toast.success(`Payment of ${formatMoney(addPay, currency)} added for ${payBalanceTarget.name}`);
-      setPayBalanceTarget(null);
+      toast.success(`Payment of ${formatMoney(addPay, currency)} recorded successfully!`);
+      setPayTargetItem(null);
       onRefreshData();
     } catch (err: any) {
-      const msg = err.message || 'Failed to process balance payment';
-      toast.error(msg);
+      toast.error(err.message || 'Payment processing failed');
     } finally {
       setIsPaying(false);
     }
   };
 
+  const currentPkg = selectedCustomer ? getCustomerPackage(selectedCustomer.id || selectedCustomer.boxNo) : null;
+
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
-      {/* Top Search & Customer Selection Hero Banner */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xs space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-xs">
-              <History className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                <span>Customer History & Ledger</span>
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                Search by subscriber name, box number, NIC, or phone number to view details and payment records.
-              </p>
-            </div>
-          </div>
-
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 self-start md:self-auto shadow-xs">
-            <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Subscribers: {customers.length}</span>
-          </div>
-        </div>
-
-        {/* Dual Search Input & Dropdown Selector */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-          {/* Quick Search Input */}
-          <div className="relative md:col-span-6">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-            <input
-              type="text"
-              placeholder="Search by Name, Box No, NIC, or Phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 shadow-inner"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-bold px-1 rounded cursor-pointer"
-                title="Clear Search"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Customer Dropdown Select */}
-          <div className="relative md:col-span-6">
-            <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-            <select
-              value={selectedCustId}
-              onChange={(e) => handleCustChange(e.target.value)}
-              className="w-full pl-10 pr-8 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 cursor-pointer shadow-inner"
-            >
-              {customers.length === 0 ? (
-                <option value="">No customers available</option>
-              ) : filteredCustomerOptions.length === 0 ? (
-                <option value="">No customer matching "{searchQuery}"</option>
-              ) : (
-                filteredCustomerOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} (Box: {c.boxNo}) - {c.phoneNo || c.nicNo} [{c.status}]
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {!currentCustomer ? (
-        <div className="p-12 text-center bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-3 shadow-xs">
-          <UserIcon className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">No Customer Selected</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            Please register customer records first or select an existing customer from the dropdown above to view their card and complete payment history.
+    <div className="space-y-5">
+      {/* ==================================================================== */}
+      {/* 1. HEADER */}
+      {/* ==================================================================== */}
+      <div className="erp-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+            <History className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <span>Subscriber Statement & Lifetime Ledger</span>
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Historical bill audit, total lifetime collections, pending arrears reconciliation, and statement printing
           </p>
         </div>
-      ) : (
-        <>
-          {/* Top Section: Detailed Customer Card */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* 1. Customer Details Profile Card */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-5 shadow-xs">
-              <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {currentCustomer.name}
-                    </h2>
+
+        {selectedCustomer && (
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <button
+              onClick={() => handlePrintFullStatement(true)}
+              disabled={lifetimeOutstanding === 0}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 hover:bg-amber-100 disabled:opacity-40 flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print Pending Dues Slip</span>
+            </button>
+
+            <button
+              onClick={() => handlePrintFullStatement(false)}
+              className="btn-primary px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print Complete Statement</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ==================================================================== */}
+      {/* 2. MAIN LAYOUT: LEFT SUBSCRIBER PICKER + RIGHT LEDGER & METRICS */}
+      {/* ==================================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left: Customer Directory Quick Selector (4 cols) */}
+        <div className="lg:col-span-4 space-y-3.5">
+          <div className="erp-card p-4 space-y-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-100 dark:border-white/[0.04] pb-2">
+              <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>Select Subscriber ({customers.length})</span>
+            </span>
+
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, box #, phone..."
+                className="erp-input pl-9 text-xs"
+              />
+            </div>
+
+            <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1 scrollbar-thin">
+              {filteredCustomerList.map((c) => {
+                const isSelected = c.id === selectedCustomer?.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => handleSelectCust(c.id)}
+                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-blue-50/80 dark:bg-blue-500/15 border-blue-600 text-blue-700 dark:text-blue-300 font-bold shadow-xs'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-white/[0.06] hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs truncate">{c.name}</span>
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          #{c.boxNo}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">{c.phoneNo}</span>
+                    </div>
+
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-extrabold rounded-full ${
-                        (currentCustomer.status || 'ACTIVE') === 'ACTIVE'
-                          ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                          : (currentCustomer.status || 'ACTIVE') === 'INACTIVE'
-                          ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
-                          : 'bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
+                      className={`badge-status text-[9px] shrink-0 ${
+                        c.balanceAmount > 0 ? 'badge-danger' : 'badge-success'
                       }`}
                     >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          (currentCustomer.status || 'ACTIVE') === 'ACTIVE'
-                            ? 'bg-emerald-500 animate-pulse'
-                            : (currentCustomer.status || 'ACTIVE') === 'INACTIVE'
-                            ? 'bg-amber-500'
-                            : 'bg-rose-500'
-                        }`}
-                      />
-                      {currentCustomer.status || 'ACTIVE'}
+                      {c.balanceAmount > 0 ? formatMoney(c.balanceAmount, currency) : 'Settled'}
                     </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/35 rounded-xl text-xs font-mono font-extrabold text-emerald-800 dark:text-emerald-300 shadow-xs">
-                      <Box className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>Box: {currentCustomer.boxNo}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Colorful Contact Details Badges */}
-              <div className="grid grid-cols-1 gap-2 text-xs">
-                {/* NIC No Badge (Sky Blue) */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20">
-                  <span className="flex items-center gap-1.5 font-bold text-sky-800 dark:text-sky-300">
-                    <ShieldCheck className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                    <span>NIC No:</span>
-                  </span>
-                  <span className="font-mono font-extrabold text-slate-900 dark:text-white">
-                    {currentCustomer.nicNo || 'N/A'}
-                  </span>
-                </div>
-
-                {/* Phone No Badge (Emerald) */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
-                  <span className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
-                    <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Phone No:</span>
-                  </span>
-                  <span className="font-mono font-extrabold text-slate-900 dark:text-white">
-                    {currentCustomer.phoneNo || 'N/A'}
-                  </span>
-                </div>
-
-                {/* Address Badge (Purple) */}
-                <div className="flex items-start justify-between p-2.5 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 gap-2">
-                  <span className="flex items-center gap-1.5 font-bold text-purple-800 dark:text-purple-300 shrink-0">
-                    <MapPin className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                    <span>Address:</span>
-                  </span>
-                  <span className="font-medium text-slate-900 dark:text-white text-right break-words max-w-[200px] sm:max-w-none">
-                    {currentCustomer.address || 'N/A'}
-                  </span>
-                </div>
-
-                {/* Registered Date Badge (Amber) */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
-                  <span className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
-                    <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    <span>Registered Date:</span>
-                  </span>
-                  <span className="font-mono font-extrabold text-slate-900 dark:text-white">
-                    {currentCustomer.createdAt ? currentCustomer.createdAt.split('T')[0] : 'N/A'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons: Total Bill & Monthly Bill */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
-                <button
-                  onClick={handlePrintTotalBill}
-                  className="py-2.5 px-3 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                  title="Print Grand Total Bill Statement"
-                >
-                  <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>Total Bill</span>
-                </button>
-                <button
-                  onClick={handlePrintMonthlyBillSummary}
-                  className="py-2.5 px-3 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 text-indigo-800 dark:text-indigo-300 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                  title="Print Monthly Bills Summary"
-                >
-                  <Printer className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  <span>Monthly Bill</span>
-                </button>
-              </div>
+                  </button>
+                );
+              })}
             </div>
+          </div>
+        </div>
 
-            {/* 2. Financial Overview Stat Cards (Right 2 Cols) */}
-            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Card 1: Registration Connection Fee */}
-              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Box Connection Fee</span>
-                    <Tag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <p className="text-xl font-black font-mono text-slate-900 dark:text-white mt-2">
-                    {formatMoney(regTotal, currency)}
-                  </p>
-                </div>
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-mono space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Paid:</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(regPaid, currency)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Balance:</span>
-                    <span className={regBalance > 0 ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-400'}>
-                      {formatMoney(regBalance, currency)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Total Monthly Payments */}
-              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Monthly Bills Total</span>
-                    <Calendar className="w-4 h-4 text-indigo-500" />
-                  </div>
-                  <p className="text-xl font-black font-mono text-slate-900 dark:text-white mt-1">
-                    {formatMoney(monthlyBilledSum, currency)}
-                  </p>
-
-                  {/* Month-by-Month Dues List */}
-                  {customerMonthlyPayments.length > 0 ? (
-                    <div className="mt-3 space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Monthly List Breakdown ({customerMonthlyPayments.length})
-                      </p>
-                      {customerMonthlyPayments.map((pmt) => (
-                        <div
-                          key={pmt.id}
-                          className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] font-mono"
-                        >
-                          <div>
-                            <span className="font-semibold text-slate-900 dark:text-white">{formatMonthLabel(pmt.month)}</span>
-                            <span className="text-[10px] text-slate-500 ml-1">({pmt.month})</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-slate-700 dark:text-slate-200">{formatMoney(pmt.monthlyFee, currency)}</span>
-                            <span
-                              className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${
-                                pmt.status === 'PAID'
-                                  ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                                  : pmt.status === 'PARTIAL'
-                                  ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
-                                  : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
-                              }`}
-                            >
-                              {pmt.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+        {/* Right: Detailed Customer Profile & Lifetime Ledger (8 cols) */}
+        <div className="lg:col-span-8 space-y-4">
+          {selectedCustomer ? (
+            <>
+              {/* Profile Card */}
+              <div className="erp-card p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/[0.04] pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-black text-base flex items-center justify-center uppercase shadow-sm">
+                      {selectedCustomer.name.charAt(0)}
                     </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-400 mt-2 italic">No monthly bills recorded yet.</p>
-                  )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-black text-slate-900 dark:text-white">
+                          {selectedCustomer.name}
+                        </h2>
+                        <span className="px-2 py-0.5 rounded-md font-mono font-black text-xs bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/25">
+                          Box #{selectedCustomer.boxNo}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{selectedCustomer.address || 'No registered address'}</p>
+                    </div>
+                  </div>
+
+                  <span
+                    className={`badge-status self-start sm:self-auto ${
+                      selectedCustomer.status === 'ACTIVE' || !selectedCustomer.status
+                        ? 'badge-success'
+                        : 'badge-warning'
+                    }`}
+                  >
+                    {selectedCustomer.status || 'ACTIVE'}
+                  </span>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-mono space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Paid Months ({customerMonthlyPayments.filter(p => p.status === 'PAID').length}):</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(monthlyPaidSum, currency)}</span>
+                {/* Attributes Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">NIC Number</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                      {selectedCustomer.nicNo || '—'}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Monthly Dues:</span>
-                    <span className={monthlyBalanceSum > 0 ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-400'}>
-                      {formatMoney(monthlyBalanceSum, currency)}
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Phone Contact</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                      {selectedCustomer.phoneNo || '—'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">TV Package</span>
+                    <span className="font-bold text-teal-700 dark:text-teal-400">
+                      {currentPkg?.packageName || 'Standard'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Registration Date</span>
+                    <span className="font-mono text-slate-800 dark:text-slate-200">
+                      {selectedCustomer.createdAt ? selectedCustomer.createdAt.slice(0, 10) : '—'}
                     </span>
                   </div>
                 </div>
+
+                {/* Lifetime KPI Cards */}
+                <div className="grid grid-cols-3 gap-3 pt-2">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-white/[0.04] text-center">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Total Billed Lifetime</span>
+                    <div className="text-sm sm:text-base font-black font-mono text-slate-900 dark:text-white mt-0.5">
+                      {formatMoney(lifetimeBilled, currency)}
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/20 text-center">
+                    <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Total Collected</span>
+                    <div className="text-sm sm:text-base font-black font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
+                      {formatMoney(lifetimePaid, currency)}
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/20 text-center">
+                    <span className="text-[10px] uppercase font-bold text-rose-700 dark:text-rose-400">Current Outstanding</span>
+                    <div className="text-sm sm:text-base font-black font-mono text-rose-700 dark:text-rose-400 mt-0.5">
+                      {formatMoney(lifetimeOutstanding, currency)}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Card 3: Grand Total Outstanding Balance */}
-              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Grand Balance Due</span>
-                    <CreditCard className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <p className={`text-xl font-black font-mono mt-2 ${
-                    grandTotalBalance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
-                  }`}>
-                    {formatMoney(grandTotalBalance, currency)}
-                  </p>
-                </div>
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-mono space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Total Billed:</span>
-                    <span className="text-slate-900 dark:text-white">{formatMoney(grandTotalBilled, currency)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Total Paid:</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(grandTotalPaid, currency)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sub-Navigation: Switch between All History, Transactions Log, and Billing Ledger */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3 rounded-2xl shadow-xs">
-            <div className="flex items-center flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setHistoryViewTab('ALL')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  historyViewTab === 'ALL'
-                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/40 shadow-xs font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800'
-                }`}
-              >
-                All History View
-              </button>
-              <button
-                type="button"
-                onClick={() => setHistoryViewTab('TRANSACTIONS')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  historyViewTab === 'TRANSACTIONS'
-                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/40 shadow-xs font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Payment Transactions Log ({customerIncomes.length})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setHistoryViewTab('LEDGER')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  historyViewTab === 'LEDGER'
-                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/40 shadow-xs font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800'
-                }`}
-              >
-                <History className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Billing Ledger ({historyItems.length})</span>
-              </button>
-            </div>
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400 self-end sm:self-auto">
-              <span>Total Inflows:</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">+{formatMoney(totalCollectedSum, currency)}</span>
-            </div>
-          </div>
-
-          {/* SECTION: Payment Transactions Log */}
-          {(historyViewTab === 'ALL' || historyViewTab === 'TRANSACTIONS') && (
-            <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-4 shadow-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>Payment Transactions Log ({customerIncomes.length} Records)</span>
+              {/* Itemized Ledger Table */}
+              <div className="erp-card overflow-hidden space-y-3 p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/[0.04] pb-3">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span>Itemized Subscription & Fee History ({filteredLedgerItems.length})</span>
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Individual payments collected with exact date & time logs and receipt vouchers
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                    <input
-                      type="text"
-                      placeholder="Search description, method..."
-                      value={txSearchQuery}
-                      onChange={(e) => setTxSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-7 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
-                    />
-                    {txSearchQuery && (
+                  <div className="flex items-center gap-1.5">
+                    {(['ALL', 'MONTHLY', 'REGISTRATION', 'UNPAID'] as const).map((tab) => (
                       <button
-                        type="button"
-                        onClick={() => setTxSearchQuery('')}
-                        className="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-bold"
+                        key={tab}
+                        onClick={() => setActiveFilterTab(tab)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                          activeFilterTab === tab
+                            ? 'bg-blue-600 text-white font-bold'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                        }`}
                       >
-                        ✕
+                        {tab}
                       </button>
-                    )}
+                    ))}
                   </div>
                 </div>
-              </div>
 
-              {/* Mobile Cards View for Transactions */}
-              <div className="block md:hidden space-y-3">
-                {filteredCustomerIncomes.length === 0 ? (
-                  <div className="p-6 text-center text-slate-400 dark:text-slate-500 text-xs bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                    {txSearchQuery
-                      ? `No payment transactions match "${txSearchQuery}".`
-                      : 'No payment transaction records found for this subscriber.'}
-                  </div>
-                ) : (
-                  filteredCustomerIncomes.map((inc) => {
-                    const { dateDisplay, timeDisplay } = formatTransactionDateTime(inc);
-                    return (
-                      <div
-                        key={inc.id}
-                        className="p-4 space-y-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-2.5">
-                          <div className="space-y-1">
-                            <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-tight">{inc.description}</h4>
-                            <div className="flex items-center flex-wrap gap-2 pt-0.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                              <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
-                                <Calendar className="w-3 h-3 text-slate-400" />
-                                {dateDisplay}
-                              </span>
-                              {timeDisplay && (
-                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                                  <Clock className="w-3 h-3 text-emerald-500" />
-                                  {timeDisplay}
-                                </span>
-                              )}
-                              <span>•</span>
-                              <span>
-                                Method: <span className="text-slate-800 dark:text-slate-200 font-semibold">{inc.paymentMethod || 'CASH'}</span>
-                              </span>
-                            </div>
-                          </div>
-                          <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 text-sm px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl shrink-0">
-                            +{formatMoney(inc.amount, currency)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2 pt-0.5">
-                          <span
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold"
-                            style={{
-                              backgroundColor: `${inc.categoryColor || '#10B981'}15`,
-                              color: inc.categoryColor || '#059669',
-                              border: `1px solid ${inc.categoryColor || '#10B981'}30`,
-                            }}
-                          >
-                            <Tag className="w-3 h-3 shrink-0" />
-                            <span>{inc.categoryName || 'Customer Cable Payments'}</span>
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => handlePrintIncomeBill(inc)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg text-xs font-medium transition-colors cursor-pointer shadow-xs"
-                            title="Print Receipt"
-                          >
-                            <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            <span>Receipt</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-
-                <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono shadow-inner">
-                  <span>Total Payments Collected:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                    +{formatMoney(totalCollectedSum, currency)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Desktop Table View for Transactions */}
-              <div className="hidden md:block rounded-xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-mono">
+                  <table className="erp-table text-xs">
+                    <thead>
                       <tr>
-                        <th className="px-4 py-3">Date & Time</th>
-                        <th className="px-4 py-3">Description</th>
-                        <th className="px-4 py-3">Category</th>
-                        <th className="px-4 py-3">Payment Method</th>
-                        <th className="px-4 py-3 text-right">Amount ({currency})</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
+                        <th>Type</th>
+                        <th>Period / Item</th>
+                        <th className="text-right">Billed</th>
+                        <th className="text-right">Paid</th>
+                        <th className="text-right">Balance</th>
+                        <th>Status</th>
+                        <th className="text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                      {filteredCustomerIncomes.length === 0 ? (
+                    <tbody>
+                      {filteredLedgerItems.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-slate-400 dark:text-slate-500">
-                            {txSearchQuery
-                              ? `No payment transactions match "${txSearchQuery}".`
-                              : 'No payment transaction records found for this subscriber.'}
+                          <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
+                            No ledger records found for this category.
                           </td>
                         </tr>
                       ) : (
-                        filteredCustomerIncomes.map((inc) => {
-                          const { dateDisplay, timeDisplay } = formatTransactionDateTime(inc);
-                          return (
-                            <tr key={inc.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/60 transition-colors">
-                              <td className="px-4 py-3">
-                                <div className="flex flex-col">
-                                  <span className="font-mono text-slate-800 dark:text-slate-200 font-medium flex items-center gap-1.5">
-                                    <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                    <span>{dateDisplay}</span>
-                                  </span>
-                                  {timeDisplay ? (
-                                    <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5 font-semibold">
-                                      <Clock className="w-3 h-3 text-emerald-500 shrink-0" />
-                                      <span>{timeDisplay}</span>
-                                    </span>
-                                  ) : (
-                                    <span className="font-mono text-[10px] text-slate-400 mt-0.5">Recorded on date</span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                                {inc.description}
-                              </td>
-                              <td className="px-4 py-3">
-                                <span
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-medium"
-                                  style={{
-                                    backgroundColor: `${inc.categoryColor || '#10B981'}15`,
-                                    color: inc.categoryColor || '#059669',
-                                    border: `1px solid ${inc.categoryColor || '#10B981'}30`,
-                                  }}
-                                >
-                                  <Tag className="w-3 h-3 shrink-0" />
-                                  <span>{inc.categoryName || 'Customer Cable Payments'}</span>
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">
-                                <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px]">
-                                  {inc.paymentMethod || 'CASH'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                                +{formatMoney(inc.amount, currency)}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => handlePrintIncomeBill(inc)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded text-[11px] font-medium transition-colors cursor-pointer shadow-xs"
-                                  title="Print Receipt"
-                                >
-                                  <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                  <span>Receipt</span>
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Bottom Section: Payment History Ledger Table */}
-          {(historyViewTab === 'ALL' || historyViewTab === 'LEDGER') && (
-            <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-4 shadow-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <History className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>Payment History Ledger ({historyItems.length} Records)</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Complete sequence of box setup connection payments and monthly billing cycles
-                  </p>
-                </div>
-
-                {/* Filter Tabs */}
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800 rounded-xl shadow-inner">
-                  {(['ALL', 'REGISTRATION', 'MONTHLY', 'UNPAID'] as const).map((filterKey) => (
-                    <button
-                      key={filterKey}
-                      onClick={() => setHistoryFilter(filterKey)}
-                      className={`px-3 py-1 text-[11px] rounded-lg font-medium transition-all cursor-pointer ${
-                        historyFilter === filterKey
-                          ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      {filterKey === 'ALL'
-                        ? 'All Payments'
-                        : filterKey === 'REGISTRATION'
-                        ? 'Registration'
-                        : filterKey === 'MONTHLY'
-                        ? 'Monthly Bills'
-                        : 'Unpaid Dues'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Mobile Cards View */}
-              <div className="block md:hidden space-y-3">
-                {filteredHistoryItems.length === 0 ? (
-                  <div className="p-6 text-center text-slate-400 dark:text-slate-500 text-xs bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                    No payment history records found matching filter "{historyFilter}".
-                  </div>
-                ) : (
-                  filteredHistoryItems.map((item) => (
-                    <div key={item.id} className="p-4 space-y-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs transition-all">
-                      {/* Header: Title + Type & Status Badges */}
-                      <div className="flex items-start justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-3">
-                        <div className="space-y-1">
-                          <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{item.title}</h3>
-                          <div className="flex items-center flex-wrap gap-2 pt-0.5">
-                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-lg font-mono ${
-                              item.itemType === 'REGISTRATION'
-                                ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                                : 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
-                            }`}>
-                              {item.itemType}
-                            </span>
-                            <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg ${
-                              item.status === 'PAID'
-                                ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                                : item.status === 'PARTIAL'
-                                ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
-                                : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
-                            }`}>
-                              {item.status}
-                            </span>
-                          </div>
-                          <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">Date/Period: {item.periodOrDate}</p>
-                        </div>
-
-                        <div className="shrink-0">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 shadow-xs">
-                            <Box className="w-3 h-3 text-slate-400" />
-                            <span>{item.boxNo || '-'}</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Financial Metrics 3-Column Card */}
-                      <div className="grid grid-cols-3 gap-2 p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-center font-mono text-xs shadow-xs">
-                        <div className="space-y-0.5">
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans block uppercase font-medium tracking-wide">Fee / Total</span>
-                          <span className="text-slate-800 dark:text-slate-200 font-semibold block">{formatMoney(item.totalOrFee, currency)}</span>
-                        </div>
-                        <div className="space-y-0.5 border-x border-slate-100 dark:border-slate-800 px-1">
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans block uppercase font-medium tracking-wide">Paid</span>
-                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold block">{formatMoney(item.paidAmount, currency)}</span>
-                        </div>
-                        <div className="space-y-0.5">
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans block uppercase font-medium tracking-wide">Balance</span>
-                          <span className={`font-bold block ${item.balanceAmount === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                            {formatMoney(item.balanceAmount, currency)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons Grid */}
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/80 dark:border-slate-800">
-                        {item.balanceAmount > 0 ? (
-                          <button
-                            onClick={() => handleOpenPayBalance(item)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/25 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
-                          >
-                            <CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            <span>Pay Balance</span>
-                          </button>
-                        ) : (
-                          <div className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-medium font-mono">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Fully Paid</span>
-                          </div>
-                        )}
-
-                        <button
-                          onClick={() => handlePrintHistoryItemBill(item)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-medium transition-all cursor-pointer shadow-xs"
-                        >
-                          <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>Print Bill</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Desktop Table View */}
-              <div className="hidden md:block rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-950 shadow-xs">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-mono">
-                      <tr>
-                        <th className="px-4 py-3">Description / Period</th>
-                        <th className="px-4 py-3">Type</th>
-                        <th className="px-4 py-3">Date</th>
-                        <th className="px-4 py-3 text-right">Fee / Total</th>
-                        <th className="px-4 py-3 text-right">Paid Amount</th>
-                        <th className="px-4 py-3 text-right">Balance</th>
-                        <th className="px-4 py-3 text-center">Status</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                      {filteredHistoryItems.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="px-4 py-10 text-center text-slate-400 dark:text-slate-500">
-                            No payment history records found matching filter "{historyFilter}".
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredHistoryItems.map((item) => (
-                          <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-900/60 transition-colors">
-                            <td className="px-4 py-3">
-                              <p className="font-semibold text-slate-900 dark:text-white">{item.title}</p>
-                              <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">Box: {item.boxNo}</p>
-                            </td>
-                            <td className="px-4 py-3 font-mono">
+                        filteredLedgerItems.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                            <td>
                               <span
-                                className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${
-                                  item.itemType === 'REGISTRATION'
-                                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                                    : 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30'
+                                className={`badge-status text-[9px] ${
+                                  item.itemType === 'REGISTRATION' ? 'badge-royal' : 'badge-teal'
                                 }`}
                               >
                                 {item.itemType}
                               </span>
                             </td>
-                            <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-300">
-                              {item.periodOrDate}
+                            <td>
+                              <span className="font-bold text-slate-900 dark:text-white">{item.title}</span>
+                              <div className="text-[10px] text-slate-400 font-mono">{item.periodOrDate}</div>
                             </td>
-                            <td className="px-4 py-3 text-right font-mono text-slate-700 dark:text-slate-300">
+                            <td className="text-right font-mono font-semibold text-slate-700 dark:text-slate-300">
                               {formatMoney(item.totalOrFee, currency)}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400">
+                            <td className="text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
                               {formatMoney(item.paidAmount, currency)}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono font-bold">
+                            <td className="text-right font-mono font-bold">
                               <span
-                                className={`px-2 py-0.5 rounded text-[11px] ${
-                                  item.balanceAmount === 0
-                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30'
-                                    : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30'
-                                }`}
+                                className={
+                                  item.balanceAmount > 0
+                                    ? 'text-rose-700 dark:text-rose-400'
+                                    : 'text-slate-400 dark:text-slate-500'
+                                }
                               >
                                 {formatMoney(item.balanceAmount, currency)}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-center font-mono">
+                            <td>
                               <span
-                                className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded ${
+                                className={`badge-status text-[9px] ${
                                   item.status === 'PAID'
-                                    ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                                    ? 'badge-success'
                                     : item.status === 'PARTIAL'
-                                    ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
-                                    : 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30'
+                                    ? 'badge-warning'
+                                    : 'badge-danger'
                                 }`}
                               >
                                 {item.status}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="text-right">
                               <div className="flex items-center justify-end gap-1.5">
                                 {item.balanceAmount > 0 && (
                                   <button
-                                    onClick={() => handleOpenPayBalance(item)}
-                                    className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer shrink-0 shadow-xs"
-                                    title="Pay Balance"
+                                    onClick={() => {
+                                      setPayTargetItem(item);
+                                      setPayAmount(item.balanceAmount.toString());
+                                    }}
+                                    className="px-2 py-1 rounded-md text-[11px] font-bold bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100"
                                   >
-                                    <CreditCard className="w-3 h-3" />
-                                    <span>Pay Balance</span>
+                                    Pay
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => handlePrintHistoryItemBill(item)}
-                                  className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-[11px] font-medium transition-colors cursor-pointer shrink-0 shadow-xs"
-                                  title="Print Receipt"
+                                  onClick={() => handlePrintItem(item)}
+                                  className="p-1 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15"
+                                  title="Print Slip"
                                 >
-                                  <Printer className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                  <span>Bill</span>
+                                  <Printer className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </td>
@@ -1269,74 +611,58 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                   </table>
                 </div>
               </div>
+            </>
+          ) : (
+            <div className="erp-card p-12 text-center text-slate-400 text-xs">
+              <Users className="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+              <p className="font-semibold text-slate-700 dark:text-slate-300">No Subscriber Selected</p>
+              <p className="mt-1">Choose a subscriber from the directory on the left to inspect their lifetime ledger.</p>
             </div>
           )}
-        </>
-      )}
+        </div>
+      </div>
 
-      {/* PAY BALANCE MODAL */}
-      {payBalanceTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Pay Balance Amount</span>
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  {payBalanceTarget.title} (Box: <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{payBalanceTarget.boxNo}</span>)
-                </p>
-              </div>
-              <button onClick={() => setPayBalanceTarget(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">
-                ✕
-              </button>
-            </div>
+      {/* Pay Item Balance Modal */}
+      {payTargetItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl p-5 space-y-4">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Banknote className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+              <span>Collect Ledger Payment</span>
+            </h3>
+            <p className="text-xs text-slate-500">
+              {payTargetItem.title} • Outstanding: {formatMoney(payTargetItem.balanceAmount, currency)}
+            </p>
 
             <form onSubmit={handleConfirmPayBalance} className="space-y-4 text-xs">
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5 font-mono shadow-inner">
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Total Amount:</span>
-                  <span className="text-slate-900 dark:text-white font-semibold">{formatMoney(payBalanceTarget.totalAmount, currency)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Already Paid:</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatMoney(payBalanceTarget.paidAmount, currency)}</span>
-                </div>
-                <div className="flex justify-between font-bold border-t border-slate-200 dark:border-slate-800 pt-1.5 text-amber-600 dark:text-amber-400">
-                  <span>Current Balance Due:</span>
-                  <span className="text-sm">{formatMoney(payBalanceTarget.balanceAmount, currency)}</span>
-                </div>
-              </div>
-
               <div>
-                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Payment Amount (LKR) *</label>
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                  Payment Amount to Collect (LKR)
+                </label>
                 <input
                   type="number"
-                  step="0.01"
-                  min="0.01"
-                  max={payBalanceTarget.balanceAmount}
+                  step="any"
                   required
                   value={payAmount}
                   onChange={(e) => setPayAmount(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:border-emerald-500 shadow-xs font-bold"
+                  className="erp-input font-mono font-black text-lg text-emerald-700 dark:text-emerald-400"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setPayBalanceTarget(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer font-medium"
+                  onClick={() => setPayTargetItem(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isPaying}
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-sm shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
+                  className="btn-teal px-5 py-2 text-xs font-bold disabled:opacity-50"
                 >
-                  {isPaying ? 'Processing...' : 'Confirm Payment'}
+                  {isPaying ? 'Recording...' : 'Confirm Payment'}
                 </button>
               </div>
             </form>
@@ -1344,15 +670,13 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
         </div>
       )}
 
-      {/* BILL PRINT MODAL */}
-      {isBillModalOpen && activeBillData && (
-        <BillPrintModal
-          isOpen={isBillModalOpen}
-          onClose={() => setIsBillModalOpen(false)}
-          billData={activeBillData}
-          currency={currency}
-        />
-      )}
+      {/* Bill Printing Modal */}
+      <BillPrintModal
+        isOpen={isBillModalOpen}
+        onClose={() => setIsBillModalOpen(false)}
+        billData={activeBillData}
+        currency={currency}
+      />
     </div>
   );
 };

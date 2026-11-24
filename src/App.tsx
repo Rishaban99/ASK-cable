@@ -16,6 +16,8 @@ import {
 import { api } from './api/client.js';
 import { getCustomerPackage, syncCablePackagesFromDb, populateAssignmentsFromCustomers } from './utils/packageManager.js';
 import { Sidebar, NavTab } from './components/Sidebar.js';
+import { Navbar } from './components/Navbar.js';
+import { GlobalSearchModal } from './components/GlobalSearchModal.js';
 import { DashboardView } from './components/DashboardView.js';
 import { TransactionsView } from './components/TransactionsView.js';
 import { SummaryView } from './components/SummaryView.js';
@@ -117,6 +119,37 @@ export default function App() {
   // UI States
   const [isLoading, setIsLoading] = useState(true);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('ask_cable_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('ask_cable_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  // Keyboard shortcut: Ctrl+K / Cmd+K for Global Search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsGlobalSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Handle Login & Logout
   const handleLoginSuccess = (user: User) => {
@@ -216,8 +249,8 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 flex flex-col md:flex-row font-sans selection:bg-emerald-500/20 selection:text-emerald-400 ${
-      theme === 'light' ? 'theme-light light bg-[#f8fafc] text-slate-900' : 'dark bg-[#080c14] text-slate-100'
+    <div className={`min-h-screen transition-colors duration-200 flex flex-col md:flex-row font-sans selection:bg-blue-500/20 selection:text-blue-600 ${
+      theme === 'light' ? 'theme-light light bg-[#F1F5F9] text-slate-900' : 'dark bg-[#090E17] text-slate-100'
     }`}>
       {/* Side Menu Navigation (Desktop Fixed + Mobile Drawer Overlay) */}
       <Sidebar
@@ -229,131 +262,172 @@ export default function App() {
         staffPrivileges={staffPrivileges}
         theme={theme}
         onToggleTheme={toggleTheme}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapse}
       />
 
-      {/* Main Viewport Content */}
-      <main className="flex-1 min-w-0 md:pl-64 lg:pl-72 pb-24 md:pb-16">
-        {currentTab === 'dashboard' && (
-          <DashboardView
-            analytics={analytics}
-            currency={currency}
-            onOpenRecordModal={() => setIsRecordModalOpen(true)}
-            onNavigateToTab={(tab) => setCurrentTab(tab as any)}
-            isLoading={isLoading}
-            customers={customers}
-            monthlyPayments={monthlyPayments}
-            incomes={incomes}
-            expenses={expenses}
-            categories={categories}
-          />
-        )}
+      {/* Main Viewport Container */}
+      <div className={`flex-1 min-w-0 flex flex-col transition-all duration-200 ${
+        isSidebarCollapsed ? 'md:pl-20' : 'md:pl-64 lg:pl-68'
+      }`}>
+        {/* Top Navigation Bar with Global Search, Notifications, Breadcrumbs, Profile */}
+        <Navbar
+          currentTab={currentTab}
+          onSelectTab={setCurrentTab}
+          currency={currency}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          staffPrivileges={staffPrivileges}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onOpenRecordModal={() => setIsRecordModalOpen(true)}
+          onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
+          isSidebarCollapsed={isSidebarCollapsed}
+          onToggleSidebarCollapse={toggleSidebarCollapse}
+          customers={customers}
+          monthlyPayments={monthlyPayments}
+        />
 
-        {currentTab === 'transactions' && (
-          <TransactionsView
-            incomes={incomes}
-            expenses={expenses}
-            categories={categories}
-            currency={currency}
-            onRefreshData={loadData}
-            onOpenRecordModal={() => setIsRecordModalOpen(true)}
-            currentUser={currentUser}
-          />
-        )}
+        {/* Main Content Area */}
+        <main className="flex-1 w-full max-w-7xl mx-auto p-3 sm:p-5 lg:p-6 pb-20 md:pb-12">
+          {currentTab === 'dashboard' && (
+            <DashboardView
+              analytics={analytics}
+              currency={currency}
+              onOpenRecordModal={() => setIsRecordModalOpen(true)}
+              onNavigateToTab={(tab) => setCurrentTab(tab as any)}
+              isLoading={isLoading}
+              customers={customers}
+              monthlyPayments={monthlyPayments}
+              incomes={incomes}
+              expenses={expenses}
+              categories={categories}
+            />
+          )}
 
-        {currentTab === 'summary' && currentUser.role === 'ADMIN' && (
-          <SummaryView
-            analytics={analytics}
-            incomes={incomes}
-            expenses={expenses}
-            categories={categories}
-            customers={customers}
-            monthlyPayments={monthlyPayments}
-            systemProfile={systemProfile}
-            currency={currency}
-            onOpenRecordModal={() => setIsRecordModalOpen(true)}
-            isLoading={isLoading}
-            onNavigateTab={(tab: NavTab) => setCurrentTab(tab)}
-          />
-        )}
+          {currentTab === 'transactions' && (
+            <TransactionsView
+              incomes={incomes}
+              expenses={expenses}
+              categories={categories}
+              currency={currency}
+              onRefreshData={loadData}
+              onOpenRecordModal={() => setIsRecordModalOpen(true)}
+              currentUser={currentUser}
+            />
+          )}
 
-        {currentTab === 'customers' && (
-          <CustomersView
-            customers={customers}
-            currency={currency}
-            onRefreshData={loadData}
-            currentUser={currentUser}
-            onViewHistory={(custId) => {
-              setSelectedHistoryCustomerId(custId);
-              setCurrentTab('customer-history');
-            }}
-          />
-        )}
+          {currentTab === 'summary' && currentUser.role === 'ADMIN' && (
+            <SummaryView
+              analytics={analytics}
+              incomes={incomes}
+              expenses={expenses}
+              categories={categories}
+              customers={customers}
+              monthlyPayments={monthlyPayments}
+              systemProfile={systemProfile}
+              currency={currency}
+              onOpenRecordModal={() => setIsRecordModalOpen(true)}
+              isLoading={isLoading}
+              onNavigateTab={(tab: NavTab) => setCurrentTab(tab)}
+            />
+          )}
 
-        {currentTab === 'packages' && (
-          <PackagesView
-            customers={customers}
-            currency={currency}
-            onRefreshData={loadData}
-            currentUser={currentUser}
-            onSelectCustomerHistory={(custId) => {
-              setSelectedHistoryCustomerId(custId);
-              setCurrentTab('customer-history');
-            }}
-          />
-        )}
+          {currentTab === 'customers' && (
+            <CustomersView
+              customers={customers}
+              currency={currency}
+              onRefreshData={loadData}
+              currentUser={currentUser}
+              onViewHistory={(custId) => {
+                setSelectedHistoryCustomerId(custId);
+                setCurrentTab('customer-history');
+              }}
+            />
+          )}
 
-        {currentTab === 'monthly-payment' && (
-          <MonthlyPaymentView
-            monthlyPayments={monthlyPayments}
-            customers={customers}
-            currency={currency}
-            onRefreshData={loadData}
-            currentUser={currentUser}
-            onViewHistory={(custId) => {
-              setSelectedHistoryCustomerId(custId);
-              setCurrentTab('customer-history');
-            }}
-          />
-        )}
+          {currentTab === 'packages' && (
+            <PackagesView
+              customers={customers}
+              currency={currency}
+              onRefreshData={loadData}
+              currentUser={currentUser}
+              onSelectCustomerHistory={(custId) => {
+                setSelectedHistoryCustomerId(custId);
+                setCurrentTab('customer-history');
+              }}
+            />
+          )}
 
-        {currentTab === 'customer-history' && (
-          <CustomerHistoryView
-            customers={customers}
-            monthlyPayments={monthlyPayments}
-            incomes={incomes}
-            currency={currency}
-            onRefreshData={loadData}
-            currentUser={currentUser}
-            selectedCustomerId={selectedHistoryCustomerId}
-            onSelectCustomer={(custId) => setSelectedHistoryCustomerId(custId)}
-          />
-        )}
+          {currentTab === 'monthly-payment' && (
+            <MonthlyPaymentView
+              monthlyPayments={monthlyPayments}
+              customers={customers}
+              currency={currency}
+              onRefreshData={loadData}
+              currentUser={currentUser}
+              onViewHistory={(custId) => {
+                setSelectedHistoryCustomerId(custId);
+                setCurrentTab('customer-history');
+              }}
+            />
+          )}
 
-        {currentTab === 'payment-collection' && (
-          <PaymentCollectionView
-            customers={customers}
-            monthlyPayments={monthlyPayments}
-            incomes={incomes}
-            currency={currency}
-            onRefreshData={loadData}
-            currentUser={currentUser}
-            onNavigateToHistory={(custId) => {
-              setSelectedHistoryCustomerId(custId);
-              setCurrentTab('customer-history');
-            }}
-          />
-        )}
+          {currentTab === 'customer-history' && (
+            <CustomerHistoryView
+              customers={customers}
+              monthlyPayments={monthlyPayments}
+              incomes={incomes}
+              currency={currency}
+              onRefreshData={loadData}
+              currentUser={currentUser}
+              selectedCustomerId={selectedHistoryCustomerId}
+              onSelectCustomer={(custId) => setSelectedHistoryCustomerId(custId)}
+            />
+          )}
 
-        {currentTab === 'settings' && (
-          <SettingsView
-            currentUser={currentUser}
-            onPrivilegesUpdated={reloadPrivileges}
-            onProfileUpdated={(updated) => setSystemProfile(updated)}
-          />
-        )}
-      </main>
+          {currentTab === 'payment-collection' && (
+            <PaymentCollectionView
+              customers={customers}
+              monthlyPayments={monthlyPayments}
+              incomes={incomes}
+              currency={currency}
+              onRefreshData={loadData}
+              currentUser={currentUser}
+              onNavigateToHistory={(custId) => {
+                setSelectedHistoryCustomerId(custId);
+                setCurrentTab('customer-history');
+              }}
+            />
+          )}
 
-      {/* Modals */}
+          {currentTab === 'settings' && (
+            <SettingsView
+              currentUser={currentUser}
+              onPrivilegesUpdated={reloadPrivileges}
+              onProfileUpdated={(updated) => setSystemProfile(updated)}
+            />
+          )}
+        </main>
+      </div>
+
+      {/* Global Command Search Modal */}
+      <GlobalSearchModal
+        isOpen={isGlobalSearchOpen}
+        onClose={() => setIsGlobalSearchOpen(false)}
+        customers={customers}
+        monthlyPayments={monthlyPayments}
+        onNavigateToTab={(tab) => setCurrentTab(tab)}
+        onSelectCustomerHistory={(custId) => {
+          setSelectedHistoryCustomerId(custId);
+          setCurrentTab('customer-history');
+        }}
+      />
+
+      {/* Record Income/Expense Modal */}
       <RecordModal
         isOpen={isRecordModalOpen}
         onClose={() => setIsRecordModalOpen(false)}

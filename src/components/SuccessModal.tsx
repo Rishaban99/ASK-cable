@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Printer, X, Box, User as UserIcon, ShieldCheck, RefreshCw, Sparkles, ArrowRight, FileText } from 'lucide-react';
+import { CheckCircle2, Printer, X, Box, User as UserIcon, RefreshCw, Sparkles, FileText } from 'lucide-react';
 import { formatMoney } from '../api/client.js';
 import { SupportedCurrency } from '../types/finance.js';
 
@@ -42,8 +42,8 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
   const details = data.details || {};
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden space-y-5 p-6 sm:p-8 relative z-10 text-slate-900 dark:text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs animate-fade-in">
+      <div className="erp-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden space-y-5 p-6 sm:p-8 relative z-10 text-slate-900 dark:text-white">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -55,14 +55,14 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
         {/* Success Icon & Radiant Badge */}
         <div className="text-center space-y-2 pt-2">
           <div className="relative inline-flex items-center justify-center">
-            <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl animate-pulse" />
-            <div className="relative inline-flex items-center justify-center p-4 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 rounded-full text-emerald-600 dark:text-emerald-400 shadow-sm">
+            <div className="absolute inset-0 bg-teal-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="relative inline-flex items-center justify-center p-4 bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/25 rounded-full text-teal-600 dark:text-teal-400 shadow-sm">
               <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12" />
             </div>
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center justify-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center justify-center gap-2">
             <span>{data.title}</span>
-            <Sparkles className="w-5 h-5 text-emerald-500 shrink-0" />
+            <Sparkles className="w-5 h-5 text-teal-500 shrink-0" />
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-2 font-sans">
             {data.message}
@@ -74,12 +74,12 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
           <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3 font-mono text-xs shadow-xs">
             <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
-                <UserIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="font-bold text-slate-900 dark:text-white text-sm">{details.customerName}</span>
+                <UserIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="font-bold text-slate-900 dark:text-white text-sm font-sans">{details.customerName}</span>
               </div>
               {details.boxNo && (
-                <span className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 text-xs">
-                  <Box className="w-3.5 h-3.5 text-slate-400" />
+                <span className="badge-status badge-royal font-mono font-bold text-xs flex items-center gap-1">
+                  <Box className="w-3.5 h-3.5 text-blue-500" />
                   <span>{details.boxNo}</span>
                 </span>
               )}
@@ -93,10 +93,10 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
               {details.status && (
                 <div>
                   Status:{' '}
-                  <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                  <span className={`badge-status text-[10px] ${
                     details.status === 'ACTIVE' || details.status === 'PAID'
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                      : 'bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30'
+                      ? 'badge-success'
+                      : 'badge-warning'
                   }`}>
                     {details.status}
                   </span>
@@ -110,19 +110,19 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
                 {details.totalAmount !== undefined && (
                   <div>
                     <span className="text-[10px] text-slate-400 block font-sans uppercase font-bold tracking-wider">Total</span>
-                    <span className="text-slate-700 dark:text-slate-200 font-bold">{formatMoney(details.totalAmount, currency)}</span>
+                    <span className="text-slate-700 dark:text-slate-200 font-bold font-mono">{formatMoney(details.totalAmount, currency)}</span>
                   </div>
                 )}
                 {details.paidAmount !== undefined && (
                   <div>
                     <span className="text-[10px] text-slate-400 block font-sans uppercase font-bold tracking-wider">Paid</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatMoney(details.paidAmount, currency)}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold font-mono">{formatMoney(details.paidAmount, currency)}</span>
                   </div>
                 )}
                 {details.balanceAmount !== undefined && (
                   <div>
                     <span className="text-[10px] text-slate-400 block font-sans uppercase font-bold tracking-wider">Balance</span>
-                    <span className={`font-bold ${details.balanceAmount === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                    <span className={`font-bold font-mono ${details.balanceAmount === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                       {formatMoney(details.balanceAmount, currency)}
                     </span>
                   </div>
@@ -140,7 +140,7 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
                 data.onPrintBill!();
                 onClose();
               }}
-              className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+              className="btn-primary w-full py-3 px-4 text-xs sm:text-sm font-bold flex items-center justify-center gap-2"
             >
               <Printer className="w-4 h-4" />
               <span>Print Bill / Receipt</span>
@@ -154,9 +154,9 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
                   data.onViewHistory!();
                   onClose();
                 }}
-                className="flex-1 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                className="flex-1 py-2.5 px-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
               >
-                <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>View History</span>
               </button>
             )}

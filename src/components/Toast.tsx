@@ -50,32 +50,32 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             key={toast.id}
             className={`pointer-events-auto flex items-center justify-between gap-3 p-3.5 rounded-2xl border shadow-xl backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 text-xs font-semibold ${
               toast.type === 'success'
-                ? 'bg-white/95 dark:bg-slate-900/95 border-emerald-300/80 dark:border-emerald-500/40 text-slate-800 dark:text-slate-100'
+                ? 'bg-white/95 dark:bg-[#0F172A]/95 border-emerald-500/40 text-slate-900 dark:text-slate-100'
                 : toast.type === 'error'
-                ? 'bg-white/95 dark:bg-slate-900/95 border-rose-300/80 dark:border-rose-500/40 text-slate-800 dark:text-slate-100'
+                ? 'bg-white/95 dark:bg-[#0F172A]/95 border-rose-500/40 text-slate-900 dark:text-slate-100'
                 : toast.type === 'ai'
-                ? 'bg-white/95 dark:bg-slate-900/95 border-indigo-300/80 dark:border-indigo-500/40 text-slate-800 dark:text-slate-100'
-                : 'bg-white/95 dark:bg-slate-900/95 border-slate-300/80 dark:border-slate-700 text-slate-800 dark:text-slate-100'
+                ? 'bg-white/95 dark:bg-[#0F172A]/95 border-teal-500/40 text-slate-900 dark:text-slate-100'
+                : 'bg-white/95 dark:bg-[#0F172A]/95 border-blue-500/40 text-slate-900 dark:text-slate-100'
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               {toast.type === 'success' && (
-                <div className="p-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
                   <CheckCircle2 className="w-4 h-4" />
                 </div>
               )}
               {toast.type === 'error' && (
-                <div className="p-1 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
+                <div className="p-1 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 shrink-0">
                   <AlertCircle className="w-4 h-4" />
                 </div>
               )}
               {toast.type === 'info' && (
-                <div className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 shrink-0">
+                <div className="p-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
                   <Info className="w-4 h-4" />
                 </div>
               )}
               {toast.type === 'ai' && (
-                <div className="p-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+                <div className="p-1 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
                   <Sparkles className="w-4 h-4" />
                 </div>
               )}

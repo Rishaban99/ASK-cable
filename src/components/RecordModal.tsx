@@ -128,19 +128,21 @@ export const RecordModal: React.FC<RecordModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-xs p-4 animate-fade-in">
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-2xl space-y-5">
+      <div className="erp-card w-full max-w-md p-6 sm:p-7 shadow-2xl space-y-5">
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
             <div className={`p-2 rounded-xl border ${
               txType === 'INCOME'
-                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400'
+                ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400'
+                : 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
             }`}>
               <Receipt className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Record Entry</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Add a new financial transaction</p>
+              <div className="flex items-center gap-2">
+                <span className="badge-status badge-royal text-[10px]">LEDGER RECORD</span>
+              </div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">Record Financial Entry</h2>
             </div>
           </div>
           <button
@@ -152,7 +154,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
         </div>
 
         {errorMsg && (
-          <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs rounded-xl font-medium">
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs rounded-xl font-medium animate-fade-in">
             {errorMsg}
           </div>
         )}
@@ -166,24 +168,24 @@ export const RecordModal: React.FC<RecordModalProps> = ({
                 onClick={() => setTxType('INCOME')}
                 className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   txType === 'INCOME'
-                    ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                    ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <ArrowDownRight className="w-3.5 h-3.5" />
-                <span>Incomes</span>
+                <span>Incomes (Credit)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setTxType('EXPENSE')}
                 className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   txType === 'EXPENSE'
-                    ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-xs'
+                    ? 'bg-rose-600 text-white shadow-xs'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>Expenses</span>
+                <span>Expenses (Debit)</span>
               </button>
             </div>
           </div>
@@ -199,7 +201,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
                 placeholder="0.00"
                 value={txAmount}
                 onChange={(e) => setTxAmount(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono font-bold text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className="erp-input w-full font-mono font-bold text-xs"
               />
             </div>
             <div>
@@ -209,7 +211,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
                 required
                 value={txDate}
                 onChange={(e) => setTxDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className="erp-input w-full font-mono text-xs"
               />
             </div>
           </div>
@@ -220,7 +222,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
               required
               value={txCategoryId}
               onChange={(e) => setTxCategoryId(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+              className="erp-input w-full text-xs font-medium cursor-pointer"
             >
               {availableCategories.length === 0 ? (
                 <option value="">No categories created yet</option>
@@ -242,7 +244,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
                   type="button"
                   onClick={handleFixSpelling}
                   disabled={isFixingSpelling}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-teal-600 dark:text-teal-400 hover:underline transition-colors cursor-pointer"
                 >
                   {isFixingSpelling ? <Spinner size="sm" /> : <Sparkles className="w-3 h-3" />}
                   <span>{isFixingSpelling ? 'Correcting...' : 'Fix with AI ✨'}</span>
@@ -255,7 +257,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
               placeholder="e.g. Salary Payout, Client Retainer, Keells Supermarket"
               value={txDescription}
               onChange={(e) => setTxDescription(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              className="erp-input w-full text-xs"
             />
           </div>
 
@@ -265,7 +267,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
               <select
                 value={txPaymentMethod}
                 onChange={(e) => setTxPaymentMethod(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                className="erp-input w-full text-xs font-medium cursor-pointer"
               >
                 <option value="BANK_TRANSFER">Bank Transfer / CEFT</option>
                 <option value="CASH">Cash</option>
@@ -281,7 +283,7 @@ export const RecordModal: React.FC<RecordModalProps> = ({
                 placeholder="salary, bills, hardware"
                 value={txTags}
                 onChange={(e) => setTxTags(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className="erp-input w-full text-xs"
               />
             </div>
           </div>
@@ -290,10 +292,10 @@ export const RecordModal: React.FC<RecordModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 px-4 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              className="btn-primary w-full py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {isSubmitting && <Spinner size="sm" className="text-white" />}
-              <span>{isSubmitting ? 'Saving Record...' : 'Save Record'}</span>
+              <span>{isSubmitting ? 'Saving Record...' : 'Save Financial Record'}</span>
             </button>
           </div>
         </form>

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Category,
   IncomeRecord,
   ExpenseRecord,
   SupportedCurrency,
-  User
+  User,
 } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { useToast } from './Toast.js';
@@ -19,7 +19,14 @@ import {
   Search,
   Download,
   X,
-  Sparkles
+  Sparkles,
+  Receipt,
+  Wallet,
+  Calendar,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Layers,
 } from 'lucide-react';
 import { Spinner } from './Spinner.js';
 
@@ -47,16 +54,20 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   // Category creation states
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
-  const [newCatColor, setNewCatColor] = useState('#10B981');
+  const [newCatColor, setNewCatColor] = useState('#1D4ED8');
   const [catError, setCatError] = useState('');
 
   // Editing state for Category
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editCatName, setEditCatName] = useState('');
-  const [editCatColor, setEditCatColor] = useState('#10B981');
+  const [editCatColor, setEditCatColor] = useState('#1D4ED8');
 
   // Editing state for Income
   const [editingIncome, setEditingIncome] = useState<IncomeRecord | null>(null);
@@ -76,21 +87,54 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
 
   const [isAiFixing, setIsAiFixing] = useState(false);
 
-  // Filtered incomes
-  const filteredIncomes = incomes.filter((r) => {
-    const matchesSearch = !searchQuery || r.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = !selectedCategoryFilter || r.categoryId === selectedCategoryFilter;
-    return matchesSearch && matchesCat;
+  // Confirm Modal State
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    variant?: 'danger' | 'emerald' | 'indigo';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
   });
+
+  // Totals
+  const totalIncomeSum = useMemo(() => incomes.reduce((acc, curr) => acc + (curr.amount || 0), 0), [incomes]);
+  const totalExpenseSum = useMemo(() => expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0), [expenses]);
+  const netLedgerBalance = totalIncomeSum - totalExpenseSum;
+  const isNetPositive = netLedgerBalance >= 0;
+
+  // Filtered incomes
+  const filteredIncomes = useMemo(() => {
+    return incomes.filter((r) => {
+      const matchesSearch = !searchQuery || r.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCat = !selectedCategoryFilter || r.categoryId === selectedCategoryFilter;
+      return matchesSearch && matchesCat;
+    });
+  }, [incomes, searchQuery, selectedCategoryFilter]);
 
   // Filtered expenses
-  const filteredExpenses = expenses.filter((r) => {
-    const matchesSearch = !searchQuery || r.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = !selectedCategoryFilter || r.categoryId === selectedCategoryFilter;
-    return matchesSearch && matchesCat;
-  });
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((r) => {
+      const matchesSearch = !searchQuery || r.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCat = !selectedCategoryFilter || r.categoryId === selectedCategoryFilter;
+      return matchesSearch && matchesCat;
+    });
+  }, [expenses, searchQuery, selectedCategoryFilter]);
 
-  // Category creation & edit
+  // Active records based on subtab
+  const activeRecords = activeSubTab === 'incomes' ? filteredIncomes : filteredExpenses;
+  const totalPages = Math.max(1, Math.ceil(activeRecords.length / pageSize));
+  const paginatedRecords = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return activeRecords.slice(start, start + pageSize);
+  }, [activeRecords, currentPage, pageSize]);
+
+  // Category creation
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     setCatError('');
@@ -109,9 +153,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       setNewCatName('');
       onRefreshData();
     } catch (err: any) {
-      const msg = err.message || 'Failed to create category';
-      setCatError(msg);
-      toast.error(msg);
+      setCatError(err.message || 'Failed to create category');
+      toast.error(err.message || 'Failed to create category');
     }
   };
 
@@ -133,25 +176,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       setEditingCategory(null);
       onRefreshData();
     } catch (err: any) {
-      const msg = err.message || 'Failed to update category';
-      toast.error(msg);
+      toast.error(err.message || 'Failed to update category');
     }
   };
-
-  // Confirm Modal State
-  const [confirmModalConfig, setConfirmModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText?: string;
-    variant?: 'danger' | 'emerald' | 'indigo';
-    onConfirm: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-  });
 
   const handleDeleteCategory = (id: string) => {
     setConfirmModalConfig({
@@ -167,8 +194,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           toast.success('Category deleted successfully!');
           onRefreshData();
         } catch (err: any) {
-          const msg = err.message || 'Failed to delete category';
-          toast.error(msg);
+          toast.error(err.message || 'Failed to delete category');
         }
       },
     });
@@ -204,8 +230,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       setEditingIncome(null);
       onRefreshData();
     } catch (err: any) {
-      const msg = err.message || 'Failed to update income record';
-      toast.error(msg);
+      toast.error(err.message || 'Failed to update income record');
     }
   };
 
@@ -220,11 +245,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
         try {
           await api.deleteIncome(id);
-          toast.success('Income record deleted successfully!');
+          toast.success('Income record deleted.');
           onRefreshData();
         } catch (err: any) {
-          const msg = err.message || 'Failed to delete income record';
-          toast.error(msg);
+          toast.error(err.message || 'Failed to delete income record');
         }
       },
     });
@@ -260,8 +284,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       setEditingExpense(null);
       onRefreshData();
     } catch (err: any) {
-      const msg = err.message || 'Failed to update expense record';
-      toast.error(msg);
+      toast.error(err.message || 'Failed to update expense record');
     }
   };
 
@@ -276,259 +299,279 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
         try {
           await api.deleteExpense(id);
-          toast.success('Expense record deleted successfully!');
+          toast.success('Expense record deleted.');
           onRefreshData();
         } catch (err: any) {
-          const msg = err.message || 'Failed to delete expense record';
-          toast.error(msg);
+          toast.error(err.message || 'Failed to delete expense record');
         }
       },
     });
   };
 
-  const totalIncomesSum = filteredIncomes.reduce((sum, r) => sum + r.amount, 0);
-  const totalExpensesSum = filteredExpenses.reduce((sum, r) => sum + r.amount, 0);
-
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6 py-5 sm:py-8 space-y-5 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+    <div className="space-y-5">
+      {/* ==================================================================== */}
+      {/* 1. HEADER & KPI CARDS STRIP */}
+      {/* ==================================================================== */}
+      <div className="erp-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Incomes &amp; Expenses Ledgers
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+            <Receipt className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <span>Income & Expense Financial Ledger</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Audit, search, and manage financial records and custom ledger categories
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Track multi-stream cash inflows, operational overhead, and customize financial ledger categories
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {activeSubTab === 'incomes' && (
-            <button
-              onClick={() => api.downloadIncomesCsv()}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              <span>Export CSV</span>
-            </button>
-          )}
-          {activeSubTab === 'expenses' && (
-            <button
-              onClick={() => api.downloadExpensesCsv()}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              <span>Export CSV</span>
-            </button>
-          )}
+
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {/* CSV Export */}
+          <button
+            onClick={() =>
+              activeSubTab === 'incomes' ? api.downloadIncomesCsv() : api.downloadExpensesCsv()
+            }
+            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+
           <button
             onClick={onOpenRecordModal}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl shadow-xs hover:shadow-sm hover:shadow-emerald-500/20 transition-all cursor-pointer"
+            className="btn-primary px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Record</span>
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>+ Record Transaction</span>
           </button>
         </div>
       </div>
 
-      {/* Subtabs Switcher */}
-      <div className="flex overflow-x-auto items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 scrollbar-none">
+      {/* Mini KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="erp-card p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Total Income</span>
+            <div className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
+              {formatMoney(totalIncomeSum, currency)}
+            </div>
+            <span className="text-[10px] text-slate-400">{incomes.length} Inflows</span>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="erp-card p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">Total Expenses</span>
+            <div className="text-lg font-black font-mono text-rose-700 dark:text-rose-400 mt-0.5">
+              {formatMoney(totalExpenseSum, currency)}
+            </div>
+            <span className="text-[10px] text-slate-400">{expenses.length} Outflows</span>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 flex items-center justify-center">
+            <TrendingDown className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="erp-card p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">Net Ledger Balance</span>
+            <div
+              className={`text-lg font-black font-mono mt-0.5 ${
+                isNetPositive ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+              }`}
+            >
+              {formatMoney(netLedgerBalance, currency)}
+            </div>
+            <span className="text-[10px] text-slate-400">Cash Difference</span>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 flex items-center justify-center">
+            <Wallet className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="erp-card p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">Categories</span>
+            <div className="text-xl font-black text-teal-700 dark:text-teal-400 mt-0.5">{categories.length}</div>
+            <span className="text-[10px] text-slate-400">Configured</span>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 flex items-center justify-center">
+            <Tag className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
+      {/* ==================================================================== */}
+      {/* 2. SUBTAB CONTROLS */}
+      {/* ==================================================================== */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-white/[0.08] pb-1 text-xs">
         <button
-          onClick={() => setActiveSubTab('incomes')}
-          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+          onClick={() => {
+            setActiveSubTab('incomes');
+            setCurrentPage(1);
+          }}
+          className={`px-4 py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeSubTab === 'incomes'
-              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-400/50 text-emerald-700 dark:text-emerald-400 shadow-xs'
-              : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5" />
-          <span>Incomes Table</span>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-            {incomes.length}
-          </span>
+          <span>Incomes ({incomes.length})</span>
         </button>
 
         <button
-          onClick={() => setActiveSubTab('expenses')}
-          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+          onClick={() => {
+            setActiveSubTab('expenses');
+            setCurrentPage(1);
+          }}
+          className={`px-4 py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeSubTab === 'expenses'
-              ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-400/50 text-rose-700 dark:text-rose-400 shadow-xs'
-              : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <TrendingDown className="w-3.5 h-3.5" />
-          <span>Expenses Table</span>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-rose-500/10 text-rose-700 dark:text-rose-400">
-            {expenses.length}
-          </span>
+          <span>Expenses ({expenses.length})</span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('categories')}
-          className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+          className={`px-4 py-2 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeSubTab === 'categories'
-              ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-400/50 text-indigo-700 dark:text-indigo-400 shadow-xs'
-              : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <Tag className="w-3.5 h-3.5" />
-          <span>Categories</span>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-indigo-500/10 text-indigo-700 dark:text-indigo-400">
-            {categories.length}
-          </span>
+          <span>Categories ({categories.length})</span>
         </button>
       </div>
 
-      {/* ------------------------------------------------------------------- */}
-      {/* 1. INCOMES TABLE VIEW */}
-      {/* ------------------------------------------------------------------- */}
-      {activeSubTab === 'incomes' && (
+      {/* ==================================================================== */}
+      {/* 3. INCOMES & EXPENSES TABLES */}
+      {/* ==================================================================== */}
+      {activeSubTab !== 'categories' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-3" />
+          {/* Search & Category Filter */}
+          <div className="erp-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search income records by description..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs transition-all"
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder={`Search ${activeSubTab} by description...`}
+                className="erp-input pl-9 text-xs"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+
             <select
               value={selectedCategoryFilter}
-              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs transition-all cursor-pointer"
+              onChange={(e) => {
+                setSelectedCategoryFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="erp-input py-1.5 text-xs w-auto font-semibold"
             >
-              <option value="">All Income Categories</option>
-              {categories.filter(c => c.type === 'INCOME').map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              <option value="">All Categories</option>
+              {categories
+                .filter((c) => c.type === (activeSubTab === 'incomes' ? 'INCOME' : 'EXPENSE'))
+                .map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
             </select>
           </div>
 
-          {/* Mobile Cards View for Incomes (block md:hidden) */}
-          <div className="block md:hidden space-y-3">
-            {filteredIncomes.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                No income records found matching your filters.
-              </div>
-            ) : (
-              filteredIncomes.map((inc) => (
-                <div key={inc.id} className="p-4 space-y-3 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs transition-all">
-                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
-                    <div className="space-y-1">
-                      <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{inc.description}</h3>
-                      <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">Date: {inc.date} • Method: <span className="text-slate-700 dark:text-slate-200 font-medium">{inc.paymentMethod}</span></p>
-                    </div>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg shrink-0">
-                      +{formatMoney(inc.amount, currency)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 pt-0.5">
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
-                      style={{
-                        backgroundColor: `${inc.categoryColor || '#10B981'}15`,
-                        color: inc.categoryColor || '#10B981',
-                        border: `1px solid ${inc.categoryColor || '#10B981'}30`,
-                      }}
-                    >
-                      {inc.categoryName}
-                    </span>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleOpenEditIncome(inc)}
-                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Record"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      {currentUser?.role !== 'STAFF' && (
-                        <button
-                          onClick={() => handleDeleteIncome(inc.id)}
-                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono shadow-xs">
-              <span className="font-sans font-medium text-slate-600 dark:text-slate-300">Total Income Inflows:</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                +{formatMoney(totalIncomesSum, currency)}
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop Table View for Incomes (hidden md:block) */}
-          <div className="hidden md:block rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+          {/* Table */}
+          <div className="erp-card overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+              <table className="erp-table text-xs">
+                <thead>
                   <tr>
-                    <th className="px-5 py-3.5">Date</th>
-                    <th className="px-5 py-3.5">Description</th>
-                    <th className="px-5 py-3.5">Category</th>
-                    <th className="px-5 py-3.5">Payment Method</th>
-                    <th className="px-5 py-3.5 text-right">Amount ({currency})</th>
-                    <th className="px-5 py-3.5 text-right">Actions</th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Method</th>
+                    <th className="text-right">Amount</th>
+                    <th className="text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {filteredIncomes.length === 0 ? (
+                <tbody>
+                  {paginatedRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
-                        No income records found matching your filters.
+                      <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                        No {activeSubTab} records found for this query.
                       </td>
                     </tr>
                   ) : (
-                    filteredIncomes.map((inc) => (
-                      <tr key={inc.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="px-5 py-3.5 font-mono text-slate-600 dark:text-slate-300">{inc.date}</td>
-                        <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-white">{inc.description}</td>
-                        <td className="px-5 py-3.5">
+                    paginatedRecords.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="font-mono text-slate-500 whitespace-nowrap">{item.date}</td>
+                        <td className="font-bold text-slate-900 dark:text-white max-w-[280px] truncate">
+                          {item.description}
+                        </td>
+                        <td>
                           <span
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
                             style={{
-                              backgroundColor: `${inc.categoryColor || '#10B981'}15`,
-                              color: inc.categoryColor || '#10B981',
-                              border: `1px solid ${inc.categoryColor || '#10B981'}30`,
+                              backgroundColor: `${item.categoryColor || '#1D4ED8'}15`,
+                              color: item.categoryColor || '#1D4ED8',
+                              borderColor: `${item.categoryColor || '#1D4ED8'}30`,
                             }}
+                            className="badge-status text-[10px]"
                           >
-                            <span>{inc.categoryName}</span>
+                            {item.categoryName || 'Other'}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5 font-mono text-slate-500 dark:text-slate-400">{inc.paymentMethod}</td>
-                        <td className="px-5 py-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          +{formatMoney(inc.amount, currency)}
+                        <td className="font-mono text-slate-500 text-[11px]">{item.paymentMethod || 'CASH'}</td>
+                        <td
+                          className={`text-right font-mono font-black ${
+                            activeSubTab === 'incomes'
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-rose-700 dark:text-rose-400'
+                          }`}
+                        >
+                          {activeSubTab === 'incomes' ? '+' : '-'} {formatMoney(item.amount, currency)}
                         </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <button
-                              onClick={() => handleOpenEditIncome(inc)}
-                              className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                              onClick={() =>
+                                activeSubTab === 'incomes'
+                                  ? handleOpenEditIncome(item as IncomeRecord)
+                                  : handleOpenEditExpense(item as ExpenseRecord)
+                              }
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
                               title="Edit Record"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
-                            {currentUser?.role !== 'STAFF' && (
-                              <button
-                                onClick={() => handleDeleteIncome(inc.id)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                                title="Delete Record (Admin Only)"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() =>
+                                activeSubTab === 'incomes'
+                                  ? handleDeleteIncome(item.id)
+                                  : handleDeleteExpense(item.id)
+                              }
+                              className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/15"
+                              title="Delete Record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -538,328 +581,151 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               </table>
             </div>
 
-            <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-              <span className="font-medium">Total Income Inflows:</span>
-              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                +{formatMoney(totalIncomesSum, currency)}
+            {/* Pagination */}
+            <div className="p-3.5 border-t border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between text-xs text-slate-500">
+              <span>
+                Showing {activeRecords.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} to{' '}
+                {Math.min(currentPage * pageSize, activeRecords.length)} of {activeRecords.length} records
               </span>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* ------------------------------------------------------------------- */}
-      {/* 2. EXPENSES TABLE VIEW */}
-      {/* ------------------------------------------------------------------- */}
-      {activeSubTab === 'expenses' && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-3" />
-              <input
-                type="text"
-                placeholder="Search expense records by description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs transition-all"
-              />
-            </div>
-            <select
-              value={selectedCategoryFilter}
-              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-xs transition-all cursor-pointer"
-            >
-              <option value="">All Expense Categories</option>
-              {categories.filter(c => c.type === 'EXPENSE').map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Mobile Cards View for Expenses (block md:hidden) */}
-          <div className="block md:hidden space-y-3">
-            {filteredExpenses.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                No expense records found matching your filters.
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40"
+                >
+                  Prev
+                </button>
+                <span className="font-mono font-bold px-2">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40"
+                >
+                  Next
+                </button>
               </div>
-            ) : (
-              filteredExpenses.map((exp) => (
-                <div key={exp.id} className="p-4 space-y-3 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs transition-all">
-                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-2.5">
-                    <div className="space-y-1">
-                      <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{exp.description}</h3>
-                      <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">Date: {exp.date} • Method: <span className="text-slate-700 dark:text-slate-200 font-medium">{exp.paymentMethod}</span></p>
-                    </div>
-                    <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-sm px-2.5 py-1 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg shrink-0">
-                      -{formatMoney(exp.amount, currency)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 pt-0.5">
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
-                      style={{
-                        backgroundColor: `${exp.categoryColor || '#F43F5E'}15`,
-                        color: exp.categoryColor || '#F43F5E',
-                        border: `1px solid ${exp.categoryColor || '#F43F5E'}30`,
-                      }}
-                    >
-                      {exp.categoryName}
-                    </span>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleOpenEditExpense(exp)}
-                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Record"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      {currentUser?.role !== 'STAFF' && (
-                        <button
-                          onClick={() => handleDeleteExpense(exp.id)}
-                          className="p-2 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono shadow-xs">
-              <span className="font-sans font-medium text-slate-600 dark:text-slate-300">Total Operational Expenses:</span>
-              <span className="font-bold text-rose-600 dark:text-rose-400 text-sm">
-                -{formatMoney(totalExpensesSum, currency)}
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop Table View for Expenses (hidden md:block) */}
-          <div className="hidden md:block rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
-                  <tr>
-                    <th className="px-5 py-3.5">Date</th>
-                    <th className="px-5 py-3.5">Description</th>
-                    <th className="px-5 py-3.5">Category</th>
-                    <th className="px-5 py-3.5">Payment Method</th>
-                    <th className="px-5 py-3.5 text-right">Amount ({currency})</th>
-                    <th className="px-5 py-3.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {filteredExpenses.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
-                        No expense records found matching your filters.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredExpenses.map((exp) => (
-                      <tr key={exp.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="px-5 py-3.5 font-mono text-slate-600 dark:text-slate-300">{exp.date}</td>
-                        <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-white">{exp.description}</td>
-                        <td className="px-5 py-3.5">
-                          <span
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
-                            style={{
-                              backgroundColor: `${exp.categoryColor || '#F43F5E'}15`,
-                              color: exp.categoryColor || '#F43F5E',
-                              border: `1px solid ${exp.categoryColor || '#F43F5E'}30`,
-                            }}
-                          >
-                            <span>{exp.categoryName}</span>
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5 font-mono text-slate-500 dark:text-slate-400">{exp.paymentMethod}</td>
-                        <td className="px-5 py-3.5 text-right font-mono font-bold text-rose-600 dark:text-rose-400">
-                          -{formatMoney(exp.amount, currency)}
-                        </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleOpenEditExpense(exp)}
-                              className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                              title="Edit Record"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            {currentUser?.role !== 'STAFF' && (
-                              <button
-                                onClick={() => handleDeleteExpense(exp.id)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                                title="Delete Record (Admin Only)"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-              <span className="font-medium">Total Operational Expenses:</span>
-              <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-sm">
-                -{formatMoney(totalExpensesSum, currency)}
-              </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* ------------------------------------------------------------------- */}
-      {/* 3. CATEGORIES MANAGEMENT VIEW */}
-      {/* ------------------------------------------------------------------- */}
+      {/* ==================================================================== */}
+      {/* 4. CATEGORIES MANAGER SUBTAB */}
+      {/* ==================================================================== */}
       {activeSubTab === 'categories' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Create New Category</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Add custom tags for financial reporting</p>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Create Category Form */}
+          <div className="lg:col-span-4 erp-card p-5 space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-white/[0.04] pb-3">
+              <Plus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span>Create New Category</span>
+            </h3>
 
             {catError && (
-              <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs rounded-xl">
-                {catError}
-              </div>
+              <div className="p-2.5 rounded-xl bg-rose-50 text-rose-700 text-xs">{catError}</div>
             )}
 
-            <form onSubmit={handleCreateCategory} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateCategory} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Category Type</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewCatType('INCOME')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                      newCatType === 'INCOME'
-                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 shadow-xs'
-                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850'
-                    }`}
-                  >
-                    Income
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewCatType('EXPENSE')}
-                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                      newCatType === 'EXPENSE'
-                        ? 'border-rose-500 bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-400 shadow-xs'
-                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850'
-                    }`}
-                  >
-                    Expense
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium">Category Name</label>
-                  {newCatName.trim() && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setIsAiFixing(true);
-                        const fixed = await api.fixSpelling(newCatName);
-                        if (fixed) setNewCatName(fixed);
-                        setIsAiFixing(false);
-                      }}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors cursor-pointer"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>{isAiFixing ? 'Correcting...' : 'Fix English ✨'}</span>
-                    </button>
-                  )}
-                </div>
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Category Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Fiber Line Expansion, Equipment"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  placeholder="e.g. Office Rent, Signal Amplifiers"
+                  className="erp-input font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Color Tag</label>
-                <div className="flex items-center gap-2.5">
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Category Type</label>
+                <select
+                  value={newCatType}
+                  onChange={(e) => setNewCatType(e.target.value as any)}
+                  className="erp-input font-medium"
+                >
+                  <option value="EXPENSE">EXPENSE</option>
+                  <option value="INCOME">INCOME</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Color Badge</label>
+                <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={newCatColor}
                     onChange={(e) => setNewCatColor(e.target.value)}
-                    className="w-10 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
+                    className="w-10 h-9 p-1 rounded-lg border border-slate-200 cursor-pointer bg-white"
                   />
                   <input
                     type="text"
                     value={newCatColor}
                     onChange={(e) => setNewCatColor(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono uppercase text-xs"
+                    className="erp-input font-mono uppercase text-xs"
                   />
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl shadow-xs transition-all cursor-pointer"
-              >
-                Add Category
-              </button>
+              <div className="pt-2">
+                <button type="submit" className="w-full btn-primary py-2 text-xs font-bold">
+                  Save Category
+                </button>
+              </div>
             </form>
           </div>
 
-          <div className="lg:col-span-2 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Active Categories ({categories.length})</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Categories used across incomes and expenses</p>
-            </div>
+          {/* Existing Categories List */}
+          <div className="lg:col-span-8 erp-card p-5 space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-white/[0.04] pb-3">
+              <Tag className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span>Existing Categories ({categories.length})</span>
+            </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {categories.map((c) => (
+              {categories.map((cat) => (
                 <div
-                  key={c.id}
-                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 text-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-2xs"
+                  key={cat.id}
+                  className="p-3 rounded-xl border border-slate-200/80 dark:border-white/[0.06] bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-2.5">
                     <span
-                      style={{ backgroundColor: c.color }}
-                      className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs ring-2 ring-white dark:ring-slate-900"
+                      style={{ backgroundColor: cat.color }}
+                      className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs"
                     />
-                    <div className="min-w-0">
-                      <p className="font-semibold text-slate-900 dark:text-white truncate">{c.name}</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                        {c.type}
-                      </p>
+                    <div>
+                      <span className="font-bold text-xs text-slate-900 dark:text-white">{cat.name}</span>
+                      <span
+                        className={`badge-status text-[8px] ml-2 ${
+                          cat.type === 'INCOME' ? 'badge-success' : 'badge-danger'
+                        }`}
+                      >
+                        {cat.type}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1">
                     <button
-                      onClick={() => handleOpenEditCategory(c)}
-                      className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors p-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-900 cursor-pointer"
+                      onClick={() => handleOpenEditCategory(cat)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white"
                       title="Edit Category"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      onClick={() => handleDeleteCategory(c.id)}
-                      className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors p-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-900 cursor-pointer"
-                      title="Delete Category"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {!cat.isDefault && (
+                      <button
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="p-1.5 rounded-lg text-rose-400 hover:text-rose-600"
+                        title="Delete Category"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -868,76 +734,122 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         </div>
       )}
 
-      {/* ------------------------------------------------------------------- */}
-      {/* EDIT CATEGORY MODAL */}
-      {/* ------------------------------------------------------------------- */}
+      {/* Edit Category Modal */}
       {editingCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Edit Category</h2>
-              <button onClick={() => setEditingCategory(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditCategory} className="space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl p-5 space-y-4">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Edit Category</h3>
+            <form onSubmit={handleSaveEditCategory} className="space-y-3.5 text-xs">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium">Category Name</label>
-                  {editCatName.trim() && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const fixed = await api.fixSpelling(editCatName);
-                        if (fixed) setEditCatName(fixed);
-                      }}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 cursor-pointer"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>Fix English ✨</span>
-                    </button>
-                  )}
-                </div>
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Name</label>
                 <input
                   type="text"
                   required
                   value={editCatName}
                   onChange={(e) => setEditCatName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="erp-input font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Color Tag</label>
-                <div className="flex items-center gap-2.5">
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Color</label>
+                <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={editCatColor}
                     onChange={(e) => setEditCatColor(e.target.value)}
-                    className="w-10 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
+                    className="w-10 h-9 p-1 rounded-lg border border-slate-200 cursor-pointer bg-white"
                   />
                   <input
                     type="text"
                     value={editCatColor}
                     onChange={(e) => setEditCatColor(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono uppercase text-xs"
+                    className="erp-input font-mono"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditingCategory(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600"
                 >
                   Cancel
                 </button>
+                <button type="submit" className="btn-primary px-5 py-2 text-xs font-bold">
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Income Modal */}
+      {editingIncome && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl p-5 space-y-4">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Edit Income Record</h3>
+            <form onSubmit={handleSaveEditIncome} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Amount (LKR)</label>
+                <input
+                  type="number"
+                  step="any"
+                  required
+                  value={editIncAmount}
+                  onChange={(e) => setEditIncAmount(e.target.value)}
+                  className="erp-input font-mono font-bold text-emerald-700"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Description</label>
+                <input
+                  type="text"
+                  required
+                  value={editIncDescription}
+                  onChange={(e) => setEditIncDescription(e.target.value)}
+                  className="erp-input"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editIncDate}
+                    onChange={(e) => setEditIncDate(e.target.value)}
+                    className="erp-input font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Category</label>
+                  <select
+                    value={editIncCategoryId}
+                    onChange={(e) => setEditIncCategoryId(e.target.value)}
+                    className="erp-input"
+                  >
+                    {categories
+                      .filter((c) => c.type === 'INCOME')
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-semibold text-white shadow-xs transition-all cursor-pointer"
+                  type="button"
+                  onClick={() => setEditingIncome(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600"
                 >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary px-5 py-2 text-xs font-bold">
                   Save Changes
                 </button>
               </div>
@@ -946,236 +858,79 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         </div>
       )}
 
-      {/* ------------------------------------------------------------------- */}
-      {/* EDIT INCOME MODAL */}
-      {/* ------------------------------------------------------------------- */}
-      {editingIncome && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Edit Income Record</h2>
-              <button onClick={() => setEditingIncome(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditIncome} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Amount ({currency})</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    value={editIncAmount}
-                    onChange={(e) => setEditIncAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={editIncDate}
-                    onChange={(e) => setEditIncDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
+      {/* Edit Expense Modal */}
+      {editingExpense && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl p-5 space-y-4">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Edit Expense Record</h3>
+            <form onSubmit={handleSaveEditExpense} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Category</label>
-                <select
-                  value={editIncCategoryId}
-                  onChange={(e) => setEditIncCategoryId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
-                >
-                  {categories.filter(c => c.type === 'INCOME').map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium">Description</label>
-                  {editIncDescription.trim() && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const fixed = await api.fixSpelling(editIncDescription);
-                        if (fixed) setEditIncDescription(fixed);
-                      }}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 cursor-pointer"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>Fix English ✨</span>
-                    </button>
-                  )}
-                </div>
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Amount (LKR)</label>
                 <input
-                  type="text"
+                  type="number"
+                  step="any"
                   required
-                  value={editIncDescription}
-                  onChange={(e) => setEditIncDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  value={editExpAmount}
+                  onChange={(e) => setEditExpAmount(e.target.value)}
+                  className="erp-input font-mono font-bold text-rose-700"
                 />
               </div>
-
               <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Payment Method</label>
-                <select
-                  value={editIncPaymentMethod}
-                  onChange={(e) => setEditIncPaymentMethod(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
-                >
-                  <option value="BANK_TRANSFER">Bank Transfer / CEFT</option>
-                  <option value="CASH">Cash</option>
-                  <option value="CREDIT_CARD">Credit Card</option>
-                  <option value="DEBIT_CARD">Debit Card</option>
-                  <option value="UPI">Direct / QR Pay</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingIncome(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-semibold text-white shadow-xs transition-all cursor-pointer"
-                >
-                  Update Income
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------------- */}
-      {/* EDIT EXPENSE MODAL */}
-      {/* ------------------------------------------------------------------- */}
-      {editingExpense && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">Edit Expense Record</h2>
-              <button onClick={() => setEditingExpense(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEditExpense} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Amount ({currency})</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    value={editExpAmount}
-                    onChange={(e) => setEditExpAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={editExpDate}
-                    onChange={(e) => setEditExpDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Category</label>
-                <select
-                  value={editExpCategoryId}
-                  onChange={(e) => setEditExpCategoryId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
-                >
-                  {categories.filter(c => c.type === 'EXPENSE').map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium">Description</label>
-                  {editExpDescription.trim() && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const fixed = await api.fixSpelling(editExpDescription);
-                        if (fixed) setEditExpDescription(fixed);
-                      }}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 cursor-pointer"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>Fix English ✨</span>
-                    </button>
-                  )}
-                </div>
+                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Description</label>
                 <input
                   type="text"
                   required
                   value={editExpDescription}
                   onChange={(e) => setEditExpDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="erp-input"
                 />
               </div>
-
-              <div>
-                <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Payment Method</label>
-                <select
-                  value={editExpPaymentMethod}
-                  onChange={(e) => setEditExpPaymentMethod(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
-                >
-                  <option value="BANK_TRANSFER">Bank Transfer / CEFT</option>
-                  <option value="CASH">Cash</option>
-                  <option value="CREDIT_CARD">Credit Card</option>
-                  <option value="DEBIT_CARD">Debit Card</option>
-                  <option value="UPI">Direct / QR Pay</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editExpDate}
+                    onChange={(e) => setEditExpDate(e.target.value)}
+                    className="erp-input font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Category</label>
+                  <select
+                    value={editExpCategoryId}
+                    onChange={(e) => setEditExpCategoryId(e.target.value)}
+                    className="erp-input"
+                  >
+                    {categories
+                      .filter((c) => c.type === 'EXPENSE')
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
               </div>
-
-              <div className="flex justify-end gap-2.5 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditingExpense(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-semibold text-white shadow-xs transition-all cursor-pointer"
-                >
-                  Update Expense
+                <button type="submit" className="btn-primary px-5 py-2 text-xs font-bold">
+                  Save Changes
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-      {/* Confirmation Dialog Modal Card */}
+
+      {/* Confirm Modal */}
       <ConfirmModal
         isOpen={confirmModalConfig.isOpen}
         onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}

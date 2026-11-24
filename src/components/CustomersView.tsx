@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useMemo } from 'react';
 import { Customer, SupportedCurrency, User } from '../types/finance.js';
 import { api, formatMoney } from '../api/client.js';
 import { BillPrintModal, BillData } from './BillPrintModal.js';
@@ -11,7 +10,6 @@ import {
   setCustomerPackage,
   getCustomerPackage,
   getPackageById,
-  CablePackage,
 } from '../utils/packageManager.js';
 import {
   UserPlus,
@@ -23,7 +21,6 @@ import {
   CreditCard,
   Phone,
   MapPin,
-  Box,
   Calendar,
   Sparkles,
   CheckCircle2,
@@ -34,7 +31,14 @@ import {
   ChevronDown,
   ChevronUp,
   Tv,
-  Crown
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
+  Banknote,
+  Clock,
+  UserCheck,
+  UserX,
 } from 'lucide-react';
 
 interface CustomersViewProps {
@@ -54,10 +58,16 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 }) => {
   const toast = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED'>('ALL');
+  const [packageFilter, setPackageFilter] = useState<string>('ALL');
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const [isAiFixing, setIsAiFixing] = useState(false);
-  const [showRegistrationForm, setShowRegistrationForm] = useState(true);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Registration Form States
   const [name, setName] = useState('');
@@ -69,23 +79,10 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const [paidAmount, setPaidAmount] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE' | 'DISCONNECTED'>('ACTIVE');
 
-  // Filter States
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED'>('ALL');
-
   // Cable TV Package States
   const cablePackages = useMemo(() => getCablePackages(), []);
   const [selectedPackageId, setSelectedPackageId] = useState<string>('STANDARD');
   const [monthlyRental, setMonthlyRental] = useState<string>('1200');
-  const [editPackageId, setEditPackageId] = useState<string>('STANDARD');
-  const [editMonthlyRental, setEditMonthlyRental] = useState<string>('1200');
-
-  // Fixed Date (cannot be changed)
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  // Calculated Balance
-  const parsedTotal = parseFloat(totalAmount) || 0;
-  const parsedPaid = parseFloat(paidAmount) || 0;
-  const calculatedBalance = Math.max(0, parsedTotal - parsedPaid);
 
   // Edit Modal States
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -97,24 +94,78 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const [editTotalAmount, setEditTotalAmount] = useState('');
   const [editPaidAmount, setEditPaidAmount] = useState('');
   const [editStatus, setEditStatus] = useState<'ACTIVE' | 'INACTIVE' | 'DISCONNECTED'>('ACTIVE');
-
-  const parsedEditTotal = parseFloat(editTotalAmount) || 0;
-  const parsedEditPaid = parseFloat(editPaidAmount) || 0;
-  const calculatedEditBalance = Math.max(0, parsedEditTotal - parsedEditPaid);
+  const [editPackageId, setEditPackageId] = useState<string>('STANDARD');
 
   // Pay Balance Modal States
   const [payBalanceCustomer, setPayBalanceCustomer] = useState<Customer | null>(null);
   const [payAmount, setPayAmount] = useState('');
   const [isPaying, setIsPaying] = useState(false);
 
-  // Mobile Card Accordion State
-  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-  const toggleCardExpand = (id: string) => setExpandedCardId((prev) => (prev === id ? null : id));
-
-  // Bill Printing Modal States
+  // Success & Print Modal States
+  const [successModalData, setSuccessModalData] = useState<SuccessData | null>(null);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [activeBillData, setActiveBillData] = useState<BillData | null>(null);
   const [isBillModalOpen, setIsBillModalOpen] = useState(false);
 
+  // Confirm Modal State
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    variant?: 'danger' | 'emerald' | 'indigo';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const parsedTotal = parseFloat(totalAmount) || 0;
+  const parsedPaid = parseFloat(paidAmount) || 0;
+  const calculatedBalance = Math.max(0, parsedTotal - parsedPaid);
+
+  const parsedEditTotal = parseFloat(editTotalAmount) || 0;
+  const parsedEditPaid = parseFloat(editPaidAmount) || 0;
+  const calculatedEditBalance = Math.max(0, parsedEditTotal - parsedEditPaid);
+
+  // Quick Stats
+  const totalSubscribers = customers.length;
+  const activeCount = customers.filter((c) => !c.status || c.status === 'ACTIVE').length;
+  const inactiveCount = totalSubscribers - activeCount;
+  const totalRegBalanceDues = customers.reduce((sum, c) => sum + (c.balanceAmount || 0), 0);
+
+  // Filtered customers
+  const filteredCustomers = useMemo(() => {
+    return customers.filter((c) => {
+      if (statusFilter !== 'ALL' && (c.status || 'ACTIVE') !== statusFilter) return false;
+      const custPkg = getCustomerPackage(c.id || c.boxNo);
+      if (packageFilter !== 'ALL' && custPkg.packageId !== packageFilter) return false;
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        c.name.toLowerCase().includes(q) ||
+        c.boxNo.toLowerCase().includes(q) ||
+        c.phoneNo.toLowerCase().includes(q) ||
+        c.nicNo.toLowerCase().includes(q) ||
+        c.address.toLowerCase().includes(q) ||
+        custPkg.packageName.toLowerCase().includes(q)
+      );
+    });
+  }, [customers, statusFilter, packageFilter, searchQuery]);
+
+  // Paginated customers
+  const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / pageSize));
+  const paginatedCustomers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCustomers.slice(start, start + pageSize);
+  }, [filteredCustomers, currentPage, pageSize]);
+
+  // Print Bill handler
   const handlePrintCustomerBill = (cust: Customer) => {
     const custPkg = getCustomerPackage(cust.id || cust.boxNo);
     setActiveBillData({
@@ -136,17 +187,13 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     setIsBillModalOpen(true);
   };
 
-  const handleOpenPayBalance = (cust: Customer) => {
-    setPayBalanceCustomer(cust);
-    setPayAmount(cust.balanceAmount.toString());
-  };
-
+  // Pay Balance submit
   const handleConfirmPayBalance = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!payBalanceCustomer) return;
     const addPay = parseFloat(payAmount);
     if (isNaN(addPay) || addPay <= 0) {
-      alert('Please enter a valid positive payment amount.');
+      toast.error('Please enter a valid positive payment amount.');
       return;
     }
 
@@ -157,46 +204,42 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         paidAmount: newPaidAmount,
       });
 
-      // Dispatch automated SMS receipt if customer has phone number
+      // Dispatch automated SMS receipt if customer has phone
       if (payBalanceCustomer.phoneNo && payBalanceCustomer.phoneNo.trim() !== '' && addPay > 0) {
         const remainingBal = Math.max(0, payBalanceCustomer.totalAmount - newPaidAmount);
-        api.sendPaymentSms({
-          customerName: payBalanceCustomer.name,
-          phoneNo: payBalanceCustomer.phoneNo,
-          boxNo: payBalanceCustomer.boxNo,
-          paidAmount: addPay,
-          balanceAmount: remainingBal,
-          paymentDate: todayStr,
-        }).then((smsRes) => {
-          if (smsRes.success) {
-            toast.success(`SMS receipt sent to ${payBalanceCustomer.phoneNo}`);
-          }
-        }).catch((err) => {
-          console.warn('Automated SMS receipt dispatch failed:', err);
-        });
+        api
+          .sendPaymentSms({
+            customerName: payBalanceCustomer.name,
+            phoneNo: payBalanceCustomer.phoneNo,
+            boxNo: payBalanceCustomer.boxNo,
+            paidAmount: addPay,
+            balanceAmount: remainingBal,
+            paymentDate: todayStr,
+          })
+          .then((smsRes) => {
+            if (smsRes.success) {
+              toast.success(`SMS receipt sent to ${payBalanceCustomer.phoneNo}`);
+            }
+          })
+          .catch((err) => console.warn('SMS dispatch failed:', err));
       }
 
       setPayBalanceCustomer(null);
       toast.success(`Payment of ${formatMoney(addPay, currency)} recorded for "${payBalanceCustomer.name}"`);
       onRefreshData();
     } catch (err: any) {
-      const msg = err.message || 'Failed to process balance payment';
-      toast.error(msg);
+      toast.error(err.message || 'Failed to process balance payment');
     } finally {
       setIsPaying(false);
     }
   };
 
-  // Success Screen Modal States
-  const [successModalData, setSuccessModalData] = useState<SuccessData | null>(null);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-
-  // Handle Customer Registration Submit
+  // Create Customer
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     if (!name.trim() || !nicNo.trim() || !phoneNo.trim() || !boxNo.trim()) {
-      setErrorMsg('Name, NIC No, Phone No, and Box No are required.');
+      setErrorMsg('Name, NIC No, Phone No, and Box No are required fields.');
       return;
     }
 
@@ -217,33 +260,26 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         monthlyFee: selectedPkg.monthlyFee,
       });
 
-      // Update local package manager cache
-      const fee = selectedPkg.monthlyFee !== undefined && selectedPkg.monthlyFee !== null ? Number(selectedPkg.monthlyFee) : 1200;
+      const fee = selectedPkg.monthlyFee ? Number(selectedPkg.monthlyFee) : 1200;
       await setCustomerPackage(
         { id: createdCust.id, boxNo: createdCust.boxNo },
-        {
-          packageId: selectedPackageId,
-          packageName: selectedPkg.name,
-          monthlyFee: fee,
-        }
+        { packageId: selectedPackageId, packageName: selectedPkg.name, monthlyFee: fee }
       );
 
-      // Clear Form
+      // Reset form
       setName('');
       setNicNo('');
       setPhoneNo('');
       setAddress('');
       setBoxNo('');
-      setTotalAmount('');
+      setTotalAmount('9500');
       setPaidAmount('');
       setStatus('ACTIVE');
-      setSelectedPackageId('STANDARD');
-      setMonthlyRental('1200');
+      setShowRegistrationForm(false);
 
-      // Trigger Success Screen Modal
       setSuccessModalData({
-        title: 'Customer Registered Successfully!',
-        message: `Subscriber ${createdCust.name} (Box: ${createdCust.boxNo}) has been added to the database.`,
+        title: 'Subscriber Registered Successfully!',
+        message: `Subscriber ${createdCust.name} (Box: #${createdCust.boxNo}) has been added to the database.`,
         details: {
           customerName: createdCust.name,
           nicNo: createdCust.nicNo,
@@ -260,36 +296,31 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       setIsSuccessModalOpen(true);
       toast.success(`Customer "${createdCust.name}" registered successfully!`);
 
-      // Dispatch automated Customer Registration Welcome SMS
+      // Welcome SMS
       if (createdCust.phoneNo && createdCust.phoneNo.trim() !== '') {
-        api.sendRegistrationSms({
-          customerName: createdCust.name,
-          phoneNo: createdCust.phoneNo,
-          boxNo: createdCust.boxNo,
-          totalAmount: createdCust.totalAmount,
-          paidAmount: createdCust.paidAmount,
-          balanceAmount: createdCust.balanceAmount,
-          registrationDate: todayStr,
-        }).then((smsRes) => {
-          if (smsRes.success) {
-            toast.success(`Registration SMS sent to ${createdCust.phoneNo}`);
-          }
-        }).catch((err) => {
-          console.warn('Automated registration SMS dispatch failed:', err);
-        });
+        api
+          .sendRegistrationSms({
+            customerName: createdCust.name,
+            phoneNo: createdCust.phoneNo,
+            boxNo: createdCust.boxNo,
+            totalAmount: createdCust.totalAmount,
+            paidAmount: createdCust.paidAmount,
+            balanceAmount: createdCust.balanceAmount,
+            registrationDate: todayStr,
+          })
+          .catch((err) => console.warn('Registration SMS dispatch failed:', err));
       }
 
       onRefreshData();
     } catch (err: any) {
-      const msg = err.message || 'Failed to register customer';
-      setErrorMsg(msg);
-      toast.error(msg);
+      setErrorMsg(err.message || 'Failed to register customer');
+      toast.error(err.message || 'Failed to register customer');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Open Edit Modal
+  // Open Edit
   const handleOpenEdit = (cust: Customer) => {
     setEditingCustomer(cust);
     setEditName(cust.name);
@@ -303,7 +334,6 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 
     const currentPkg = getCustomerPackage(cust.id || cust.boxNo);
     setEditPackageId(currentPkg.packageId);
-    setEditMonthlyRental(currentPkg.monthlyFee.toString());
   };
 
   // Save Edit
@@ -327,1203 +357,828 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         monthlyFee: editPkg.monthlyFee,
       });
 
-      // Update local cache
-      const editFee = editPkg.monthlyFee !== undefined && editPkg.monthlyFee !== null ? Number(editPkg.monthlyFee) : 1200;
+      const editFee = editPkg.monthlyFee ? Number(editPkg.monthlyFee) : 1200;
       await setCustomerPackage(
         { id: editingCustomer.id, boxNo: editBoxNo.trim() || editingCustomer.boxNo },
-        {
-          packageId: editPackageId,
-          packageName: editPkg.name,
-          monthlyFee: editFee,
-        }
+        { packageId: editPackageId, packageName: editPkg.name, monthlyFee: editFee }
       );
 
-      toast.success(`Customer "${editName.trim()}" updated successfully!`);
+      toast.success(`Subscriber "${editName.trim()}" updated successfully!`);
       setEditingCustomer(null);
       onRefreshData();
     } catch (err: any) {
-      const msg = err.message || 'Failed to update customer details';
-      toast.error(msg);
+      toast.error(err.message || 'Failed to update customer');
     }
   };
-
-  // Confirm Modal State
-  const [confirmModalConfig, setConfirmModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText?: string;
-    variant?: 'danger' | 'emerald' | 'indigo';
-    onConfirm: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-  });
 
   // Delete Customer
   const handleDelete = (id: string, name: string) => {
     setConfirmModalConfig({
       isOpen: true,
-      title: 'Delete Customer Account',
-      message: `Are you sure you want to delete customer "${name}"? This action cannot be undone and will remove subscriber records.`,
-      confirmText: 'Delete Customer',
+      title: 'Delete Subscriber Account',
+      message: `Are you sure you want to delete customer "${name}"? This action permanently removes subscriber details and records.`,
+      confirmText: 'Delete Account',
       variant: 'danger',
       onConfirm: async () => {
         setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
         try {
           await api.deleteCustomer(id);
-          toast.success(`Customer "${name}" deleted successfully!`);
+          toast.success(`Customer "${name}" deleted.`);
           onRefreshData();
         } catch (err: any) {
-          const msg = err.message || 'Failed to delete customer';
-          toast.error(msg);
+          toast.error(err.message || 'Failed to delete customer');
         }
       },
     });
   };
 
-  // Filtered customers
-  const filteredCustomers = customers.filter((c) => {
-    // Status Filter
-    if (statusFilter !== 'ALL' && c.status !== statusFilter) {
-      return false;
-    }
-
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    const pkg = getCustomerPackage(c.id || c.boxNo);
-    return (
-      c.name.toLowerCase().includes(q) ||
-      c.nicNo.toLowerCase().includes(q) ||
-      c.phoneNo.toLowerCase().includes(q) ||
-      c.boxNo.toLowerCase().includes(q) ||
-      c.address.toLowerCase().includes(q) ||
-      pkg.packageName.toLowerCase().includes(q)
-    );
-  });
-
   return (
-    <div className="mx-auto max-w-[1700px] w-full px-3 sm:px-6 py-5 sm:py-8 space-y-6 sm:space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+    <div className="space-y-5">
+      {/* ==================================================================== */}
+      {/* 1. HEADER & KPI CARDS STRIP */}
+      {/* ==================================================================== */}
+      <div className="erp-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-              <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <span>Customer Registration &amp; Ledger</span>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+            <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <span>Subscriber Directory & Ledger</span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Register new cable subscribers, track total/paid amounts, balance dues, and assigned set-top boxes
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Manage cable TV subscribers, box assignments, package tiers, and registration balances
           </p>
         </div>
 
-        {/* Form Visibility Toggle */}
         <button
-          type="button"
-          onClick={() => setShowRegistrationForm(!showRegistrationForm)}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs self-start sm:self-auto shrink-0"
+          onClick={() => setShowRegistrationForm((prev) => !prev)}
+          className="btn-primary px-4 py-2 text-xs flex items-center gap-2 self-start sm:self-auto cursor-pointer"
         >
-          <UserPlus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>{showRegistrationForm ? 'Hide Form' : '+ Register New Customer'}</span>
-          {showRegistrationForm ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+          <UserPlus className="w-4 h-4 stroke-[2.5]" />
+          <span>{showRegistrationForm ? 'Close Form' : '+ New Subscriber'}</span>
         </button>
       </div>
 
-      {/* Main Grid: Registration Form (Left) & Customer Table (Right) */}
-      <div className={`grid grid-cols-1 ${showRegistrationForm ? 'xl:grid-cols-12' : ''} gap-5 sm:gap-6`}>
-        {/* 1. Customer Registration Form Card */}
-        {showRegistrationForm && (
-          <div className="xl:col-span-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 h-fit shadow-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3.5">
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Customer Registration</span>
-              </h2>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-                  DB Connected
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowRegistrationForm(false)}
-                  className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  title="Collapse Registration Form"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </button>
+      {/* Mini KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="erp-card p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Subscribers</span>
+            <div className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalSubscribers}</div>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <Users className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="erp-card p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Active Accounts</span>
+            <div className="text-xl font-black text-emerald-700 dark:text-emerald-400 mt-0.5">{activeCount}</div>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
+            <UserCheck className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="erp-card p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Inactive Accounts</span>
+            <div className="text-xl font-black text-amber-700 dark:text-amber-400 mt-0.5">{inactiveCount}</div>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center justify-center">
+            <UserX className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="erp-card p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">Reg. Balance Dues</span>
+            <div className="text-lg font-black font-mono text-rose-700 dark:text-rose-400 mt-0.5">
+              {formatMoney(totalRegBalanceDues, currency)}
+            </div>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 flex items-center justify-center">
+            <Banknote className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+
+      {/* ==================================================================== */}
+      {/* 2. REGISTRATION FORM (COLLAPSIBLE) */}
+      {/* ==================================================================== */}
+      {showRegistrationForm && (
+        <div className="erp-card p-5 sm:p-6 bg-slate-50/70 dark:bg-slate-900/60 border-blue-500/30 animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-blue-600 text-white">
+                <UserPlus className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white">Register New Cable TV Subscriber</h2>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Assign Set-Top Box, Package Tier, and setup fee balance
+                </p>
               </div>
             </div>
+            <button
+              onClick={() => setShowRegistrationForm(false)}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-            {errorMsg && (
-              <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs rounded-xl flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
+          {errorMsg && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
-            <form onSubmit={handleCreateCustomer} className="space-y-4 text-xs">
-              {/* Customer Name */}
+          <form onSubmit={handleCreateCustomer} className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold">Customer Name *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Customer Name *</label>
                   {name.trim() && (
                     <button
                       type="button"
+                      disabled={isAiFixing}
                       onClick={async () => {
                         setIsAiFixing(true);
                         const fixed = await api.fixSpelling(name);
                         if (fixed) setName(fixed);
                         setIsAiFixing(false);
                       }}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline transition-colors cursor-pointer"
+                      className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
                     >
                       <Sparkles className="w-3 h-3" />
-                      <span>{isAiFixing ? 'Checking...' : 'Fix AI ✨'}</span>
+                      <span>{isAiFixing ? 'Checking...' : 'AI Polish'}</span>
                     </button>
                   )}
                 </div>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. K. Perera, A. Rahman"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  placeholder="e.g. K. Vimalanathan"
+                  className="erp-input"
                 />
               </div>
 
-              {/* NIC No & Phone No */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">NIC No *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 199012345678"
-                    value={nicNo}
-                    onChange={(e) => setNicNo(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5 flex items-center gap-1">
-                    <Phone className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                    <span>Phone No *</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 0771234567"
-                    value={phoneNo}
-                    onChange={(e) => setPhoneNo(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Address */}
               <div>
-                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5 flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                  <span>Address</span>
-                </label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">NIC Number *</label>
                 <input
                   type="text"
-                  placeholder="e.g. 45 Main Street, Jaffna"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  required
+                  value={nicNo}
+                  onChange={(e) => setNicNo(e.target.value.toUpperCase())}
+                  placeholder="e.g. 198523456789 or 852345678V"
+                  className="erp-input font-mono"
                 />
               </div>
 
-              {/* Box No & Customer Status */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5 flex items-center gap-1">
-                    <Box className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                    <span>Box No *</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. BOX-1042"
-                    value={boxNo}
-                    onChange={(e) => setBoxNo(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono uppercase placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  />
-                </div>
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone Number *</label>
+                <input
+                  type="text"
+                  required
+                  value={phoneNo}
+                  onChange={(e) => setPhoneNo(e.target.value)}
+                  placeholder="e.g. 0771234567"
+                  className="erp-input font-mono"
+                />
+              </div>
+            </div>
 
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Customer Status</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
-                  >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="DISCONNECTED">Disconnected</option>
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Box Number *</label>
+                <input
+                  type="text"
+                  required
+                  value={boxNo}
+                  onChange={(e) => setBoxNo(e.target.value)}
+                  placeholder="e.g. 001, 104"
+                  className="erp-input font-mono font-bold"
+                />
               </div>
 
-              {/* Cable TV Package Selection */}
-              <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center justify-between">
-                  <label className="text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1.5">
-                    <Tv className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Cable TV Package *</span>
-                  </label>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                    Auto-fills rental
-                  </span>
-                </div>
-
-                {/* 3 Package Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {cablePackages.map((pkg) => {
-                    const isSelected = selectedPackageId === pkg.id;
-                    const isPremium = pkg.id === 'PREMIUM_HD';
-                    const isBasic = pkg.id === 'BASIC';
-                    return (
-                      <button
-                        type="button"
-                        key={pkg.id}
-                        onClick={() => {
-                          setSelectedPackageId(pkg.id);
-                          setMonthlyRental(pkg.monthlyFee.toString());
-                        }}
-                        className={`p-3 rounded-xl border text-left transition-all relative cursor-pointer ${
-                          isSelected
-                            ? isPremium
-                              ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/30 dark:bg-amber-500/15 shadow-xs'
-                              : isBasic
-                              ? 'bg-sky-500/10 border-sky-500 ring-2 ring-sky-500/30 dark:bg-sky-500/15 shadow-xs'
-                              : 'bg-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/30 dark:bg-emerald-500/15 shadow-xs'
-                            : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className={`text-[11px] font-bold truncate flex items-center gap-1 ${
-                            isSelected
-                              ? isPremium ? 'text-amber-700 dark:text-amber-400' : isBasic ? 'text-sky-700 dark:text-sky-400' : 'text-emerald-700 dark:text-emerald-400'
-                              : 'text-slate-900 dark:text-white'
-                          }`}>
-                            {isPremium && <Crown className="w-3 h-3 text-amber-500" />}
-                            {pkg.name}
-                          </span>
-                          {isSelected && (
-                            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${
-                              isPremium ? 'text-amber-500' : isBasic ? 'text-sky-500' : 'text-emerald-500'
-                            }`} />
-                          )}
-                        </div>
-                        <div className="text-xs font-mono font-bold text-slate-900 dark:text-white">
-                          {formatMoney(pkg.monthlyFee, currency)}
-                          <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400 font-sans">/mo</span>
-                        </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                          {pkg.channelsCount}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">TV Package *</label>
+                <select
+                  value={selectedPackageId}
+                  onChange={(e) => {
+                    setSelectedPackageId(e.target.value);
+                    const pkg = getPackageById(e.target.value);
+                    setMonthlyRental(pkg.monthlyFee.toString());
+                  }}
+                  className="erp-input font-medium"
+                >
+                  {cablePackages.map((pkg) => (
+                    <option key={pkg.id} value={pkg.id}>
+                      {pkg.name} — {formatMoney(pkg.monthlyFee, currency)}/mo
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Financials: Total Amount & Paid Amount */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5 flex items-center gap-1">
-                    <CreditCard className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                    <span>Total Amount</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={totalAmount}
-                    onChange={(e) => setTotalAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  />
-                </div>
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Account Status</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as any)}
+                  className="erp-input font-medium"
+                >
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                  <option value="DISCONNECTED">DISCONNECTED</option>
+                </select>
+              </div>
+            </div>
 
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Paid Amount</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  />
-                </div>
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Subscriber Address</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. No. 45, Station Road, Nanu Oya"
+                className="erp-input"
+              />
+            </div>
+
+            {/* Financial breakdown for registration */}
+            <div className="p-3.5 rounded-xl bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Total Setup Fee (LKR) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={totalAmount}
+                  onChange={(e) => setTotalAmount(e.target.value)}
+                  className="erp-input font-mono font-bold"
+                />
               </div>
 
-              {/* Calculated Balance Amount Badge */}
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <span className="text-slate-600 dark:text-slate-400 font-semibold">Balance Due:</span>
-                <span className={`font-mono font-bold text-sm ${
-                  calculatedBalance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                }`}>
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Paid Amount (LKR)
+                </label>
+                <input
+                  type="number"
+                  value={paidAmount}
+                  onChange={(e) => setPaidAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="erp-input font-mono font-bold text-emerald-700 dark:text-emerald-400"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Calculated Balance Due
+                </label>
+                <div className="h-10 px-3 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center font-mono font-black text-rose-700 dark:text-rose-400">
                   {formatMoney(calculatedBalance, currency)}
-                </span>
+                </div>
               </div>
+            </div>
 
-              {/* Registration Date (Read Only) */}
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5 flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-                  <span>Registration Date (System Date)</span>
-                </label>
-                <input
-                  type="text"
-                  readOnly
-                  disabled
-                  value={todayStr}
-                  className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 dark:text-slate-400 font-mono cursor-not-allowed select-none"
-                />
-              </div>
-
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowRegistrationForm(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 px-4 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl transition-all shadow-xs hover:shadow-sm hover:shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                className="btn-primary px-5 py-2 text-xs font-bold disabled:opacity-50"
               >
-                <UserPlus className="w-4 h-4" />
-                <span>{isSubmitting ? 'Registering...' : 'Register Customer'}</span>
+                {isSubmitting ? 'Registering...' : 'Save & Register Subscriber'}
               </button>
-            </form>
-          </div>
-        )}
-
-        {/* 2. Registered Customer Table Card */}
-        <div className={`${showRegistrationForm ? 'xl:col-span-8' : 'w-full'} p-4 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs flex flex-col justify-between`}>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-3.5">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">Registered Customers ({customers.length})</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Live database records with quick billing and management</p>
-              </div>
-
-              {/* Filters */}
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Search Filter */}
-                <div className="relative w-full sm:w-60">
-                  <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    placeholder="Search name, NIC, box..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  />
-                </div>
-
-                {/* Status Filter Buttons */}
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800 rounded-xl">
-                  {(['ALL', 'ACTIVE', 'INACTIVE', 'DISCONNECTED'] as const).map((st) => (
-                    <button
-                      key={st}
-                      onClick={() => setStatusFilter(st)}
-                      className={`px-2.5 py-1 text-[10.5px] rounded-lg font-semibold transition-all cursor-pointer ${
-                        statusFilter === st
-                          ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      {st}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
+          </form>
+        </div>
+      )}
 
-            {/* Mobile Cards View (block md:hidden) - Native App Style Accordion */}
-            <div className="block md:hidden space-y-3">
-              {filteredCustomers.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                  No customer records found matching the criteria.
-                </div>
+      {/* ==================================================================== */}
+      {/* 3. ADVANCED SEARCH & MULTI-FILTER BAR */}
+      {/* ==================================================================== */}
+      <div className="erp-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search by customer name, box #, phone, NIC, address..."
+            className="erp-input pl-9 text-xs"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter Pills */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+            <Filter className="w-3.5 h-3.5" />
+            <span>Status:</span>
+          </span>
+          {(['ALL', 'ACTIVE', 'INACTIVE', 'DISCONNECTED'] as const).map((st) => (
+            <button
+              key={st}
+              onClick={() => {
+                setStatusFilter(st);
+                setCurrentPage(1);
+              }}
+              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                statusFilter === st
+                  ? 'bg-blue-600 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              {st}
+            </button>
+          ))}
+
+          {/* Package filter */}
+          <select
+            value={packageFilter}
+            onChange={(e) => {
+              setPackageFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="erp-input py-1 text-xs w-auto font-semibold ml-1"
+          >
+            <option value="ALL">All Packages</option>
+            {cablePackages.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* ==================================================================== */}
+      {/* 4. PROFESSIONAL DATA TABLE & PAGINATION */}
+      {/* ==================================================================== */}
+      <div className="erp-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="erp-table">
+            <thead>
+              <tr>
+                <th>Box #</th>
+                <th>Subscriber Info</th>
+                <th>Phone / NIC</th>
+                <th>Package Tier</th>
+                <th className="text-right">Total Setup</th>
+                <th className="text-right">Paid</th>
+                <th className="text-right">Balance Due</th>
+                <th>Status</th>
+                <th className="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
+                    <Users className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                    <p className="font-semibold">No subscribers match the current filters.</p>
+                    <p className="text-[11px] mt-1 text-slate-400">Try adjusting your search terms or filters.</p>
+                  </td>
+                </tr>
               ) : (
-                filteredCustomers.map((cust) => {
-                  const isExpanded = expandedCardId === cust.id;
+                paginatedCustomers.map((cust) => {
+                  const custPkg = getCustomerPackage(cust.id || cust.boxNo);
                   return (
-                    <motion.div
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-                      key={cust.id}
-                      className="p-4 space-y-3.5 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs transition-all hover:border-slate-300 dark:hover:border-slate-700"
-                    >
-                      {/* Header: Tap to toggle accordion */}
-                      <div
-                        onClick={() => toggleCardExpand(cust.id)}
-                        className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3 cursor-pointer select-none"
-                      >
-                        <div className="space-y-1.5 flex-1 min-w-0">
-                          <div className="flex items-center flex-wrap gap-2">
-                            <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight leading-tight">
-                              {cust.name}
-                            </h3>
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10.5px] font-bold rounded-full border ${
-                              (cust.status || 'ACTIVE') === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
-                                : (cust.status || 'ACTIVE') === 'INACTIVE'
-                                ? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                                : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${
-                                (cust.status || 'ACTIVE') === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
-                              }`} />
-                              {cust.status || 'ACTIVE'}
-                            </span>
+                    <tr key={cust.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                      {/* Box # */}
+                      <td>
+                        <span className="font-mono font-black text-xs px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/25">
+                          #{cust.boxNo}
+                        </span>
+                      </td>
 
-                            {/* Cable TV Package Badge */}
-                            {(() => {
-                              const custPkg = getCustomerPackage(cust.id || cust.boxNo);
-                              const isPrem = custPkg.packageId === 'PREMIUM_HD';
-                              const isBasic = custPkg.packageId === 'BASIC';
-                              return (
-                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${
-                                  isPrem
-                                    ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
-                                    : isBasic
-                                    ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
-                                }`}>
-                                  {isPrem ? <Crown className="w-2.5 h-2.5 text-amber-500" /> : <Tv className="w-2.5 h-2.5 text-emerald-500" />}
-                                  <span>{custPkg.packageName}</span>
-                                  <span className="font-mono text-[9px] opacity-80 font-bold">({formatMoney(custPkg.monthlyFee, currency)}/mo)</span>
-                                </span>
-                              );
-                            })()}
-                          </div>
-
-                          {/* Address Badge */}
-                          {cust.address && (
-                            <div className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800/80 px-2.5 py-1.5 rounded-xl">
-                              <MapPin className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400 shrink-0 mt-0.5" />
-                              <span className="font-medium leading-tight">{cust.address}</span>
-                            </div>
-                          )}
-
-                          {/* NIC & Phone Badges */}
-                          <div className="flex items-center flex-wrap gap-2 text-xs font-mono pt-0.5">
-                            {cust.nicNo && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold shadow-2xs">
-                                <ShieldCheck className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-                                <span>NIC: {cust.nicNo}</span>
-                              </span>
-                            )}
-                            {cust.phoneNo && (
-                              <a
-                                href={`tel:${cust.phoneNo}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 font-semibold shadow-2xs transition-colors"
-                                title="Tap to call"
-                              >
-                                <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                <span>Tel: {cust.phoneNo}</span>
-                              </a>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Box Number Pill & Accordion Indicator */}
-                        <div className="shrink-0 flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
-                            <Box className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                            <span>Box: {cust.boxNo || '-'}</span>
-                          </span>
-                          <motion.div
-                            animate={{ rotate: isExpanded ? 180 : 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="p-1 rounded-md text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                      {/* Name & Address */}
+                      <td>
+                        <div className="min-w-[140px]">
+                          <button
+                            onClick={() => onViewHistory && onViewHistory(cust.id)}
+                            className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-left cursor-pointer"
                           >
-                            <ChevronDown className="w-4 h-4" />
-                          </motion.div>
+                            {cust.name}
+                          </button>
+                          <p className="text-[11px] text-slate-400 truncate max-w-[200px]">{cust.address || '—'}</p>
                         </div>
-                      </div>
+                      </td>
 
-                      {/* Expandable Details Drawer */}
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-                            className="overflow-hidden space-y-2 text-xs"
-                          >
-                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 space-y-2">
-                              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                                <span className="font-medium">Subscriber Status:</span>
-                                <span className="font-bold text-slate-900 dark:text-white">{cust.status || 'ACTIVE'}</span>
-                              </div>
-                              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                                <span className="font-medium">Assigned Package:</span>
-                                <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1">
-                                  {getCustomerPackage(cust.id || cust.boxNo).packageName}
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">
-                                    ({formatMoney(getCustomerPackage(cust.id || cust.boxNo).monthlyFee, currency)}/mo)
-                                  </span>
-                                </span>
-                              </div>
-                              {cust.createdAt && (
-                                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                                  <span className="font-medium">Registered Date:</span>
-                                  <span className="font-mono text-slate-800 dark:text-slate-200">{cust.createdAt.split('T')[0]}</span>
-                                </div>
-                              )}
-                              {cust.phoneNo && (
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
-                                  <span className="font-medium text-slate-600 dark:text-slate-400">Direct Actions:</span>
-                                  <div className="flex items-center gap-2">
-                                    <a
-                                      href={`tel:${cust.phoneNo}`}
-                                      className="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 hover:bg-emerald-500/25 transition-colors"
-                                    >
-                                      <Phone className="w-3 h-3" />
-                                      <span>Call</span>
-                                    </a>
-                                    <a
-                                      href={`sms:${cust.phoneNo}`}
-                                      className="px-2.5 py-1 rounded-lg bg-sky-500/15 text-sky-700 dark:text-sky-400 font-bold flex items-center gap-1 hover:bg-sky-500/25 transition-colors"
-                                    >
-                                      <span>SMS</span>
-                                    </a>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {/* Financial Metrics 3-Column Color Cards */}
-                      <div className="grid grid-cols-3 gap-2 font-mono">
-                        {/* TOTAL TILE */}
-                        <div className="p-2.5 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl text-center space-y-0.5 shadow-2xs">
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans block uppercase font-bold tracking-wide">Total</span>
-                          <span className="text-slate-900 dark:text-white font-extrabold text-xs sm:text-sm block">{formatMoney(cust.totalAmount, currency)}</span>
+                      {/* Phone / NIC */}
+                      <td>
+                        <div className="font-mono text-[11px]">
+                          <div className="font-semibold text-slate-700 dark:text-slate-200">{cust.phoneNo}</div>
+                          <div className="text-slate-400 text-[10px]">{cust.nicNo}</div>
                         </div>
+                      </td>
 
-                        {/* PAID TILE */}
-                        <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/40 rounded-xl text-center space-y-0.5 shadow-2xs">
-                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-sans block uppercase font-bold tracking-wide">Paid</span>
-                          <span className="text-emerald-700 dark:text-emerald-400 font-extrabold text-xs sm:text-sm block">{formatMoney(cust.paidAmount, currency)}</span>
-                        </div>
+                      {/* Package */}
+                      <td>
+                        <span className="badge-status badge-teal font-medium">
+                          {custPkg.packageName}
+                        </span>
+                      </td>
 
-                        {/* BALANCE TILE */}
-                        <div className={`p-2.5 rounded-xl text-center space-y-0.5 shadow-2xs border ${
-                          cust.balanceAmount === 0
-                            ? 'bg-emerald-50/70 dark:bg-emerald-950/25 border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400'
-                            : 'bg-rose-50 dark:bg-rose-950/25 border-rose-200 dark:border-rose-800/40 text-rose-700 dark:text-rose-400'
-                        }`}>
-                          <span className="text-[10px] font-sans block uppercase font-bold tracking-wide">Balance</span>
-                          <span className="font-extrabold text-xs sm:text-sm block">
-                            {formatMoney(cust.balanceAmount, currency)}
-                          </span>
-                        </div>
-                      </div>
+                      {/* Total */}
+                      <td className="text-right font-mono font-semibold text-slate-700 dark:text-slate-300">
+                        {formatMoney(cust.totalAmount, currency)}
+                      </td>
 
-                      {/* Aligned Action Buttons Grid */}
-                      <div className="flex flex-col gap-2 pt-1">
-                        {/* Top Row Primary Actions */}
-                        <div className="grid grid-cols-2 gap-2">
-                          {cust.balanceAmount > 0 ? (
-                            <motion.button
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => handleOpenPayBalance(cust)}
-                              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      {/* Paid */}
+                      <td className="text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                        {formatMoney(cust.paidAmount, currency)}
+                      </td>
+
+                      {/* Balance */}
+                      <td className="text-right font-mono font-bold">
+                        <span
+                          className={
+                            cust.balanceAmount > 0
+                              ? 'text-rose-700 dark:text-rose-400'
+                              : 'text-slate-400 dark:text-slate-500'
+                          }
+                        >
+                          {formatMoney(cust.balanceAmount, currency)}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td>
+                        <span
+                          className={`badge-status ${
+                            cust.status === 'ACTIVE' || !cust.status
+                              ? 'badge-success'
+                              : cust.status === 'INACTIVE'
+                              ? 'badge-warning'
+                              : 'badge-danger'
+                          }`}
+                        >
+                          {cust.status || 'ACTIVE'}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Pay Balance */}
+                          {cust.balanceAmount > 0 && (
+                            <button
+                              onClick={() => {
+                                setPayBalanceCustomer(cust);
+                                setPayAmount(cust.balanceAmount.toString());
+                              }}
+                              className="p-1.5 rounded-lg text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/15"
+                              title="Collect Balance Payment"
                             >
-                              <CreditCard className="w-3.5 h-3.5 text-white" />
-                              <span>Pay Balance</span>
-                            </motion.button>
-                          ) : (
-                            <div className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 rounded-xl text-xs font-bold font-mono">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Fully Paid</span>
-                            </div>
+                              <CreditCard className="w-3.5 h-3.5" />
+                            </button>
                           )}
 
-                          {onViewHistory && (
-                            <motion.button
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => onViewHistory(cust.id)}
-                              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
-                            >
-                              <History className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                              <span>History</span>
-                            </motion.button>
-                          )}
-                        </div>
-
-                        {/* Bottom Row Secondary Actions */}
-                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
+                          {/* Print Receipt */}
+                          <button
                             onClick={() => handlePrintCustomerBill(cust)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                            className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15"
+                            title="Print Customer Receipt"
                           >
-                            <Printer className="w-3.5 h-3.5 text-slate-600 dark:text-emerald-400" />
-                            <span>Print Bill</span>
-                          </motion.button>
+                            <Printer className="w-3.5 h-3.5" />
+                          </button>
 
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <motion.button
-                              whileTap={{ scale: 0.92 }}
-                              onClick={() => handleOpenEdit(cust)}
-                              className="p-2 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 border border-sky-200 dark:border-sky-500/25 rounded-xl transition-colors cursor-pointer shadow-xs"
-                              title="Edit Customer"
+                          {/* View History */}
+                          {onViewHistory && (
+                            <button
+                              onClick={() => onViewHistory(cust.id)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                              title="Subscriber Statement & History"
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </motion.button>
-                            {currentUser?.role === 'ADMIN' && (
-                              <motion.button
-                                whileTap={{ scale: 0.92 }}
-                                onClick={() => handleDelete(cust.id, cust.name)}
-                                className="p-2 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/25 rounded-xl transition-colors cursor-pointer shadow-xs"
-                                title="Delete Customer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </motion.button>
-                            )}
-                          </div>
+                              <History className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
+                          {/* Edit */}
+                          <button
+                            onClick={() => handleOpenEdit(cust)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                            title="Edit Subscriber"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Delete (Admin only) */}
+                          {currentUser?.role === 'ADMIN' && (
+                            <button
+                              onClick={() => handleDelete(cust.id, cust.name)}
+                              className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/15"
+                              title="Delete Subscriber"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
-                      </div>
-                    </motion.div>
+                      </td>
+                    </tr>
                   );
                 })
               )}
-            </div>
+            </tbody>
+          </table>
+        </div>
 
-            {/* Mobile Floating Action Button (FAB) */}
-            <motion.button
-              whileTap={{ scale: 0.88 }}
-              whileHover={{ scale: 1.05 }}
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                const nameInput = document.querySelector<HTMLInputElement>('input[placeholder*="Name"], input[required]');
-                if (nameInput) nameInput.focus();
+        {/* Pagination Bar */}
+        <div className="p-3.5 border-t border-slate-200 dark:border-white/[0.08] bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <span>Showing</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {filteredCustomers.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+            </span>
+            <span>to</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {Math.min(currentPage * pageSize, filteredCustomers.length)}
+            </span>
+            <span>of</span>
+            <span className="font-bold text-slate-900 dark:text-white">{filteredCustomers.length}</span>
+            <span>subscribers</span>
+
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
               }}
-              className="fixed bottom-20 right-4 z-30 md:hidden w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/40 border-2 border-white dark:border-slate-900 cursor-pointer"
-              title="Add New Customer"
+              className="erp-input py-0.5 text-xs w-auto ml-2"
             >
-              <UserPlus className="w-5 h-5 stroke-[2.3]" />
-            </motion.button>
-
-            {/* Desktop Table View (hidden md:block) */}
-            <div className="hidden md:block rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3.5">Customer</th>
-                      <th className="px-4 py-3.5">NIC &amp; Phone</th>
-                      <th className="px-4 py-3.5">Box No</th>
-                      <th className="px-4 py-3.5 text-center">Package</th>
-                      <th className="px-4 py-3.5 text-center">Status</th>
-                      <th className="px-4 py-3.5 text-right">Total</th>
-                      <th className="px-4 py-3.5 text-right">Paid</th>
-                      <th className="px-4 py-3.5 text-right">Balance</th>
-                      <th className="px-4 py-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                    {filteredCustomers.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="px-4 py-10 text-center text-slate-400 dark:text-slate-500">
-                          No customer records found matching the criteria.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredCustomers.map((cust) => (
-                        <tr key={cust.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                          <td className="px-4 py-3.5">
-                            <p className="font-bold text-sm text-slate-900 dark:text-white leading-snug">{cust.name}</p>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[150px] 2xl:max-w-[220px]" title={cust.address || 'No Address'}>
-                              {cust.address || 'No Address'}
-                            </p>
-                          </td>
-                          <td className="px-4 py-3.5 font-mono whitespace-nowrap">
-                            <p className="text-slate-800 dark:text-slate-200 font-semibold text-xs">{cust.nicNo || '-'}</p>
-                            {cust.phoneNo ? (
-                              <a href={`tel:${cust.phoneNo}`} className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium text-[11px] block">
-                                {cust.phoneNo}
-                              </a>
-                            ) : (
-                              <p className="text-slate-400 dark:text-slate-500 text-[11px]">-</p>
-                            )}
-                          </td>
-                          <td className="px-4 py-3.5 font-mono whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs">
-                              <Box className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-                              <span>{cust.boxNo || '-'}</span>
-                            </span>
-                          </td>
-                          <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                            {(() => {
-                              const custPkg = getCustomerPackage(cust.id || cust.boxNo);
-                              const isPrem = custPkg.packageId === 'PREMIUM_HD';
-                              const isBasic = custPkg.packageId === 'BASIC';
-                              return (
-                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10.5px] font-bold rounded-full border ${
-                                  isPrem
-                                    ? 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
-                                    : isBasic
-                                    ? 'bg-sky-50 text-sky-700 border-sky-300 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30'
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
-                                }`}>
-                                  {isPrem && <Crown className="w-2.5 h-2.5 text-amber-500" />}
-                                  <span>{custPkg.packageName}</span>
-                                  <span className="font-mono text-[9px] opacity-75">
-                                    {formatMoney(custPkg.monthlyFee, currency)}
-                                  </span>
-                                </span>
-                              );
-                            })()}
-                          </td>
-                          <td className="px-4 py-3.5 text-center font-mono whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold rounded-full border ${
-                              (cust.status || 'ACTIVE') === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
-                                : (cust.status || 'ACTIVE') === 'INACTIVE'
-                                ? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                                : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${
-                                (cust.status || 'ACTIVE') === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
-                              }`} />
-                              {cust.status || 'ACTIVE'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap text-xs">
-                            {formatMoney(cust.totalAmount, currency)}
-                          </td>
-                          <td className="px-4 py-3.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap text-xs">
-                            {formatMoney(cust.paidAmount, currency)}
-                          </td>
-                          <td className="px-4 py-3.5 text-right font-mono font-bold whitespace-nowrap text-xs">
-                            <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border inline-block ${
-                              cust.balanceAmount === 0
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
-                                : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30 font-extrabold'
-                            }`}>
-                              {formatMoney(cust.balanceAmount, currency)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {cust.balanceAmount > 0 && (
-                                <button
-                                  onClick={() => handleOpenPayBalance(cust)}
-                                  className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer shadow-xs shrink-0"
-                                  title="Pay Balance"
-                                >
-                                  <CreditCard className="w-3 h-3" />
-                                  <span>Pay</span>
-                                </button>
-                              )}
-                              {onViewHistory && (
-                                <button
-                                  onClick={() => onViewHistory(cust.id)}
-                                  className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60 rounded-lg transition-colors cursor-pointer shrink-0"
-                                  title="View Customer Payment History"
-                                >
-                                  <History className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handlePrintCustomerBill(cust)}
-                                className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer shrink-0"
-                                title="Print Customer Receipt / Bill"
-                              >
-                                <Printer className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
-                              </button>
-                              <button
-                                onClick={() => handleOpenEdit(cust)}
-                                className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
-                                title="Edit Customer"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              {currentUser?.role !== 'STAFF' && (
-                                <button
-                                  onClick={() => handleDelete(cust.id, cust.name)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
-                                  title="Delete Customer (Admin Only)"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+              <option value={10}>10 per page</option>
+              <option value={25}>25 per page</option>
+              <option value={50}>50 per page</option>
+              <option value={100}>100 per page</option>
+            </select>
           </div>
 
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2">
-            <span>Total Registered Customers: <strong className="text-slate-900 dark:text-white font-mono">{customers.length}</strong></span>
-            <div className="flex items-center gap-4 font-mono text-[11px]">
-              <span>Total Dues: <strong className="text-amber-600 dark:text-amber-400">{formatMoney(customers.reduce((sum, c) => sum + c.balanceAmount, 0), currency)}</strong></span>
-              <span>Total Paid: <strong className="text-emerald-600 dark:text-emerald-400">{formatMoney(customers.reduce((sum, c) => sum + c.paidAmount, 0), currency)}</strong></span>
-            </div>
+          <div className="flex items-center gap-1.5 self-end sm:self-auto">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 inline mr-1" />
+              Prev
+            </button>
+            <span className="px-2 font-mono font-bold text-slate-900 dark:text-white">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              Next
+              <ChevronRight className="w-3.5 h-3.5 inline ml-1" />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ------------------------------------------------------------------- */}
-      {/* EDIT CUSTOMER MODAL (Responsive Bottom Sheet / Modal) */}
-      {/* ------------------------------------------------------------------- */}
-      <AnimatePresence>
-        {editingCustomer && (
-          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setEditingCustomer(null)}
-              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
-            />
+      {/* ==================================================================== */}
+      {/* 5. MODALS (EDIT, PAY BALANCE, CONFIRM, SUCCESS, PRINT) */}
+      {/* ==================================================================== */}
 
-            {/* Bottom Sheet on Mobile / Centered Modal on Desktop */}
-            <motion.div
-              initial={{ y: '100%', opacity: 0.5 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '100%', opacity: 0 }}
-              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="relative w-full md:max-w-lg rounded-t-3xl md:rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto z-10"
-            >
-              {/* Native Mobile Pull Handle */}
-              <div className="md:hidden w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-2" />
+      {/* Edit Customer Modal */}
+      {editingCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-lg bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] pb-3">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>Edit Subscriber Details</span>
+              </h3>
+              <button
+                onClick={() => setEditingCustomer(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Edit2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Edit Customer Details</span>
-                </h2>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setEditingCustomer(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </motion.button>
-              </div>
-
-              <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Customer Name *</label>
+                  <label className="font-semibold block mb-1 text-slate-700 dark:text-slate-300">Name</label>
                   <input
                     type="text"
                     required
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                    className="erp-input"
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">NIC No *</label>
-                    <input
-                      type="text"
-                      required
-                      value={editNicNo}
-                      onChange={(e) => setEditNicNo(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Phone No *</label>
-                    <input
-                      type="text"
-                      required
-                      value={editPhoneNo}
-                      onChange={(e) => setEditPhoneNo(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Address</label>
+                  <label className="font-semibold block mb-1 text-slate-700 dark:text-slate-300">Box #</label>
                   <input
                     type="text"
-                    value={editAddress}
-                    onChange={(e) => setEditAddress(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    required
+                    value={editBoxNo}
+                    onChange={(e) => setEditBoxNo(e.target.value)}
+                    className="erp-input font-mono font-bold"
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Box No *</label>
-                    <input
-                      type="text"
-                      required
-                      value={editBoxNo}
-                      onChange={(e) => setEditBoxNo(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Customer Status</label>
-                    <select
-                      value={editStatus}
-                      onChange={(e) => setEditStatus(e.target.value as any)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
-                    >
-                      <option value="ACTIVE">ACTIVE (Connected)</option>
-                      <option value="INACTIVE">INACTIVE (Suspended)</option>
-                      <option value="DISCONNECTED">DISCONNECTED (Cut)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Cable Package Selection in Edit Modal */}
-                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <label className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5 text-xs">
-                      <Tv className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>Cable TV Package</span>
-                    </label>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                      Auto-sets rental
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    {cablePackages.map((pkg) => {
-                      const isSelected = editPackageId === pkg.id;
-                      const isPremium = pkg.id === 'PREMIUM_HD';
-                      const isBasic = pkg.id === 'BASIC';
-                      return (
-                        <button
-                          type="button"
-                          key={pkg.id}
-                          onClick={() => {
-                            setEditPackageId(pkg.id);
-                            setEditMonthlyRental(pkg.monthlyFee.toString());
-                          }}
-                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                            isSelected
-                              ? isPremium
-                                ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/30'
-                                : isBasic
-                                ? 'bg-sky-500/10 border-sky-500 ring-2 ring-sky-500/30'
-                                : 'bg-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/30'
-                              : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-1 mb-0.5">
-                            <span className="text-[10.5px] font-bold truncate flex items-center gap-1 text-slate-900 dark:text-white">
-                              {isPremium && <Crown className="w-2.5 h-2.5 text-amber-500" />}
-                              {pkg.name.replace(' Package', '')}
-                            </span>
-                            {isSelected && (
-                              <CheckCircle2 className={`w-3 h-3 shrink-0 ${
-                                isPremium ? 'text-amber-500' : isBasic ? 'text-sky-500' : 'text-emerald-500'
-                              }`} />
-                            )}
-                          </div>
-                          <div className="text-[11px] font-mono font-bold text-slate-900 dark:text-white">
-                            {formatMoney(pkg.monthlyFee, currency)}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Total Amount</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editTotalAmount}
-                      onChange={(e) => setEditTotalAmount(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Paid Amount</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editPaidAmount}
-                      onChange={(e) => setEditPaidAmount(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-slate-600 dark:text-slate-400 font-medium">Updated Balance Due:</span>
-                  <span className={`font-mono font-bold text-sm ${
-                    calculatedEditBalance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
-                  }`}>
-                    {formatMoney(calculatedEditBalance, currency)}
-                  </span>
-                </div>
-
-                <div className="flex justify-end gap-2.5 pt-2">
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setEditingCustomer(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </motion.button>
-                  <motion.button
-                    type="submit"
-                    whileTap={{ scale: 0.95 }}
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-bold text-white shadow-xs cursor-pointer"
-                  >
-                    Save Changes
-                  </motion.button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ------------------------------------------------------------------- */}
-      {/* PAY BALANCE MODAL (Responsive Bottom Sheet / Modal) */}
-      {/* ------------------------------------------------------------------- */}
-      <AnimatePresence>
-        {payBalanceCustomer && (
-          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setPayBalanceCustomer(null)}
-              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
-            />
-
-            {/* Bottom Sheet on Mobile / Centered Modal on Desktop */}
-            <motion.div
-              initial={{ y: '100%', opacity: 0.5 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '100%', opacity: 0 }}
-              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="relative w-full md:max-w-md rounded-t-3xl md:rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto z-10"
-            >
-              {/* Native Mobile Pull Handle */}
-              <div className="md:hidden w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto -mt-1 mb-2" />
-
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>Pay Customer Balance</span>
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {payBalanceCustomer.name} (Box: <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{payBalanceCustomer.boxNo}</span>)
-                  </p>
-                </div>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setPayBalanceCustomer(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </motion.button>
               </div>
 
-              <form onSubmit={handleConfirmPayBalance} className="space-y-4 text-xs">
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Total Amount:</span>
-                    <span className="font-mono font-bold text-slate-900 dark:text-white">{formatMoney(payBalanceCustomer.totalAmount, currency)}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Already Paid:</span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(payBalanceCustomer.paidAmount, currency)}</span>
-                  </div>
-                  <div className="flex justify-between font-bold border-t border-slate-200 dark:border-slate-800 pt-2 text-rose-600 dark:text-rose-400">
-                    <span>Current Balance Due:</span>
-                    <span className="font-mono text-sm">{formatMoney(payBalanceCustomer.balanceAmount, currency)}</span>
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-slate-600 dark:text-slate-400 font-medium">Payment Amount ({currency}) *</label>
-                    <button
-                      type="button"
-                      onClick={() => setPayAmount(payBalanceCustomer.balanceAmount.toString())}
-                      className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
-                    >
-                      Pay Full Balance
-                    </button>
-                  </div>
+                  <label className="font-semibold block mb-1 text-slate-700 dark:text-slate-300">Phone</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    max={payBalanceCustomer.balanceAmount}
+                    type="text"
                     required
-                    value={payAmount}
-                    onChange={(e) => setPayAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
+                    value={editPhoneNo}
+                    onChange={(e) => setEditPhoneNo(e.target.value)}
+                    className="erp-input font-mono"
                   />
                 </div>
-
-                <div className="flex justify-end gap-2.5 pt-2">
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setPayBalanceCustomer(null)}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </motion.button>
-                  <motion.button
-                    type="submit"
-                    disabled={isPaying}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-bold text-white flex items-center gap-1.5 cursor-pointer shadow-xs"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{isPaying ? 'Processing...' : 'Confirm Payment'}</span>
-                  </motion.button>
+                <div>
+                  <label className="font-semibold block mb-1 text-slate-700 dark:text-slate-300">NIC</label>
+                  <input
+                    type="text"
+                    required
+                    value={editNicNo}
+                    onChange={(e) => setEditNicNo(e.target.value)}
+                    className="erp-input font-mono"
+                  />
                 </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </div>
 
-      {/* Printable Receipt Modal */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold block mb-1 text-slate-700 dark:text-slate-300">Package</label>
+                  <select
+                    value={editPackageId}
+                    onChange={(e) => setEditPackageId(e.target.value)}
+                    className="erp-input"
+                  >
+                    {cablePackages.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({formatMoney(p.monthlyFee, currency)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-slate-700 dark:text-slate-300">Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as any)}
+                    className="erp-input font-semibold"
+                  >
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                    <option value="DISCONNECTED">DISCONNECTED</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold block mb-1 text-slate-700 dark:text-slate-300">Address</label>
+                <input
+                  type="text"
+                  value={editAddress}
+                  onChange={(e) => setEditAddress(e.target.value)}
+                  className="erp-input"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl">
+                <div>
+                  <label className="font-semibold block mb-1 text-slate-600">Total Fee</label>
+                  <input
+                    type="number"
+                    value={editTotalAmount}
+                    onChange={(e) => setEditTotalAmount(e.target.value)}
+                    className="erp-input font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-slate-600">Paid</label>
+                  <input
+                    type="number"
+                    value={editPaidAmount}
+                    onChange={(e) => setEditPaidAmount(e.target.value)}
+                    className="erp-input font-mono text-emerald-700"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold block mb-1 text-slate-600">Balance</label>
+                  <div className="h-9 px-2.5 rounded-lg bg-slate-200/60 dark:bg-slate-800 flex items-center font-mono font-bold text-rose-700">
+                    {formatMoney(calculatedEditBalance, currency)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingCustomer(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary px-5 py-2 text-xs font-bold">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Pay Balance Modal */}
+      {payBalanceCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] pb-3">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Banknote className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
+                <span>Collect Registration Balance</span>
+              </h3>
+              <button
+                onClick={() => setPayBalanceCustomer(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 dark:text-white">{payBalanceCustomer.name}</span>
+                <span className="badge-status badge-royal font-mono">Box #{payBalanceCustomer.boxNo}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-500 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                <span>Outstanding Balance:</span>
+                <span className="font-mono font-black text-rose-700 dark:text-rose-400 text-sm">
+                  {formatMoney(payBalanceCustomer.balanceAmount, currency)}
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmPayBalance} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Payment Amount to Collect (LKR)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  required
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="erp-input font-mono font-black text-base text-emerald-700 dark:text-emerald-400"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPayBalanceCustomer(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPaying}
+                  className="btn-teal px-5 py-2 text-xs font-bold disabled:opacity-50"
+                >
+                  {isPaying ? 'Recording...' : 'Confirm Payment & Print'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bill Printing Modal */}
       <BillPrintModal
         isOpen={isBillModalOpen}
         onClose={() => setIsBillModalOpen(false)}
@@ -1531,7 +1186,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         currency={currency}
       />
 
-      {/* Success Screen Modal */}
+      {/* Success Modal */}
       <SuccessModal
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
@@ -1539,7 +1194,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         currency={currency}
       />
 
-      {/* Confirmation Dialog Modal Card */}
+      {/* Confirm Delete Modal */}
       <ConfirmModal
         isOpen={confirmModalConfig.isOpen}
         onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
