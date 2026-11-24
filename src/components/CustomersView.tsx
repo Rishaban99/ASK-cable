@@ -137,10 +137,11 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const activeCount = customers.filter((c) => !c.status || c.status === 'ACTIVE').length;
   const inactiveCount = totalSubscribers - activeCount;
   const totalRegBalanceDues = customers.reduce((sum, c) => sum + (c.balanceAmount || 0), 0);
+  const totalRegPaidAmount = customers.reduce((sum, c) => sum + (c.paidAmount || 0), 0);
 
   // Filtered customers
   const filteredCustomers = useMemo(() => {
-    return customers.filter((c) => {
+    const list = customers.filter((c) => {
       if (statusFilter !== 'ALL' && (c.status || 'ACTIVE') !== statusFilter) return false;
       const custPkg = getCustomerPackage(c.id || c.boxNo);
       if (packageFilter !== 'ALL' && custPkg.packageId !== packageFilter) return false;
@@ -155,6 +156,26 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         c.address.toLowerCase().includes(q) ||
         custPkg.packageName.toLowerCase().includes(q)
       );
+    });
+
+    // Sort: Customers with balance dues (due > 0) on TOP, paid customers (balance === 0) at the BOTTOM
+    return list.sort((a, b) => {
+      const aDue = (a.balanceAmount || 0) > 0 ? 1 : 0;
+      const bDue = (b.balanceAmount || 0) > 0 ? 1 : 0;
+
+      // Unpaid / with dues first
+      if (bDue !== aDue) {
+        return bDue - aDue;
+      }
+
+      // If both have dues, higher due balance first
+      if (aDue === 1 && bDue === 1) {
+        const diff = (b.balanceAmount || 0) - (a.balanceAmount || 0);
+        if (diff !== 0) return diff;
+      }
+
+      // Fallback: newest / stable sort
+      return (b.id || '').localeCompare(a.id || '');
     });
   }, [customers, statusFilter, packageFilter, searchQuery]);
 
@@ -417,8 +438,101 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         </button>
       </div>
 
-      {/* Mini KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+      {/* ==================================================================== */}
+      {/* 1A. MOBILE VIEW: SINGLE CONSOLIDATED COMPACT KPI CARD (sm:hidden) */}
+      {/* ==================================================================== */}
+      <div className="erp-card p-3 sm:hidden shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.04] pb-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Users className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-xs font-bold text-slate-900 dark:text-white">Subscribers Overview</span>
+          </div>
+          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            {totalSubscribers} Total
+          </span>
+        </div>
+
+        {/* Row 1: Accounts (3 mini-tiles) */}
+        <div className="grid grid-cols-3 gap-1.5">
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-center">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">
+              Total
+            </span>
+            <div className="text-base font-black text-slate-900 dark:text-white mt-0.5 font-mono">
+              {totalSubscribers}
+            </div>
+            <span className="text-[9px] text-slate-400 block truncate">Boxes</span>
+          </div>
+
+          <div className="bg-emerald-50/50 dark:bg-emerald-500/10 p-2 rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 text-center">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block truncate">
+              Active
+            </span>
+            <div className="text-base font-black text-emerald-700 dark:text-emerald-400 mt-0.5 font-mono">
+              {activeCount}
+            </div>
+            <span className="text-[9px] font-semibold text-emerald-600/90 dark:text-emerald-400/90 block truncate">
+              Live
+            </span>
+          </div>
+
+          <div className="bg-amber-50/50 dark:bg-amber-500/10 p-2 rounded-xl border border-amber-200/60 dark:border-amber-500/20 text-center">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block truncate">
+              Inactive
+            </span>
+            <div className="text-base font-black text-amber-700 dark:text-amber-400 mt-0.5 font-mono">
+              {inactiveCount}
+            </div>
+            <span className="text-[9px] font-semibold text-amber-600/90 dark:text-amber-400/90 block truncate">
+              Off
+            </span>
+          </div>
+        </div>
+
+        {/* Row 2: Registration Fees (Paid Amount vs Balance Dues) */}
+        <div className="border-t border-slate-100 dark:border-white/[0.04] pt-2">
+          <div className="grid grid-cols-2 gap-1.5">
+            {/* Paid Amount */}
+            <div className="bg-teal-50/50 dark:bg-teal-500/10 p-2 rounded-xl border border-teal-200/60 dark:border-teal-500/20">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 block truncate">
+                  Paid Amount
+                </span>
+                <CheckCircle2 className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div className="text-xs font-black font-mono text-teal-700 dark:text-teal-400 mt-0.5 truncate">
+                {formatMoney(totalRegPaidAmount, currency)}
+              </div>
+              <span className="text-[9px] text-teal-600/80 dark:text-teal-400/80 block truncate">
+                Collected Setup
+              </span>
+            </div>
+
+            {/* Reg Balance Dues */}
+            <div className="bg-rose-50/50 dark:bg-rose-500/10 p-2 rounded-xl border border-rose-200/60 dark:border-rose-500/20">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 block truncate">
+                  Balance Dues
+                </span>
+                <Banknote className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+              </div>
+              <div className="text-xs font-black font-mono text-rose-700 dark:text-rose-400 mt-0.5 truncate">
+                {formatMoney(totalRegBalanceDues, currency)}
+              </div>
+              <span className="text-[9px] text-rose-600/80 dark:text-rose-400/80 block truncate">
+                Pending Reg
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ==================================================================== */}
+      {/* 1B. DESKTOP/TABLET VIEW: EXPANSIVE 5-CARD GRID (hidden sm:grid) */}
+      {/* ==================================================================== */}
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         <div className="erp-card p-3.5 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Subscribers</span>
@@ -446,6 +560,18 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
           </div>
           <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center justify-center">
             <UserX className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="erp-card p-3.5 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400">Paid Amount</span>
+            <div className="text-lg font-black font-mono text-teal-700 dark:text-teal-400 mt-0.5">
+              {formatMoney(totalRegPaidAmount, currency)}
+            </div>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 flex items-center justify-center">
+            <CheckCircle2 className="w-4 h-4" />
           </div>
         </div>
 

@@ -23,6 +23,8 @@ import {
   ArrowRight,
   RotateCcw,
   Box,
+  Lock,
+  X,
 } from 'lucide-react';
 import { getCustomerPackage } from '../utils/packageManager.js';
 
@@ -64,7 +66,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
 
   // Selection & Search States
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCustId, setSelectedCustId] = useState<string>(customers[0]?.id || '');
+  const [selectedCustId, setSelectedCustId] = useState<string>('');
 
   // Payment Form States
   const [paymentTargetType, setPaymentTargetType] = useState<'MONTHLY' | 'REGISTRATION'>('MONTHLY');
@@ -78,23 +80,78 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
   const [activeBillData, setActiveBillData] = useState<BillData | null>(null);
   const [isBillModalOpen, setIsBillModalOpen] = useState<boolean>(false);
 
+  // Sort customers: Customers with dues on TOP, Settled at BOTTOM
+  const sortedCustomers = useMemo(() => {
+    return [...customers].sort((a, b) => {
+      const aDue = (a.balanceAmount || 0) > 0 ? 1 : 0;
+      const bDue = (b.balanceAmount || 0) > 0 ? 1 : 0;
+
+      if (bDue !== aDue) {
+        return bDue - aDue;
+      }
+
+      if (aDue === 1 && bDue === 1) {
+        const diff = (b.balanceAmount || 0) - (a.balanceAmount || 0);
+        if (diff !== 0) return diff;
+      }
+
+      return (b.id || '').localeCompare(a.id || '');
+    });
+  }, [customers]);
+
   // Filtered customer list for search box
   const filteredCustomers = useMemo(() => {
-    if (!searchQuery) return customers;
+    if (!searchQuery) return sortedCustomers;
     const q = searchQuery.toLowerCase();
-    return customers.filter(
+    return sortedCustomers.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.boxNo.toLowerCase().includes(q) ||
         c.nicNo.toLowerCase().includes(q) ||
         c.phoneNo.toLowerCase().includes(q)
     );
-  }, [customers, searchQuery]);
+  }, [sortedCustomers, searchQuery]);
+
+  // Initial selection defaults to first customer in sortedCustomers (customer with dues)
+  useEffect(() => {
+    if (!selectedCustId && sortedCustomers.length > 0) {
+      setSelectedCustId(sortedCustomers[0].id);
+    }
+  }, [sortedCustomers, selectedCustId]);
+
+  // Sync selectedCustId whenever search query or filtered list updates
+  useEffect(() => {
+    if (filteredCustomers.length > 0) {
+      const isSelectedInFiltered = filteredCustomers.some((c) => c.id === selectedCustId);
+      if (!isSelectedInFiltered) {
+        setSelectedCustId(filteredCustomers[0].id);
+      }
+    }
+  }, [filteredCustomers, selectedCustId]);
+
+  const handleSearchChange = (q: string) => {
+    setSearchQuery(q);
+    if (q.trim()) {
+      const lower = q.toLowerCase();
+      const match = sortedCustomers.find(
+        (c) =>
+          c.name.toLowerCase().includes(lower) ||
+          c.boxNo.toLowerCase().includes(lower) ||
+          c.nicNo.toLowerCase().includes(lower) ||
+          c.phoneNo.toLowerCase().includes(lower)
+      );
+      if (match) {
+        setSelectedCustId(match.id);
+      }
+    } else if (sortedCustomers.length > 0) {
+      setSelectedCustId(sortedCustomers[0].id);
+    }
+  };
 
   // Selected customer object
   const currentCustomer = useMemo(
-    () => customers.find((c) => c.id === selectedCustId) || customers[0],
-    [customers, selectedCustId]
+    () => sortedCustomers.find((c) => c.id === selectedCustId) || sortedCustomers[0],
+    [sortedCustomers, selectedCustId]
   );
 
   // Get monthly payments for current customer
@@ -108,9 +165,12 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
     );
   }, [monthlyPayments, currentCustomer]);
 
-  // Pending unpaid monthly payments for current customer
+  // Pending unpaid monthly payments for current customer (strictly bills with balance due and not fully paid)
   const unpaidMonthlyPayments = useMemo(
-    () => customerMonthlyPayments.filter((p) => (p.balanceAmount || 0) > 0 || p.status !== 'PAID'),
+    () =>
+      customerMonthlyPayments.filter(
+        (p) => (p.balanceAmount || 0) > 0 && (p.paidAmount || 0) < p.monthlyFee && p.status !== 'PAID'
+      ),
     [customerMonthlyPayments]
   );
 
@@ -126,9 +186,9 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
   const hasMonthlyDue = monthlyBalanceSum > 0 && unpaidMonthlyPayments.length > 0;
   const hasRegDue = regBalance > 0;
 
-  // Selected monthly payment item object
+  // Selected monthly payment item object (strictly from unpaid monthly payments)
   const selectedMonthlyPmt =
-    customerMonthlyPayments.find((p) => p.id === selectedMonthlyPaymentId) || unpaidMonthlyPayments[0];
+    unpaidMonthlyPayments.find((p) => p.id === selectedMonthlyPaymentId) || unpaidMonthlyPayments[0];
 
   // Auto-sync initial selection when customer changes
   useEffect(() => {
@@ -143,15 +203,25 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
       setPayAmount(regBalance.toString());
     } else {
       setPaymentTargetType('MONTHLY');
+      setSelectedMonthlyPaymentId('');
       setPayAmount('');
     }
   }, [selectedCustId, customerMonthlyPayments.length, regBalance, monthlyBalanceSum]);
+
+  // Keep target in sync if a category becomes totally paid
+  useEffect(() => {
+    if (!hasRegDue && paymentTargetType === 'REGISTRATION' && hasMonthlyDue) {
+      setPaymentTargetType('MONTHLY');
+    } else if (!hasMonthlyDue && paymentTargetType === 'MONTHLY' && hasRegDue) {
+      setPaymentTargetType('REGISTRATION');
+    }
+  }, [hasMonthlyDue, hasRegDue, paymentTargetType]);
 
   const handleTargetTypeChange = (type: 'MONTHLY' | 'REGISTRATION') => {
     setPaymentTargetType(type);
     if (type === 'MONTHLY') {
       const targetPmt =
-        customerMonthlyPayments.find((p) => p.id === selectedMonthlyPaymentId) || unpaidMonthlyPayments[0];
+        unpaidMonthlyPayments.find((p) => p.id === selectedMonthlyPaymentId) || unpaidMonthlyPayments[0];
       setPayAmount(targetPmt ? targetPmt.balanceAmount.toString() : '');
     } else {
       setPayAmount(regBalance.toString());
@@ -160,7 +230,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
 
   const handleMonthlyPmtSelect = (pmtId: string) => {
     setSelectedMonthlyPaymentId(pmtId);
-    const targetPmt = customerMonthlyPayments.find((p) => p.id === pmtId);
+    const targetPmt = unpaidMonthlyPayments.find((p) => p.id === pmtId);
     if (targetPmt) {
       setPayAmount(targetPmt.balanceAmount.toString());
     }
@@ -496,27 +566,44 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     placeholder="Type name, box #, or phone..."
-                    className="erp-input pl-9 text-xs"
+                    className="erp-input pl-9 pr-8 text-xs"
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => handleSearchChange('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Choose from Matching Results
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center justify-between">
+                  <span>Choose from Matching Results</span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {filteredCustomers.length} match{filteredCustomers.length !== 1 ? 'es' : ''}
+                  </span>
                 </label>
                 <select
-                  value={selectedCustId}
+                  value={currentCustomer?.id || selectedCustId}
                   onChange={(e) => setSelectedCustId(e.target.value)}
-                  className="erp-input text-xs font-semibold"
+                  className="erp-input text-xs font-semibold cursor-pointer"
                 >
-                  {filteredCustomers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      Box #{c.boxNo} — {c.name} ({c.phoneNo})
-                    </option>
-                  ))}
+                  {filteredCustomers.length === 0 ? (
+                    <option value="">No subscriber matches "{searchQuery}"</option>
+                  ) : (
+                    filteredCustomers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        Box #{c.boxNo} — {c.name} ({c.phoneNo})
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
             </div>
@@ -587,58 +674,81 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
             </span>
 
             {/* Target Switcher: Monthly Bill vs Registration Balance */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => handleTargetTypeChange('MONTHLY')}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  paymentTargetType === 'MONTHLY'
-                    ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold">Monthly Bill Dues</span>
-                  <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="text-xs font-mono font-black mt-1 text-slate-900 dark:text-white">
-                  {formatMoney(monthlyBalanceSum, currency)}
-                </div>
-                <span className="text-[10px] text-slate-400">{unpaidMonthlyPayments.length} unpaid bill(s)</span>
-              </button>
+            {/* Total Paid cards are hidden; only active dues cards are displayed */}
+            <div className={`grid ${hasMonthlyDue && hasRegDue ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+              {hasMonthlyDue && (
+                <button
+                  type="button"
+                  onClick={() => handleTargetTypeChange('MONTHLY')}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    paymentTargetType === 'MONTHLY'
+                      ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 shadow-xs'
+                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">Monthly Bill Dues</span>
+                    <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="text-xs font-mono font-black mt-1 text-slate-900 dark:text-white">
+                    {formatMoney(monthlyBalanceSum, currency)}
+                  </div>
+                  <span className="text-[10px] text-slate-400">{unpaidMonthlyPayments.length} unpaid bill(s)</span>
+                </button>
+              )}
 
-              <button
-                type="button"
-                onClick={() => handleTargetTypeChange('REGISTRATION')}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  paymentTargetType === 'REGISTRATION'
-                    ? 'border-teal-600 bg-teal-50/60 dark:bg-teal-500/10 text-teal-700 dark:text-teal-300 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold">Setup / Reg Balance</span>
-                  <Box className="w-4 h-4 text-teal-700 dark:text-teal-400" />
+              {hasRegDue && (
+                <button
+                  type="button"
+                  onClick={() => handleTargetTypeChange('REGISTRATION')}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    paymentTargetType === 'REGISTRATION'
+                      ? 'border-teal-600 bg-teal-50/60 dark:bg-teal-500/10 text-teal-700 dark:text-teal-300 shadow-xs'
+                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">Setup / Reg Balance</span>
+                    <Box className="w-4 h-4 text-teal-700 dark:text-teal-400" />
+                  </div>
+                  <div className="text-xs font-mono font-black mt-1 text-slate-900 dark:text-white">
+                    {formatMoney(regBalance, currency)}
+                  </div>
+                  <span className="text-[10px] text-slate-400">Total Setup: {formatMoney(regTotal, currency)}</span>
+                </button>
+              )}
+
+              {/* Both are totally paid in full (0 balance) */}
+              {!hasMonthlyDue && !hasRegDue && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold">All Dues Paid in Full (Zero Balance)</div>
+                      <div className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80">
+                        This subscriber has no outstanding monthly bills or registration balance.
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-black bg-emerald-100 dark:bg-emerald-500/20 px-2.5 py-1 rounded-lg">
+                    {formatMoney(0, currency)}
+                  </span>
                 </div>
-                <div className="text-xs font-mono font-black mt-1 text-slate-900 dark:text-white">
-                  {formatMoney(regBalance, currency)}
-                </div>
-                <span className="text-[10px] text-slate-400">Total Setup: {formatMoney(regTotal, currency)}</span>
-              </button>
+              )}
             </div>
 
-            {/* If Monthly, Pick Specific Month Bill */}
-            {paymentTargetType === 'MONTHLY' && customerMonthlyPayments.length > 0 && (
+            {/* If Monthly, Pick Specific Month Bill (Only show if there are unpaid bills) */}
+            {paymentTargetType === 'MONTHLY' && unpaidMonthlyPayments.length > 0 && (
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Select Monthly Bill Period
+                  Select Monthly Bill Period ({unpaidMonthlyPayments.length} Pending)
                 </label>
                 <select
                   value={selectedMonthlyPaymentId}
                   onChange={(e) => handleMonthlyPmtSelect(e.target.value)}
                   className="erp-input text-xs font-semibold"
                 >
-                  {customerMonthlyPayments.map((p) => (
+                  {unpaidMonthlyPayments.map((p) => (
                     <option key={p.id} value={p.id}>
                       Month: {p.month} — Fee: {formatMoney(p.monthlyFee, currency)} | Paid:{' '}
                       {formatMoney(p.paidAmount, currency)} | Bal: {formatMoney(p.balanceAmount, currency)} ({p.status})
@@ -648,116 +758,150 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
               </div>
             )}
 
-            {/* Fast Cash Preset Buttons */}
-            <div>
-              <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                Fast Cash Presets (Quick Tap)
-              </span>
-              <div className="grid grid-cols-3 sm:flex sm:items-center gap-2">
-                {[500, 1000, 1200, 1500, 2000].map((amt) => (
-                  <button
-                    key={amt}
-                    type="button"
-                    onClick={() => setPayAmount(amt.toString())}
-                    className={`py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all border text-center cursor-pointer min-h-[40px] flex items-center justify-center active:scale-95 ${
-                      payAmount === amt.toString()
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
-                    }`}
-                  >
-                    Rs. {amt}
-                  </button>
-                ))}
-
-                {currentTargetDue > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setPayAmount(currentTargetDue.toString())}
-                    className="col-span-3 sm:col-span-1 py-2 px-3 rounded-xl text-xs font-mono font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-center cursor-pointer min-h-[40px] flex items-center justify-center active:scale-95"
-                  >
-                    Full Due ({formatMoney(currentTargetDue, currency)})
-                  </button>
-                )}
+            {/* If all dues are paid in full, show settled message; otherwise show collection inputs */}
+            {!hasMonthlyDue && !hasRegDue ? (
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                <p className="font-bold text-slate-700 dark:text-slate-200 text-sm">No Pending Dues to Collect</p>
+                <p className="text-[11px] text-slate-400">
+                  All monthly billing periods and registration balances for Box #{currentCustomer?.boxNo || '-'} have been settled in full.
+                </p>
               </div>
-            </div>
-
-            {/* Custom Amount & Live Balance Preview */}
-            <form onSubmit={handleSubmitPayment} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            ) : (
+              <>
+                {/* Fast Cash Preset Buttons */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Amount to Collect (LKR) *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    value={payAmount}
-                    onChange={(e) => setPayAmount(e.target.value)}
-                    placeholder="Enter amount..."
-                    className="erp-input font-mono font-black text-lg text-emerald-700 dark:text-emerald-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Remaining Balance After
-                  </label>
-                  <div className="h-10 px-3 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center font-mono font-black text-base text-rose-700 dark:text-rose-400 border border-slate-200 dark:border-white/[0.08]">
-                    {formatMoney(remainingBalanceAfter, currency)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Method & Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Payment Method</label>
-                  <div className="flex items-center gap-2">
-                    {['Cash', 'Bank Transfer', 'Online'].map((method) => (
+                  <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                    Fast Cash Presets (Quick Tap)
+                  </span>
+                  <div className="grid grid-cols-3 sm:flex sm:items-center gap-2">
+                    {[500, 1000, 1200, 1500, 2000].map((amt) => (
                       <button
-                        key={method}
+                        key={amt}
                         type="button"
-                        onClick={() => setPaymentMethod(method)}
-                        className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-                          paymentMethod === method
+                        onClick={() => setPayAmount(amt.toString())}
+                        className={`py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all border text-center cursor-pointer min-h-[40px] flex items-center justify-center active:scale-95 ${
+                          payAmount === amt.toString()
                             ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
                         }`}
                       >
-                        {method}
+                        Rs. {amt}
                       </button>
                     ))}
+
+                    {currentTargetDue > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setPayAmount(currentTargetDue.toString())}
+                        className="col-span-3 sm:col-span-1 py-2 px-3 rounded-xl text-xs font-mono font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-center cursor-pointer min-h-[40px] flex items-center justify-center active:scale-95"
+                      >
+                        Full Due ({formatMoney(currentTargetDue, currency)})
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Payment Date</label>
-                  <input
-                    type="date"
-                    value={paymentDate}
-                    onChange={(e) => setPaymentDate(e.target.value)}
-                    className="erp-input font-mono text-xs"
-                  />
-                </div>
-              </div>
+                {/* Custom Amount & Live Balance Preview */}
+                <form onSubmit={handleSubmitPayment} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Amount to Collect (LKR) *
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        required
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value)}
+                        placeholder="Enter amount..."
+                        className="erp-input font-mono font-black text-lg text-emerald-700 dark:text-emerald-400"
+                      />
+                    </div>
 
-              {/* Submit CTA */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !payAmount}
-                  className="w-full btn-teal py-3 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-md"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>
-                    {isSubmitting
-                      ? 'Recording & Generating Slip...'
-                      : `Collect ${formatMoney(parsedPayAmount, currency)} & Print Receipt`}
-                  </span>
-                </button>
-              </div>
-            </form>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        {parsedPayAmount > currentTargetDue && currentTargetDue > 0
+                          ? 'Advance / Excess Paid'
+                          : 'Remaining Balance After'}
+                      </label>
+                      <div
+                        className={`h-10 px-3 rounded-lg flex items-center font-mono font-black text-base border ${
+                          parsedPayAmount > currentTargetDue && currentTargetDue > 0
+                            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30'
+                            : 'bg-slate-100 dark:bg-slate-800 text-rose-700 dark:text-rose-400 border-slate-200 dark:border-white/[0.08]'
+                        }`}
+                      >
+                        {parsedPayAmount > currentTargetDue && currentTargetDue > 0
+                          ? `+${formatMoney(parsedPayAmount - currentTargetDue, currency)} (Advance)`
+                          : formatMoney(remainingBalanceAfter, currency)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Method & Date */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Payment Method</label>
+                      <div className="flex items-center gap-2">
+                        {['Cash', 'Bank Transfer', 'Online'].map((method) => (
+                          <button
+                            key={method}
+                            type="button"
+                            onClick={() => setPaymentMethod(method)}
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                              paymentMethod === method
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                            }`}
+                          >
+                            {method}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                        <span>Payment Date</span>
+                        <span className="text-[10px] font-mono text-slate-400 font-normal flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-slate-400" /> Locked
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="date"
+                          readOnly
+                          disabled
+                          tabIndex={-1}
+                          value={paymentDate}
+                          className="erp-input font-mono text-xs bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none opacity-90 pr-8 pointer-events-none"
+                          title="Payment date is fixed to today's system date and locked"
+                        />
+                        <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Submit CTA */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !payAmount}
+                      className="w-full btn-teal py-3 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-md"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>
+                        {isSubmitting
+                          ? 'Recording & Generating Slip...'
+                          : `Collect ${formatMoney(parsedPayAmount, currency)} & Print Receipt`}
+                      </span>
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
 

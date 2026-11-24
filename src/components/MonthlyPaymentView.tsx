@@ -32,6 +32,7 @@ import {
   Sparkles,
   Banknote,
   RotateCcw,
+  Lock,
 } from 'lucide-react';
 import {
   getCustomerPackage,
@@ -136,6 +137,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   const [editMonthlyFee, setEditMonthlyFee] = useState('');
   const [editPaidAmount, setEditPaidAmount] = useState('');
   const [editPaymentDate, setEditPaymentDate] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   // Pay Balance Modal States
   const [payBalancePayment, setPayBalancePayment] = useState<MonthlyPayment | null>(null);
@@ -183,6 +185,13 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   const parsedPaid = parseFloat(paidAmount) || 0;
   const calculatedFormBalance = Math.max(0, parsedFee - parsedPaid);
 
+  const editFeeParsed = parseFloat(editMonthlyFee) || 0;
+  const editPaidParsed = parseFloat(editPaidAmount) || 0;
+  const editBalancePreview = Math.max(0, editFeeParsed - editPaidParsed);
+  let editStatusPreview: 'PAID' | 'PARTIAL' | 'UNPAID' = 'UNPAID';
+  if (editBalancePreview === 0 && editPaidParsed > 0) editStatusPreview = 'PAID';
+  else if (editPaidParsed > 0 && editBalancePreview > 0) editStatusPreview = 'PARTIAL';
+
   // Duplicate Check
   const existingDuplicatePayment =
     selectedCustomer && month
@@ -219,7 +228,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
   // Filtered Payments
   const filteredPayments = useMemo(() => {
-    return monthlyPayments.filter((p) => {
+    const list = monthlyPayments.filter((p) => {
       if (selectedMonthFilter && p.month !== selectedMonthFilter) return false;
       if (statusFilter !== 'ALL' && p.status !== statusFilter) return false;
 
@@ -230,6 +239,23 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
         p.boxNo.toLowerCase().includes(q) ||
         p.month.toLowerCase().includes(q)
       );
+    });
+
+    // Sort: Bills with balance dues on TOP, paid bills at the BOTTOM
+    return list.sort((a, b) => {
+      const aDue = (a.balanceAmount || 0) > 0 || a.status !== 'PAID' ? 1 : 0;
+      const bDue = (b.balanceAmount || 0) > 0 || b.status !== 'PAID' ? 1 : 0;
+
+      if (bDue !== aDue) {
+        return bDue - aDue;
+      }
+
+      if (aDue === 1 && bDue === 1) {
+        const diff = (b.balanceAmount || 0) - (a.balanceAmount || 0);
+        if (diff !== 0) return diff;
+      }
+
+      return (b.id || '').localeCompare(a.id || '');
     });
   }, [monthlyPayments, selectedMonthFilter, statusFilter, searchQuery]);
 
@@ -432,6 +458,49 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
         }
       },
     });
+  };
+
+  // Open Edit Monthly Payment Modal
+  const handleOpenEditPayment = (pmt: MonthlyPayment) => {
+    setEditingPayment(pmt);
+    setEditMonth(pmt.month);
+    setEditMonthlyFee(pmt.monthlyFee.toString());
+    setEditPaidAmount(pmt.paidAmount.toString());
+    setEditPaymentDate(pmt.paymentDate ? pmt.paymentDate.split('T')[0] : todayStr);
+  };
+
+  // Save Edit Monthly Payment
+  const handleSaveEditPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPayment) return;
+
+    const fee = parseFloat(editMonthlyFee);
+    const paid = parseFloat(editPaidAmount);
+
+    if (isNaN(fee) || fee < 0) {
+      toast.error('Please enter a valid monthly fee amount.');
+      return;
+    }
+    if (isNaN(paid) || paid < 0) {
+      toast.error('Please enter a valid paid amount (0 or more).');
+      return;
+    }
+
+    setIsEditing(true);
+    try {
+      await api.updateMonthlyPayment(editingPayment.id, {
+        monthlyFee: fee,
+        paidAmount: paid,
+      });
+
+      toast.success(`Monthly bill for Box #${editingPayment.boxNo} (${editingPayment.month}) updated.`);
+      setEditingPayment(null);
+      onRefreshData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update monthly bill');
+    } finally {
+      setIsEditing(false);
+    }
   };
 
   // Delete Payment
@@ -735,13 +804,24 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Payment Date</label>
-                <input
-                  type="date"
-                  value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
-                  className="erp-input font-mono"
-                />
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                  <span>Payment Date</span>
+                  <span className="text-[10px] font-mono text-slate-400 font-normal flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-slate-400" /> Locked
+                  </span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    readOnly
+                    disabled
+                    tabIndex={-1}
+                    value={paymentDate}
+                    className="erp-input font-mono bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none opacity-90 pr-8 pointer-events-none"
+                    title="Payment date is fixed to today's system date and locked"
+                  />
+                  <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
             </div>
 
@@ -939,7 +1019,9 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                               : 'badge-danger'
                           }`}
                         >
-                          {pmt.status}
+                          {pmt.paidAmount > pmt.monthlyFee
+                            ? `PAID (+${formatMoney(pmt.paidAmount - pmt.monthlyFee, currency)} Adv)`
+                            : pmt.status}
                         </span>
                       </td>
 
@@ -972,6 +1054,15 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                             title="Print Monthly Bill Slip"
                           >
                             <Printer className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Edit Bill */}
+                          <button
+                            onClick={() => handleOpenEditPayment(pmt)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15 cursor-pointer transition-colors"
+                            title="Edit Monthly Bill"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
                           </button>
 
                           {/* Delete Bill */}
@@ -1036,7 +1127,9 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                           : 'badge-danger'
                       }`}
                     >
-                      {pmt.status}
+                      {pmt.paidAmount > pmt.monthlyFee
+                        ? `PAID (+${formatMoney(pmt.paidAmount - pmt.monthlyFee, currency)} Adv)`
+                        : pmt.status}
                     </span>
                   </div>
 
@@ -1099,6 +1192,13 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                         title="Print Monthly Bill Slip"
                       >
                         <Printer className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleOpenEditPayment(pmt)}
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                        title="Edit Monthly Bill"
+                      >
+                        <Edit2 className="w-4 h-4" />
                       </button>
                       {onViewHistory && (
                         <button
@@ -1244,6 +1344,152 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                   className="btn-teal px-5 py-2 text-xs font-bold disabled:opacity-50"
                 >
                   {isPaying ? 'Recording...' : 'Confirm & Print Slip'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Monthly Bill Modal */}
+      {editingPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] pb-3">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>Edit Monthly Bill Record</span>
+              </h3>
+              <button
+                onClick={() => setEditingPayment(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Subscriber Info Banner */}
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 dark:text-white">{editingPayment.customerName}</span>
+                <span className="badge-status badge-royal font-mono">Box #{editingPayment.boxNo}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-500 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                <span>Billing Period: {formatYearMonthDisplay(editingPayment.month)}</span>
+                <span className="font-mono text-slate-600 dark:text-slate-400">
+                  {editingPayment.packageName || 'Standard TV'}
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveEditPayment} className="space-y-4 text-xs">
+              {/* Monthly Fee Input */}
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Monthly Rate / Fee ({currency})
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  required
+                  min="0"
+                  value={editMonthlyFee}
+                  onChange={(e) => setEditMonthlyFee(e.target.value)}
+                  className="erp-input font-mono font-bold"
+                  placeholder="e.g. 1200"
+                />
+              </div>
+
+              {/* Paid Amount Input */}
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Paid Amount ({currency})
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  required
+                  min="0"
+                  value={editPaidAmount}
+                  onChange={(e) => setEditPaidAmount(e.target.value)}
+                  className="erp-input font-mono font-bold text-emerald-700 dark:text-emerald-400"
+                  placeholder="e.g. 1200 or 0"
+                />
+              </div>
+
+              {/* Live Balance & Status Preview */}
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    {editPaidParsed > editFeeParsed ? 'Advance / Excess' : 'Balance Due'}
+                  </span>
+                  <span
+                    className={`text-base font-black font-mono ${
+                      editPaidParsed > editFeeParsed
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : editBalancePreview > 0
+                        ? 'text-rose-700 dark:text-rose-400'
+                        : 'text-emerald-700 dark:text-emerald-400'
+                    }`}
+                  >
+                    {editPaidParsed > editFeeParsed
+                      ? `+${formatMoney(editPaidParsed - editFeeParsed, currency)} (Advance)`
+                      : formatMoney(editBalancePreview, currency)}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Status</span>
+                  <span
+                    className={`badge-status ${
+                      editPaidParsed > editFeeParsed
+                        ? 'badge-emerald'
+                        : editStatusPreview === 'PAID'
+                        ? 'badge-emerald'
+                        : editStatusPreview === 'PARTIAL'
+                        ? 'badge-amber'
+                        : 'badge-rose'
+                    }`}
+                  >
+                    {editPaidParsed > editFeeParsed ? 'PAID (ADVANCE)' : editStatusPreview}
+                  </span>
+                </div>
+              </div>
+
+              {/* Locked Payment Date */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">
+                    Payment Date
+                  </label>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                    <Lock className="w-3 h-3 text-slate-500" /> Locked
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={editPaymentDate || todayStr}
+                  className="erp-input bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 cursor-not-allowed font-mono opacity-80"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-white/[0.08]">
+                <button
+                  type="button"
+                  onClick={() => setEditingPayment(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isEditing}
+                  className="btn-primary px-5 py-2 text-xs font-bold disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{isEditing ? 'Saving...' : 'Save Changes'}</span>
                 </button>
               </div>
             </form>

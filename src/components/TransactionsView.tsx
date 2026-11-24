@@ -27,6 +27,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Layers,
+  Lock,
 } from 'lucide-react';
 import { Spinner } from './Spinner.js';
 
@@ -815,14 +816,25 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={editIncDate}
-                    onChange={(e) => setEditIncDate(e.target.value)}
-                    className="erp-input font-mono"
-                  />
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                    <span>Date</span>
+                    <span className="text-[10px] font-mono text-slate-400 font-normal flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-slate-400" /> Locked
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      required
+                      readOnly
+                      disabled
+                      tabIndex={-1}
+                      value={editIncDate}
+                      className="erp-input font-mono bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none opacity-90 pr-8 pointer-events-none"
+                      title="Date is locked and cannot be modified"
+                    />
+                    <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
                 <div>
                   <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Category</label>
@@ -887,14 +899,25 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={editExpDate}
-                    onChange={(e) => setEditExpDate(e.target.value)}
-                    className="erp-input font-mono"
-                  />
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                    <span>Date</span>
+                    <span className="text-[10px] font-mono text-slate-400 font-normal flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-slate-400" /> Locked
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      required
+                      readOnly
+                      disabled
+                      tabIndex={-1}
+                      value={editExpDate}
+                      className="erp-input font-mono bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none opacity-90 pr-8 pointer-events-none"
+                      title="Date is locked and cannot be modified"
+                    />
+                    <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
                 <div>
                   <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Category</label>

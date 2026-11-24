@@ -501,7 +501,151 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ==================================================================== */}
       {/* 2. THE 6 PRIMARY KPI CARDS (Requirements Item 4) */}
       {/* ==================================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4">
+
+      {/* 2A. MOBILE VIEW: SINGLE CONSOLIDATED COMPACT KPI CARD (sm:hidden) */}
+      <div className="erp-card p-3 sm:hidden shadow-xs space-y-2.5">
+        {/* Header row with Title and Month pill */}
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.04] pb-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-xs font-bold text-slate-900 dark:text-white">KPI Overview</span>
+          </div>
+          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            {formatMonthLabel(selectedBillingMonth)}
+          </span>
+        </div>
+
+        {/* Section 1: Subscribers (3 mini tiles) */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <Users className="w-3 h-3 text-blue-500" /> Subscribers
+            </span>
+            <button
+              onClick={() => onNavigateToTab('customers')}
+              className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-0.5 cursor-pointer"
+            >
+              Directory <ArrowRight className="w-2.5 h-2.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {/* Total */}
+            <div
+              onClick={() => onNavigateToTab('customers')}
+              className="bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-center transition-colors cursor-pointer"
+            >
+              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">
+                Total
+              </span>
+              <div className="text-base font-black text-slate-900 dark:text-white mt-0.5 tracking-tight font-mono">
+                {isLoading ? <div className="h-5 w-8 skeleton mx-auto" /> : totalCustomersCount}
+              </div>
+              <span className="text-[9px] text-slate-400 dark:text-slate-400 block truncate">Registered</span>
+            </div>
+
+            {/* Active */}
+            <div
+              onClick={() => onNavigateToTab('customers')}
+              className="bg-emerald-50/50 dark:bg-emerald-500/10 hover:bg-emerald-50 dark:hover:bg-emerald-500/15 p-2 rounded-xl border border-emerald-200/60 dark:border-emerald-500/20 text-center transition-colors cursor-pointer"
+            >
+              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block truncate">
+                Active
+              </span>
+              <div className="text-base font-black text-emerald-700 dark:text-emerald-400 mt-0.5 tracking-tight font-mono">
+                {isLoading ? <div className="h-5 w-8 skeleton mx-auto" /> : activeCustomersCount}
+              </div>
+              <span className="text-[9px] font-semibold text-emerald-600/90 dark:text-emerald-400/90 block truncate">
+                {activeRatePct}% base
+              </span>
+            </div>
+
+            {/* Inactive */}
+            <div
+              onClick={() => onNavigateToTab('customers')}
+              className="bg-amber-50/50 dark:bg-amber-500/10 hover:bg-amber-50 dark:hover:bg-amber-500/15 p-2 rounded-xl border border-amber-200/60 dark:border-amber-500/20 text-center transition-colors cursor-pointer"
+            >
+              <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block truncate">
+                Inactive
+              </span>
+              <div className="text-base font-black text-amber-700 dark:text-amber-400 mt-0.5 tracking-tight font-mono">
+                {isLoading ? <div className="h-5 w-8 skeleton mx-auto" /> : inactiveCustomersCount}
+              </div>
+              <span className="text-[9px] font-semibold text-amber-600/90 dark:text-amber-400/90 block truncate">
+                Off / Cut
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 2: Billing & Collections (3 mini tiles) */}
+        <div className="border-t border-slate-100 dark:border-white/[0.04] pt-2">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <Receipt className="w-3 h-3 text-teal-500" /> Billing & Dues
+            </span>
+            <button
+              onClick={() => onNavigateToTab('payment-collection')}
+              className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-0.5 cursor-pointer"
+            >
+              Collect <ArrowRight className="w-2.5 h-2.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {/* Bills */}
+            <div
+              onClick={() => onNavigateToTab('monthly-payment')}
+              className="bg-blue-50/40 dark:bg-blue-500/10 hover:bg-blue-50 dark:hover:bg-blue-500/15 p-2 rounded-xl border border-blue-200/60 dark:border-blue-500/20 transition-colors cursor-pointer"
+            >
+              <span className="text-[9px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 block truncate">
+                Bills
+              </span>
+              <div className="text-xs font-black font-mono text-slate-900 dark:text-white mt-0.5 truncate">
+                {isLoading ? <div className="h-4 w-12 skeleton" /> : formatCompactMoney(totalBilledAmount, currency)}
+              </div>
+              <span className="text-[9px] text-slate-400 dark:text-slate-400 block truncate">
+                {billsGeneratedCount} issued
+              </span>
+            </div>
+
+            {/* Collected */}
+            <div
+              onClick={() => onNavigateToTab('payment-collection')}
+              className="bg-teal-50/50 dark:bg-teal-500/10 hover:bg-teal-50 dark:hover:bg-teal-500/15 p-2 rounded-xl border border-teal-200/60 dark:border-teal-500/20 transition-colors cursor-pointer"
+            >
+              <span className="text-[9px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 block truncate">
+                Collected
+              </span>
+              <div className="text-xs font-black font-mono text-teal-700 dark:text-teal-400 mt-0.5 truncate">
+                {isLoading ? <div className="h-4 w-12 skeleton" /> : formatCompactMoney(paymentsReceivedAmount, currency)}
+              </div>
+              <span className="text-[9px] font-semibold text-teal-600/90 dark:text-teal-400/90 block truncate">
+                {collectionPct}% recvd
+              </span>
+            </div>
+
+            {/* Pending */}
+            <div
+              onClick={() => onNavigateToTab('monthly-payment')}
+              className="bg-amber-50/50 dark:bg-amber-500/10 hover:bg-amber-50 dark:hover:bg-amber-500/15 p-2 rounded-xl border border-amber-200/60 dark:border-amber-500/20 transition-colors cursor-pointer"
+            >
+              <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block truncate">
+                Pending
+              </span>
+              <div className="text-xs font-black font-mono text-amber-700 dark:text-amber-400 mt-0.5 truncate">
+                {isLoading ? <div className="h-4 w-12 skeleton" /> : formatCompactMoney(paymentsPendingAmount, currency)}
+              </div>
+              <span className="text-[9px] font-semibold text-amber-600/90 dark:text-amber-400/90 block truncate">
+                {paymentsPendingCount} dues
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2B. DESKTOP/TABLET VIEW: EXPANSIVE 6-CARD GRID (hidden sm:grid) */}
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4">
         {/* KPI 1: Total Customers */}
         <div
           onClick={() => onNavigateToTab('customers')}

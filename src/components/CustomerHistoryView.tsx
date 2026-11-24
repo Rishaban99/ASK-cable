@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Filter,
+  Receipt,
 } from 'lucide-react';
 import { getCustomerPackage } from '../utils/packageManager.js';
 
@@ -48,10 +49,30 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
   const toast = useToast();
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // Sort customers: Customers with dues (balanceAmount > 0) on TOP, Settled (balance === 0) at the BOTTOM
+  const sortedCustomers = useMemo(() => {
+    return [...customers].sort((a, b) => {
+      const aDue = (a.balanceAmount || 0) > 0 ? 1 : 0;
+      const bDue = (b.balanceAmount || 0) > 0 ? 1 : 0;
+
+      if (bDue !== aDue) {
+        return bDue - aDue;
+      }
+
+      if (aDue === 1 && bDue === 1) {
+        const diff = (b.balanceAmount || 0) - (a.balanceAmount || 0);
+        if (diff !== 0) return diff;
+      }
+
+      return (b.id || '').localeCompare(a.id || '');
+    });
+  }, [customers]);
+
   const [activeCustomerId, setActiveCustomerId] = useState<string>(
-    selectedCustomerId || customers[0]?.id || ''
+    selectedCustomerId || ''
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'COLLECTIONS' | 'INVOICES'>('COLLECTIONS');
   const [activeFilterTab, setActiveFilterTab] = useState<'ALL' | 'REGISTRATION' | 'MONTHLY' | 'UNPAID'>('ALL');
 
   // Pay Balance Modal States
@@ -66,10 +87,10 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
   useEffect(() => {
     if (selectedCustomerId) {
       setActiveCustomerId(selectedCustomerId);
-    } else if (!activeCustomerId && customers.length > 0) {
-      setActiveCustomerId(customers[0].id);
+    } else if (!activeCustomerId && sortedCustomers.length > 0) {
+      setActiveCustomerId(sortedCustomers[0].id);
     }
-  }, [selectedCustomerId, customers]);
+  }, [selectedCustomerId, sortedCustomers, activeCustomerId]);
 
   const handleSelectCust = (id: string) => {
     setActiveCustomerId(id);
@@ -77,21 +98,21 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
   };
 
   const selectedCustomer = useMemo(
-    () => customers.find((c) => c.id === activeCustomerId) || customers[0],
-    [customers, activeCustomerId]
+    () => sortedCustomers.find((c) => c.id === activeCustomerId) || sortedCustomers[0],
+    [sortedCustomers, activeCustomerId]
   );
 
   const filteredCustomerList = useMemo(() => {
-    if (!searchQuery) return customers;
+    if (!searchQuery) return sortedCustomers;
     const q = searchQuery.toLowerCase();
-    return customers.filter(
+    return sortedCustomers.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.boxNo.toLowerCase().includes(q) ||
         c.phoneNo.toLowerCase().includes(q) ||
         c.nicNo.toLowerCase().includes(q)
     );
-  }, [customers, searchQuery]);
+  }, [sortedCustomers, searchQuery]);
 
   // Monthly bills for selected customer
   const customerMonthlyBills = useMemo(() => {
@@ -182,6 +203,182 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
       return true;
     });
   }, [unifiedLedgerItems, activeFilterTab]);
+
+  // Customer-specific collection logs (all payments/installments recorded for this subscriber)
+  const customerCollectionLogs = useMemo(() => {
+    if (!selectedCustomer) return [];
+    const logs: {
+      id: string;
+      title: string;
+      installmentAmount: number;
+      balanceRemaining: number;
+      dateDisplay: string;
+      timeDisplay: string;
+      paymentMethod: string;
+      billNo: string;
+      rawDateSort: number;
+      rawBillData: BillData;
+    }[] = [];
+
+    // 1. From live incomes table
+    if (incomes && incomes.length > 0) {
+      incomes.forEach((inc) => {
+        const desc = inc.description || '';
+        const nameMatch =
+          selectedCustomer.name && desc.toLowerCase().includes(selectedCustomer.name.toLowerCase());
+        const boxMatch =
+          selectedCustomer.boxNo &&
+          selectedCustomer.boxNo !== '-' &&
+          desc.toLowerCase().includes(selectedCustomer.boxNo.toLowerCase());
+
+        if (!nameMatch && !boxMatch) return;
+
+        let title = desc;
+        let monthStr = '';
+        const monthMatch = desc.match(/\((\d{4}-\d{2})\)/);
+        if (monthMatch) {
+          monthStr = monthMatch[1];
+          title = `Monthly Bill Payment (${monthStr})`;
+        } else if (
+          desc.toLowerCase().includes('setup') ||
+          desc.toLowerCase().includes('connection') ||
+          desc.toLowerCase().includes('registration')
+        ) {
+          title = 'Box Setup & Connection Fee Payment';
+        }
+
+        const createdDate = inc.createdAt ? new Date(inc.createdAt) : new Date(inc.date || todayStr);
+        const dateDisplay = inc.date || createdDate.toISOString().split('T')[0];
+        const timeDisplay = inc.createdAt
+          ? new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : '';
+
+        let balanceRemaining = 0;
+        if (monthStr) {
+          const mPmt = monthlyPayments.find(
+            (p) =>
+              (p.customerId === selectedCustomer.id ||
+                (p.boxNo && p.boxNo.toLowerCase() === selectedCustomer.boxNo.toLowerCase())) &&
+              p.month === monthStr
+          );
+          if (mPmt) balanceRemaining = mPmt.balanceAmount;
+        } else {
+          balanceRemaining = selectedCustomer.balanceAmount;
+        }
+
+        const billData: BillData = {
+          type: monthStr ? 'MONTHLY' : 'CUSTOMER',
+          billNo: `REC-${(selectedCustomer.boxNo || '0').replace(/[^a-zA-Z0-9]/g, '')}-${inc.id.slice(-6)}`,
+          date: dateDisplay,
+          customerName: selectedCustomer.name,
+          nicNo: selectedCustomer.nicNo,
+          phoneNo: selectedCustomer.phoneNo,
+          address: selectedCustomer.address,
+          boxNo: selectedCustomer.boxNo,
+          month: monthStr || undefined,
+          totalOrFeeAmount: inc.amount + balanceRemaining,
+          paidAmount: inc.amount,
+          balanceAmount: balanceRemaining,
+          status: balanceRemaining === 0 ? 'PAID' : 'PARTIAL',
+          paymentDate: dateDisplay,
+        };
+
+        logs.push({
+          id: `cust-inc-${inc.id}`,
+          title,
+          installmentAmount: inc.amount,
+          balanceRemaining,
+          dateDisplay,
+          timeDisplay,
+          paymentMethod: inc.paymentMethod || 'CASH',
+          billNo: billData.billNo,
+          rawDateSort: createdDate.getTime(),
+          rawBillData: billData,
+        });
+      });
+    }
+
+    // 2. Paid monthly payments
+    customerMonthlyBills.forEach((pmt) => {
+      if (pmt.paidAmount > 0) {
+        const alreadyInLogs = logs.some((l) => l.title.includes(pmt.month));
+        if (!alreadyInLogs) {
+          const createdDate = pmt.createdAt ? new Date(pmt.createdAt) : new Date();
+          const dateDisplay = pmt.paymentDate ? pmt.paymentDate.split('T')[0] : todayStr;
+          const billData: BillData = {
+            type: 'MONTHLY',
+            billNo: `BILL-${pmt.boxNo}-${pmt.month.replace('-', '')}`,
+            date: dateDisplay,
+            customerName: selectedCustomer.name,
+            nicNo: selectedCustomer.nicNo,
+            phoneNo: selectedCustomer.phoneNo,
+            address: selectedCustomer.address,
+            boxNo: pmt.boxNo,
+            month: pmt.month,
+            packageName: getCustomerPackage(selectedCustomer.id || selectedCustomer.boxNo).packageName,
+            totalOrFeeAmount: pmt.monthlyFee,
+            paidAmount: pmt.paidAmount,
+            balanceAmount: pmt.balanceAmount,
+            status: pmt.status,
+            paymentDate: dateDisplay,
+          };
+
+          logs.push({
+            id: `cust-pmt-${pmt.id}`,
+            title: `Monthly Bill Payment (${pmt.month})`,
+            installmentAmount: pmt.paidAmount,
+            balanceRemaining: pmt.balanceAmount,
+            dateDisplay,
+            timeDisplay: createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            paymentMethod: 'CASH',
+            billNo: billData.billNo,
+            rawDateSort: createdDate.getTime(),
+            rawBillData: billData,
+          });
+        }
+      }
+    });
+
+    // 3. Initial setup fee payment
+    if (regPaid > 0) {
+      const alreadyHasReg = logs.some(
+        (l) => l.title.toLowerCase().includes('setup') || l.title.toLowerCase().includes('registration')
+      );
+      if (!alreadyHasReg) {
+        const regDate = selectedCustomer.createdAt ? selectedCustomer.createdAt.split('T')[0] : todayStr;
+        const billData: BillData = {
+          type: 'CUSTOMER',
+          billNo: `CUST-${selectedCustomer.boxNo}-${regDate.replace(/-/g, '')}`,
+          date: regDate,
+          customerName: selectedCustomer.name,
+          nicNo: selectedCustomer.nicNo,
+          phoneNo: selectedCustomer.phoneNo,
+          address: selectedCustomer.address,
+          boxNo: selectedCustomer.boxNo,
+          totalOrFeeAmount: selectedCustomer.totalAmount,
+          paidAmount: regPaid,
+          balanceAmount: regBalance,
+          status: regBalance === 0 ? 'PAID' : 'PARTIAL',
+          paymentDate: regDate,
+        };
+
+        logs.push({
+          id: `cust-reg-${selectedCustomer.id}`,
+          title: 'Box Connection & Setup Fee Payment',
+          installmentAmount: regPaid,
+          balanceRemaining: regBalance,
+          dateDisplay: regDate,
+          timeDisplay: '',
+          paymentMethod: 'CASH',
+          billNo: billData.billNo,
+          rawDateSort: selectedCustomer.createdAt ? new Date(selectedCustomer.createdAt).getTime() : 0,
+          rawBillData: billData,
+        });
+      }
+    }
+
+    return logs.sort((a, b) => b.rawDateSort - a.rawDateSort);
+  }, [selectedCustomer, incomes, customerMonthlyBills, regPaid, regBalance, todayStr, monthlyPayments]);
 
   // Print item receipt
   const handlePrintItem = (item: (typeof unifiedLedgerItems)[0]) => {
@@ -491,125 +688,314 @@ export const CustomerHistoryView: React.FC<CustomerHistoryViewProps> = ({
                 </div>
               </div>
 
-              {/* Itemized Ledger Table */}
+              {/* Primary Dual View Card: Collection Logs vs Invoices Ledger */}
               <div className="erp-card overflow-hidden space-y-3 p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-white/[0.04] pb-3">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span>Itemized Subscription & Fee History ({filteredLedgerItems.length})</span>
-                  </h3>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      {viewMode === 'COLLECTIONS' ? (
+                        <>
+                          <Receipt className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                          <span>Subscriber Collection Logs ({customerCollectionLogs.length})</span>
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          <span>Itemized Subscription & Fee History ({filteredLedgerItems.length})</span>
+                        </>
+                      )}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      {viewMode === 'COLLECTIONS'
+                        ? `Recorded payment installment slips, cash receipts, and balance history for ${selectedCustomer.name}`
+                        : `Complete itemized billing ledger and account debits for ${selectedCustomer.name}`}
+                    </p>
+                  </div>
 
-                  <div className="flex items-center gap-1.5">
-                    {(['ALL', 'MONTHLY', 'REGISTRATION', 'UNPAID'] as const).map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveFilterTab(tab)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                          activeFilterTab === tab
-                            ? 'bg-blue-600 text-white font-bold'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-                        }`}
-                      >
-                        {tab}
-                      </button>
-                    ))}
+                  <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                    <button
+                      onClick={() => setViewMode('COLLECTIONS')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        viewMode === 'COLLECTIONS'
+                          ? 'bg-teal-600 text-white font-bold shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <Receipt className="w-3.5 h-3.5" />
+                      <span>Collection Logs ({customerCollectionLogs.length})</span>
+                    </button>
+
+                    <button
+                      onClick={() => setViewMode('INVOICES')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        viewMode === 'INVOICES'
+                          ? 'bg-blue-600 text-white font-bold shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Invoices & Fees ({filteredLedgerItems.length})</span>
+                    </button>
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="erp-table text-xs">
-                    <thead>
-                      <tr>
-                        <th>Type</th>
-                        <th>Period / Item</th>
-                        <th className="text-right">Billed</th>
-                        <th className="text-right">Paid</th>
-                        <th className="text-right">Balance</th>
-                        <th>Status</th>
-                        <th className="text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredLedgerItems.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
-                            No ledger records found for this category.
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredLedgerItems.map((item) => (
-                          <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td>
-                              <span
-                                className={`badge-status text-[9px] ${
-                                  item.itemType === 'REGISTRATION' ? 'badge-royal' : 'badge-teal'
-                                }`}
-                              >
-                                {item.itemType}
-                              </span>
-                            </td>
-                            <td>
-                              <span className="font-bold text-slate-900 dark:text-white">{item.title}</span>
-                              <div className="text-[10px] text-slate-400 font-mono">{item.periodOrDate}</div>
-                            </td>
-                            <td className="text-right font-mono font-semibold text-slate-700 dark:text-slate-300">
-                              {formatMoney(item.totalOrFee, currency)}
-                            </td>
-                            <td className="text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                              {formatMoney(item.paidAmount, currency)}
-                            </td>
-                            <td className="text-right font-mono font-bold">
-                              <span
-                                className={
-                                  item.balanceAmount > 0
-                                    ? 'text-rose-700 dark:text-rose-400'
-                                    : 'text-slate-400 dark:text-slate-500'
-                                }
-                              >
-                                {formatMoney(item.balanceAmount, currency)}
-                              </span>
-                            </td>
-                            <td>
-                              <span
-                                className={`badge-status text-[9px] ${
-                                  item.status === 'PAID'
-                                    ? 'badge-success'
-                                    : item.status === 'PARTIAL'
-                                    ? 'badge-warning'
-                                    : 'badge-danger'
-                                }`}
-                              >
-                                {item.status}
-                              </span>
-                            </td>
-                            <td className="text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                {item.balanceAmount > 0 && (
+                {/* VIEW 1: COLLECTION LOGS (Payment receipts for this subscriber) */}
+                {viewMode === 'COLLECTIONS' && (
+                  <div className="space-y-3">
+                    {/* Desktop Table View */}
+                    <div className="hidden sm:block overflow-x-auto">
+                      <table className="erp-table text-xs">
+                        <thead>
+                          <tr>
+                            <th>Receipt / Bill #</th>
+                            <th>Date & Time</th>
+                            <th>Description</th>
+                            <th>Method</th>
+                            <th className="text-right">Collected Amount</th>
+                            <th className="text-right">Balance Due</th>
+                            <th className="text-right">Receipt Slip</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {customerCollectionLogs.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="py-10 text-center text-slate-400 text-xs">
+                                <Receipt className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                                <p className="font-semibold text-slate-700 dark:text-slate-300">
+                                  No collection logs recorded for this subscriber yet.
+                                </p>
+                                <p className="text-[11px] mt-1 text-slate-400">
+                                  Payments collected in Field POS or Monthly Billing will automatically appear here.
+                                </p>
+                              </td>
+                            </tr>
+                          ) : (
+                            customerCollectionLogs.map((log) => (
+                              <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                <td>
+                                  <span className="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200/60 dark:border-white/[0.06]">
+                                    {log.billNo}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className="font-mono text-[11px] text-slate-800 dark:text-slate-200 font-semibold">
+                                    {log.dateDisplay}
+                                  </div>
+                                  {log.timeDisplay && (
+                                    <div className="text-[10px] text-slate-400 font-mono">{log.timeDisplay}</div>
+                                  )}
+                                </td>
+                                <td>
+                                  <span className="font-bold text-slate-900 dark:text-white">{log.title}</span>
+                                </td>
+                                <td>
+                                  <span className="badge-status badge-royal text-[9px] uppercase font-mono">
+                                    {log.paymentMethod}
+                                  </span>
+                                </td>
+                                <td className="text-right font-mono font-black text-emerald-700 dark:text-emerald-400 text-sm">
+                                  +{formatMoney(log.installmentAmount, currency)}
+                                </td>
+                                <td className="text-right font-mono font-semibold">
+                                  {log.balanceRemaining > 0 ? (
+                                    <span className="text-rose-700 dark:text-rose-400">
+                                      {formatMoney(log.balanceRemaining, currency)}
+                                    </span>
+                                  ) : (
+                                    <span className="badge-status badge-success text-[9px]">Settled</span>
+                                  )}
+                                </td>
+                                <td className="text-right">
                                   <button
                                     onClick={() => {
-                                      setPayTargetItem(item);
-                                      setPayAmount(item.balanceAmount.toString());
+                                      setActiveBillData(log.rawBillData);
+                                      setIsBillModalOpen(true);
                                     }}
-                                    className="px-2 py-1 rounded-md text-[11px] font-bold bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100"
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer inline-flex items-center gap-1 text-xs font-semibold"
+                                    title="Print Slip"
                                   >
-                                    Pay
+                                    <Printer className="w-3.5 h-3.5" />
+                                    <span>Slip</span>
                                   </button>
-                                )}
-                                <button
-                                  onClick={() => handlePrintItem(item)}
-                                  className="p-1 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15"
-                                  title="Print Slip"
-                                >
-                                  <Printer className="w-3.5 h-3.5" />
-                                </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="block sm:hidden space-y-2">
+                      {customerCollectionLogs.length === 0 ? (
+                        <div className="py-8 text-center text-slate-400 text-xs">
+                          <Receipt className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                          <p className="font-semibold">No collection logs recorded yet.</p>
+                        </div>
+                      ) : (
+                        customerCollectionLogs.map((log) => (
+                          <div
+                            key={log.id}
+                            className="p-3 rounded-xl border border-slate-200/80 dark:border-white/[0.06] bg-slate-50/50 dark:bg-slate-850 space-y-2"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono text-[10px] font-bold bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded">
+                                {log.billNo}
+                              </span>
+                              <div className="flex items-center gap-1.5 font-mono text-[10px] text-slate-400">
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                <span>
+                                  {log.dateDisplay} {log.timeDisplay}
+                                </span>
                               </div>
-                            </td>
-                          </tr>
+                            </div>
+                            <div className="text-xs font-bold text-slate-900 dark:text-white">{log.title}</div>
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-white/[0.04] text-xs">
+                              <div>
+                                <span className="text-[10px] text-slate-400 block">Collected</span>
+                                <span className="font-mono font-black text-emerald-700 dark:text-emerald-400 text-sm">
+                                  +{formatMoney(log.installmentAmount, currency)}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[10px] text-slate-400 block">Due Remaining</span>
+                                <span className="font-mono font-bold text-rose-700 dark:text-rose-400">
+                                  {log.balanceRemaining > 0 ? formatMoney(log.balanceRemaining, currency) : 'Settled'}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setActiveBillData(log.rawBillData);
+                                  setIsBillModalOpen(true);
+                                }}
+                                className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/[0.08] text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center gap-1 shadow-2xs"
+                              >
+                                <Printer className="w-3 h-3" />
+                                <span>Slip</span>
+                              </button>
+                            </div>
+                          </div>
                         ))
                       )}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* VIEW 2: ITEMIZED INVOICES & LEDGER (Debits / bills) */}
+                {viewMode === 'INVOICES' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-1.5 justify-end">
+                      {(['ALL', 'MONTHLY', 'REGISTRATION', 'UNPAID'] as const).map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setActiveFilterTab(tab)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            activeFilterTab === tab
+                              ? 'bg-blue-600 text-white font-bold'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="erp-table text-xs">
+                        <thead>
+                          <tr>
+                            <th>Type</th>
+                            <th>Period / Item</th>
+                            <th className="text-right">Billed</th>
+                            <th className="text-right">Paid</th>
+                            <th className="text-right">Balance</th>
+                            <th>Status</th>
+                            <th className="text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredLedgerItems.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
+                                No ledger records found for this category.
+                              </td>
+                            </tr>
+                          ) : (
+                            filteredLedgerItems.map((item) => (
+                              <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                <td>
+                                  <span
+                                    className={`badge-status text-[9px] ${
+                                      item.itemType === 'REGISTRATION' ? 'badge-royal' : 'badge-teal'
+                                    }`}
+                                  >
+                                    {item.itemType}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-slate-900 dark:text-white">{item.title}</span>
+                                  <div className="text-[10px] text-slate-400 font-mono">{item.periodOrDate}</div>
+                                </td>
+                                <td className="text-right font-mono font-semibold text-slate-700 dark:text-slate-300">
+                                  {formatMoney(item.totalOrFee, currency)}
+                                </td>
+                                <td className="text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                  {formatMoney(item.paidAmount, currency)}
+                                </td>
+                                <td className="text-right font-mono font-bold">
+                                  <span
+                                    className={
+                                      item.balanceAmount > 0
+                                        ? 'text-rose-700 dark:text-rose-400'
+                                        : 'text-slate-400 dark:text-slate-500'
+                                    }
+                                  >
+                                    {formatMoney(item.balanceAmount, currency)}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span
+                                    className={`badge-status text-[9px] ${
+                                      item.status === 'PAID'
+                                        ? 'badge-success'
+                                        : item.status === 'PARTIAL'
+                                        ? 'badge-warning'
+                                        : 'badge-danger'
+                                    }`}
+                                  >
+                                    {item.status}
+                                  </span>
+                                </td>
+                                <td className="text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    {item.balanceAmount > 0 && (
+                                      <button
+                                        onClick={() => {
+                                          setPayTargetItem(item);
+                                          setPayAmount(item.balanceAmount.toString());
+                                        }}
+                                        className="px-2 py-1 rounded-md text-[11px] font-bold bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100"
+                                      >
+                                        Pay
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => handlePrintItem(item)}
+                                      className="p-1 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15"
+                                      title="Print Slip"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           ) : (

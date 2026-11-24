@@ -4,7 +4,7 @@ import {
   SupportedCurrency
 } from '../types/finance.js';
 import { api } from '../api/client.js';
-import { X, Sparkles, Receipt, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { X, Sparkles, Receipt, ArrowDownRight, ArrowUpRight, Lock } from 'lucide-react';
 import { useToast } from './Toast.tsx';
 import { Spinner } from './Spinner.tsx';
 
@@ -205,14 +205,25 @@ export const RecordModal: React.FC<RecordModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Date *</label>
-              <input
-                type="date"
-                required
-                value={txDate}
-                onChange={(e) => setTxDate(e.target.value)}
-                className="erp-input w-full font-mono text-xs"
-              />
+              <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5 flex items-center justify-between">
+                <span>Date *</span>
+                <span className="text-[10px] font-mono text-slate-400 font-normal flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-slate-400" /> Locked
+                </span>
+              </label>
+              <div className="relative">
+                <input
+                  type="date"
+                  required
+                  readOnly
+                  disabled
+                  tabIndex={-1}
+                  value={txDate}
+                  className="erp-input w-full font-mono text-xs bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 cursor-not-allowed select-none opacity-90 pr-8 pointer-events-none"
+                  title="Transaction date is fixed to today's system date and locked"
+                />
+                <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
           </div>
 
