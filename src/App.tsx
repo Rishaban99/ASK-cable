@@ -17,6 +17,7 @@ import { api } from './api/client.js';
 import { getCustomerPackage, syncCablePackagesFromDb, populateAssignmentsFromCustomers } from './utils/packageManager.js';
 import { Sidebar, NavTab } from './components/Sidebar.js';
 import { Navbar } from './components/Navbar.js';
+import { MobileBottomNav } from './components/MobileBottomNav.js';
 import { GlobalSearchModal } from './components/GlobalSearchModal.js';
 import { DashboardView } from './components/DashboardView.js';
 import { TransactionsView } from './components/TransactionsView.js';
@@ -413,6 +414,15 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {/* Mobile Floating Bottom Navigation Bar */}
+      <MobileBottomNav
+        currentTab={currentTab}
+        onSelectTab={setCurrentTab}
+        onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
+        pendingBillsCount={monthlyPayments.filter((p) => (p.balanceAmount || 0) > 0).length}
+        customersCount={customers.length}
+      />
 
       {/* Global Command Search Modal */}
       <GlobalSearchModal

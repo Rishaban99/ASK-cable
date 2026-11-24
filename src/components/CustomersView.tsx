@@ -736,10 +736,11 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       </div>
 
       {/* ==================================================================== */}
-      {/* 4. PROFESSIONAL DATA TABLE & PAGINATION */}
+      {/* 4. PROFESSIONAL DATA TABLE & MOBILE CARDS WITH PAGINATION */}
       {/* ==================================================================== */}
       <div className="erp-card overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop View: Table (hidden on mobile, visible on md+) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="erp-table">
             <thead>
               <tr>
@@ -905,6 +906,148 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile View: Subscriber Cards List (visible on mobile < md, hidden on md+) */}
+        <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+          {paginatedCustomers.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 text-xs px-4">
+              <Users className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+              <p className="font-semibold">No subscribers match the current filters.</p>
+              <p className="text-[11px] mt-1 text-slate-400">Try adjusting your search terms or filters.</p>
+            </div>
+          ) : (
+            paginatedCustomers.map((cust) => {
+              const custPkg = getCustomerPackage(cust.id || cust.boxNo);
+              return (
+                <div key={cust.id} className="p-4 space-y-3 bg-white dark:bg-slate-900">
+                  {/* Card Header: Box #, Name, and Status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-xs px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/25 shrink-0">
+                          #{cust.boxNo}
+                        </span>
+                        <button
+                          onClick={() => onViewHistory && onViewHistory(cust.id)}
+                          className="font-bold text-slate-900 dark:text-white text-sm truncate text-left hover:text-blue-600 dark:hover:text-blue-400"
+                        >
+                          {cust.name}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">{cust.address || '—'}</p>
+                    </div>
+                    <span
+                      className={`badge-status shrink-0 text-[10px] ${
+                        cust.status === 'ACTIVE' || !cust.status
+                          ? 'badge-success'
+                          : cust.status === 'INACTIVE'
+                          ? 'badge-warning'
+                          : 'badge-danger'
+                      }`}
+                    >
+                      {cust.status || 'ACTIVE'}
+                    </span>
+                  </div>
+
+                  {/* Card Meta: Phone with direct call & Package */}
+                  <div className="flex items-center justify-between gap-2 text-xs pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                    <a
+                      href={`tel:${cust.phoneNo}`}
+                      className="flex items-center gap-1.5 font-mono text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{cust.phoneNo}</span>
+                    </a>
+                    <span className="badge-status badge-teal font-medium text-[10px]">
+                      {custPkg.packageName}
+                    </span>
+                  </div>
+
+                  {/* Financial Status Strip */}
+                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 text-center font-mono">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Total</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs">
+                        {formatMoney(cust.totalAmount, currency)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Paid</span>
+                      <span className="font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                        {formatMoney(cust.paidAmount, currency)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Balance</span>
+                      <span
+                        className={`font-black text-xs ${
+                          cust.balanceAmount > 0
+                            ? 'text-rose-700 dark:text-rose-400'
+                            : 'text-emerald-700 dark:text-emerald-400'
+                        }`}
+                      >
+                        {formatMoney(cust.balanceAmount, currency)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Mobile Actions Toolbar */}
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center gap-1.5">
+                      {cust.balanceAmount > 0 && (
+                        <button
+                          onClick={() => {
+                            setPayBalanceCustomer(cust);
+                            setPayAmount(cust.balanceAmount.toString());
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>Pay</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handlePrintCustomerBill(cust)}
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer"
+                        title="Print Receipt"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      {onViewHistory && (
+                        <button
+                          onClick={() => onViewHistory(cust.id)}
+                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                          title="View Statement History"
+                        >
+                          <History className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEdit(cust)}
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                        title="Edit Subscriber"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      {currentUser?.role === 'ADMIN' && (
+                        <button
+                          onClick={() => handleDelete(cust.id, cust.name)}
+                          className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                          title="Delete Subscriber"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* Pagination Bar */}

@@ -175,11 +175,24 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs">
+        {/* Breadcrumb Navigation / Mobile Brand Display */}
+        <div className="flex items-center gap-2 text-xs min-w-0">
+          {/* Mobile Brand Button (< sm) */}
           <button
             onClick={() => onSelectTab('dashboard')}
-            className="font-semibold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors hidden sm:inline-block"
+            className="flex items-center gap-1.5 sm:hidden font-black text-slate-900 dark:text-white shrink-0 hover:opacity-80 transition-opacity cursor-pointer"
+          >
+            <div className="p-1 rounded-lg bg-blue-600/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
+              <Tv className="w-3.5 h-3.5" />
+            </div>
+            <span className="tracking-tight text-xs font-black">ASK</span>
+          </button>
+          <span className="text-slate-300 dark:text-slate-700 sm:hidden">/</span>
+
+          {/* Desktop Breadcrumbs (sm+) */}
+          <button
+            onClick={() => onSelectTab('dashboard')}
+            className="font-semibold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors hidden sm:inline-block cursor-pointer"
           >
             ASK Cable
           </button>
@@ -279,7 +292,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {isNotificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-sm bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               <div className="px-4 py-3 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
                 <div className="flex items-center gap-2">
                   <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />

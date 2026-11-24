@@ -838,10 +838,11 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
       </div>
 
       {/* ==================================================================== */}
-      {/* 5. DATA TABLE & PAGINATION */}
+      {/* 5. DATA TABLE & MOBILE CARDS WITH PAGINATION */}
       {/* ==================================================================== */}
       <div className="erp-card overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop View: Table (hidden on mobile, visible on md+) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="erp-table">
             <thead>
               <tr>
@@ -991,6 +992,139 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile View: Monthly Bills Cards List (visible on mobile < md, hidden on md+) */}
+        <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+          {paginatedPayments.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 text-xs px-4">
+              <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+              <p className="font-semibold">No monthly bills found for the selected criteria.</p>
+              <p className="text-[11px] mt-1 text-slate-400">
+                Generate bills using the Bulk Generator or select a different month.
+              </p>
+            </div>
+          ) : (
+            paginatedPayments.map((pmt) => {
+              const custPkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
+              return (
+                <div key={pmt.id} className="p-4 space-y-3 bg-white dark:bg-slate-900">
+                  {/* Card Header: Month, Box #, Status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          {pmt.month}
+                        </span>
+                        <span className="font-mono font-black text-xs px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/25 shrink-0">
+                          #{pmt.boxNo}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => onViewHistory && onViewHistory(pmt.customerId)}
+                        className="font-bold text-slate-900 dark:text-white text-sm truncate text-left hover:text-blue-600 dark:hover:text-blue-400 block mt-1"
+                      >
+                        {pmt.customerName}
+                      </button>
+                    </div>
+                    <span
+                      className={`badge-status shrink-0 text-[10px] ${
+                        pmt.status === 'PAID'
+                          ? 'badge-success'
+                          : pmt.status === 'PARTIAL'
+                          ? 'badge-warning'
+                          : 'badge-danger'
+                      }`}
+                    >
+                      {pmt.status}
+                    </span>
+                  </div>
+
+                  {/* Package & Payment Date */}
+                  <div className="flex items-center justify-between gap-2 text-xs pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                    <span className="badge-status badge-teal font-medium text-[10px]">
+                      {pmt.packageName || custPkg.packageName}
+                    </span>
+                    <span className="text-[10.5px] font-mono text-slate-400">
+                      {pmt.paymentDate || 'Pending payment'}
+                    </span>
+                  </div>
+
+                  {/* Financial Strip: Fee, Paid, Balance */}
+                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 text-center font-mono">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Monthly Fee</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs">
+                        {formatMoney(pmt.monthlyFee, currency)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Paid</span>
+                      <span className="font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                        {formatMoney(pmt.paidAmount, currency)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Balance</span>
+                      <span
+                        className={`font-black text-xs ${
+                          pmt.balanceAmount > 0
+                            ? 'text-rose-700 dark:text-rose-400'
+                            : 'text-emerald-700 dark:text-emerald-400'
+                        }`}
+                      >
+                        {formatMoney(pmt.balanceAmount, currency)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Mobile Actions Toolbar */}
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center gap-1.5">
+                      {pmt.balanceAmount > 0 && (
+                        <button
+                          onClick={() => {
+                            setPayBalancePayment(pmt);
+                            setPayAmount(pmt.balanceAmount.toString());
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>Pay Due</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handlePrintMonthlyBill(pmt)}
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer"
+                        title="Print Monthly Bill Slip"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </button>
+                      {onViewHistory && (
+                        <button
+                          onClick={() => onViewHistory(pmt.customerId)}
+                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                          title="View Statement History"
+                        >
+                          <History className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {currentUser?.role === 'ADMIN' && (
+                      <button
+                        onClick={() => handleDeletePayment(pmt)}
+                        className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                        title="Delete Monthly Bill"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* Pagination Bar */}

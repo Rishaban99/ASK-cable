@@ -651,15 +651,15 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
             {/* Fast Cash Preset Buttons */}
             <div>
               <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                Fast Cash Preset Pills
+                Fast Cash Presets (Quick Tap)
               </span>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="grid grid-cols-3 sm:flex sm:items-center gap-2">
                 {[500, 1000, 1200, 1500, 2000].map((amt) => (
                   <button
                     key={amt}
                     type="button"
                     onClick={() => setPayAmount(amt.toString())}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all border ${
+                    className={`py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all border text-center cursor-pointer min-h-[40px] flex items-center justify-center active:scale-95 ${
                       payAmount === amt.toString()
                         ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
@@ -673,7 +673,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setPayAmount(currentTargetDue.toString())}
-                    className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 hover:bg-teal-500/25"
+                    className="col-span-3 sm:col-span-1 py-2 px-3 rounded-xl text-xs font-mono font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-center cursor-pointer min-h-[40px] flex items-center justify-center active:scale-95"
                   >
                     Full Due ({formatMoney(currentTargetDue, currency)})
                   </button>
