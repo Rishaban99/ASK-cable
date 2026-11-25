@@ -1086,9 +1086,9 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
         </div>
 
         {/* Mobile View: Monthly Bills Cards List (visible on mobile < md, hidden on md+) */}
-        <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="block md:hidden p-3 sm:p-4 space-y-3.5 bg-slate-100/70 dark:bg-slate-950/60">
           {paginatedPayments.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-xs px-4">
+            <div className="py-12 text-center text-slate-400 text-xs px-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
               <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
               <p className="font-semibold">No monthly bills found for the selected criteria.</p>
               <p className="text-[11px] mt-1 text-slate-400">
@@ -1099,27 +1099,30 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
             paginatedPayments.map((pmt) => {
               const custPkg = getCustomerPackage(pmt.customerId || pmt.boxNo);
               return (
-                <div key={pmt.id} className="p-4 space-y-3 bg-white dark:bg-slate-900">
+                <div
+                  key={pmt.id}
+                  className="rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 space-y-3.5 shadow-sm hover:border-blue-500/50 hover:shadow-md transition-all"
+                >
                   {/* Card Header: Month, Box #, Status */}
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800/80">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                           {pmt.month}
                         </span>
-                        <span className="font-mono font-black text-xs px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/25 shrink-0">
+                        <span className="font-mono font-black text-xs px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/25 shrink-0 shadow-2xs">
                           #{pmt.boxNo}
                         </span>
                       </div>
                       <button
                         onClick={() => onViewHistory && onViewHistory(pmt.customerId)}
-                        className="font-bold text-slate-900 dark:text-white text-sm truncate text-left hover:text-blue-600 dark:hover:text-blue-400 block mt-1"
+                        className="font-black text-slate-900 dark:text-white text-base truncate text-left hover:text-blue-600 dark:hover:text-blue-400 block mt-1.5"
                       >
                         {pmt.customerName}
                       </button>
                     </div>
                     <span
-                      className={`badge-status shrink-0 text-[10px] ${
+                      className={`badge-status shrink-0 text-[10px] font-bold ${
                         pmt.status === 'PAID'
                           ? 'badge-success'
                           : pmt.status === 'PARTIAL'
@@ -1134,8 +1137,8 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                   </div>
 
                   {/* Package & Payment Date */}
-                  <div className="flex items-center justify-between gap-2 text-xs pt-1 border-t border-slate-100 dark:border-slate-800/80">
-                    <span className="badge-status badge-teal font-medium text-[10px]">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="badge-status badge-teal font-semibold text-[10px] px-2.5 py-1">
                       {pmt.packageName || custPkg.packageName}
                     </span>
                     <span className="text-[10.5px] font-mono text-slate-400">
@@ -1144,35 +1147,41 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                   </div>
 
                   {/* Financial Strip: Fee, Paid, Balance */}
-                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 text-center font-mono">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Monthly Fee</span>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs">
-                        {formatMoney(pmt.monthlyFee, currency)}
-                      </span>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 text-center font-mono">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-left mb-1.5 font-sans flex items-center justify-between">
+                      <span>Monthly Subscription Ledger</span>
+                      <span className="text-[9px] font-normal font-mono text-slate-400">{pmt.month}</span>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Paid</span>
-                      <span className="font-bold text-emerald-700 dark:text-emerald-400 text-xs">
-                        {formatMoney(pmt.paidAmount, currency)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Balance</span>
-                      <span
-                        className={`font-black text-xs ${
-                          pmt.balanceAmount > 0
-                            ? 'text-rose-700 dark:text-rose-400'
-                            : 'text-emerald-700 dark:text-emerald-400'
-                        }`}
-                      >
-                        {formatMoney(pmt.balanceAmount, currency)}
-                      </span>
+                    <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans uppercase font-medium">Monthly Fee</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                          {formatMoney(pmt.monthlyFee, currency)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans uppercase font-medium">Paid</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                          {formatMoney(pmt.paidAmount, currency)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans uppercase font-medium">Balance</span>
+                        <span
+                          className={`font-black text-xs ${
+                            pmt.balanceAmount > 0
+                              ? 'text-rose-700 dark:text-rose-400'
+                              : 'text-emerald-700 dark:text-emerald-400'
+                          }`}
+                        >
+                          {formatMoney(pmt.balanceAmount, currency)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Mobile Actions Toolbar */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
                     <div className="flex items-center gap-1.5">
                       {pmt.balanceAmount > 0 && (
                         <button
@@ -1180,7 +1189,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                             setPayBalancePayment(pmt);
                             setPayAmount(pmt.balanceAmount.toString());
                           }}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
                           <span>Pay Due</span>
@@ -1188,7 +1197,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                       )}
                       <button
                         onClick={() => handlePrintMonthlyBill(pmt)}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer"
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-700/60"
                         title="Print Monthly Bill Slip"
                       >
                         <Printer className="w-4 h-4" />

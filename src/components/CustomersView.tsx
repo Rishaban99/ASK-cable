@@ -75,7 +75,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const [phoneNo, setPhoneNo] = useState('');
   const [address, setAddress] = useState('');
   const [boxNo, setBoxNo] = useState('');
-  const [totalAmount, setTotalAmount] = useState('10500');
+  const [totalAmount, setTotalAmount] = useState('9500');
   const [paidAmount, setPaidAmount] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE' | 'DISCONNECTED'>('ACTIVE');
 
@@ -119,7 +119,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => { },
+    onConfirm: () => {},
   });
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -293,7 +293,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       setPhoneNo('');
       setAddress('');
       setBoxNo('');
-      setTotalAmount('10500');
+      setTotalAmount('9500');
       setPaidAmount('');
       setStatus('ACTIVE');
       setShowRegistrationForm(false);
@@ -832,10 +832,11 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                 setStatusFilter(st);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${statusFilter === st
-                ? 'bg-blue-600 text-white font-bold shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-                }`}
+              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                statusFilter === st
+                  ? 'bg-blue-600 text-white font-bold shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+              }`}
             >
               {st}
             </button>
@@ -955,12 +956,13 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       {/* Status */}
                       <td>
                         <span
-                          className={`badge-status ${cust.status === 'ACTIVE' || !cust.status
-                            ? 'badge-success'
-                            : cust.status === 'INACTIVE'
+                          className={`badge-status ${
+                            cust.status === 'ACTIVE' || !cust.status
+                              ? 'badge-success'
+                              : cust.status === 'INACTIVE'
                               ? 'badge-warning'
                               : 'badge-danger'
-                            }`}
+                          }`}
                         >
                           {cust.status || 'ACTIVE'}
                         </span>
@@ -1033,9 +1035,9 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         </div>
 
         {/* Mobile View: Subscriber Cards List (visible on mobile < md, hidden on md+) */}
-        <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="block md:hidden p-3 sm:p-4 space-y-3.5 bg-slate-100/70 dark:bg-slate-950/60">
           {paginatedCustomers.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-xs px-4">
+            <div className="py-12 text-center text-slate-400 text-xs px-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
               <Users className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
               <p className="font-semibold">No subscribers match the current filters.</p>
               <p className="text-[11px] mt-1 text-slate-400">Try adjusting your search terms or filters.</p>
@@ -1044,78 +1046,92 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
             paginatedCustomers.map((cust) => {
               const custPkg = getCustomerPackage(cust.id || cust.boxNo);
               return (
-                <div key={cust.id} className="p-4 space-y-3 bg-white dark:bg-slate-900">
-                  {/* Card Header: Box #, Name, and Status */}
-                  <div className="flex items-start justify-between gap-2">
+                <div
+                  key={cust.id}
+                  className="rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 space-y-3.5 shadow-sm hover:border-blue-500/50 hover:shadow-md transition-all"
+                >
+                  {/* Part 1: Subscriber Identity & Profile */}
+                  <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800/80">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-black text-xs px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/25 shrink-0">
+                        <span className="font-mono font-black text-xs px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/25 shrink-0 shadow-2xs">
                           #{cust.boxNo}
                         </span>
                         <button
                           onClick={() => onViewHistory && onViewHistory(cust.id)}
-                          className="font-bold text-slate-900 dark:text-white text-sm truncate text-left hover:text-blue-600 dark:hover:text-blue-400"
+                          className="font-black text-slate-900 dark:text-white text-base truncate text-left hover:text-blue-600 dark:hover:text-blue-400"
                         >
                           {cust.name}
                         </button>
                       </div>
-                      <p className="text-[11px] text-slate-400 truncate mt-0.5">{cust.address || '—'}</p>
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 truncate mt-1">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{cust.address || 'No address specified'}</span>
+                      </div>
                     </div>
                     <span
-                      className={`badge-status shrink-0 text-[10px] ${cust.status === 'ACTIVE' || !cust.status
-                        ? 'badge-success'
-                        : cust.status === 'INACTIVE'
+                      className={`badge-status shrink-0 text-[10px] font-bold ${
+                        cust.status === 'ACTIVE' || !cust.status
+                          ? 'badge-success'
+                          : cust.status === 'INACTIVE'
                           ? 'badge-warning'
                           : 'badge-danger'
-                        }`}
+                      }`}
                     >
                       {cust.status || 'ACTIVE'}
                     </span>
                   </div>
 
-                  {/* Card Meta: Phone with direct call & Package */}
-                  <div className="flex items-center justify-between gap-2 text-xs pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                  {/* Contact & Subscription Tier Strip */}
+                  <div className="flex items-center justify-between gap-2 text-xs">
                     <a
                       href={`tel:${cust.phoneNo}`}
-                      className="flex items-center gap-1.5 font-mono text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+                      className="flex items-center gap-1.5 font-mono text-blue-600 dark:text-blue-400 font-semibold hover:underline bg-blue-50/60 dark:bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-100 dark:border-blue-500/20"
                     >
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>{cust.phoneNo}</span>
+                      <Phone className="w-3.5 h-3.5 text-blue-500" />
+                      <span>{cust.phoneNo || '—'}</span>
                     </a>
-                    <span className="badge-status badge-teal font-medium text-[10px]">
+                    <span className="badge-status badge-teal font-semibold text-[10px] px-2.5 py-1">
                       {custPkg.packageName}
                     </span>
                   </div>
 
-                  {/* Financial Status Strip */}
-                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 text-center font-mono">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Total</span>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs">
-                        {formatMoney(cust.totalAmount, currency)}
-                      </span>
+                  {/* Part 2: Financial Account & Ledger Status (Divided Section) */}
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 text-center font-mono">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-left mb-1.5 font-sans flex items-center justify-between">
+                      <span>Registration / Setup Balance</span>
+                      <span className="text-[9px] font-normal font-mono text-slate-400">Account Summary</span>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Paid</span>
-                      <span className="font-bold text-emerald-700 dark:text-emerald-400 text-xs">
-                        {formatMoney(cust.paidAmount, currency)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-sans uppercase">Balance</span>
-                      <span
-                        className={`font-black text-xs ${cust.balanceAmount > 0
-                          ? 'text-rose-700 dark:text-rose-400'
-                          : 'text-emerald-700 dark:text-emerald-400'
+                    <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans uppercase font-medium">Total</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                          {formatMoney(cust.totalAmount, currency)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans uppercase font-medium">Paid</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                          {formatMoney(cust.paidAmount, currency)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-sans uppercase font-medium">Balance</span>
+                        <span
+                          className={`font-black text-xs ${
+                            cust.balanceAmount > 0
+                              ? 'text-rose-700 dark:text-rose-400'
+                              : 'text-emerald-700 dark:text-emerald-400'
                           }`}
-                      >
-                        {formatMoney(cust.balanceAmount, currency)}
-                      </span>
+                        >
+                          {formatMoney(cust.balanceAmount, currency)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Mobile Actions Toolbar */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
                     <div className="flex items-center gap-1.5">
                       {cust.balanceAmount > 0 && (
                         <button
@@ -1123,7 +1139,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                             setPayBalanceCustomer(cust);
                             setPayAmount(cust.balanceAmount.toString());
                           }}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
                           <span>Pay</span>
@@ -1131,7 +1147,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       )}
                       <button
                         onClick={() => handlePrintCustomerBill(cust)}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer"
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-blue-600 dark:text-blue-400 transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-700/60"
                         title="Print Receipt"
                       >
                         <Printer className="w-4 h-4" />
@@ -1139,7 +1155,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       {onViewHistory && (
                         <button
                           onClick={() => onViewHistory(cust.id)}
-                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-700/60"
                           title="View Statement History"
                         >
                           <History className="w-4 h-4" />
@@ -1150,7 +1166,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleOpenEdit(cust)}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-700/60"
                         title="Edit Subscriber"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -1158,7 +1174,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       {currentUser?.role === 'ADMIN' && (
                         <button
                           onClick={() => handleDelete(cust.id, cust.name)}
-                          className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                          className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer border border-rose-200/60 dark:border-rose-500/20"
                           title="Delete Subscriber"
                         >
                           <Trash2 className="w-4 h-4" />
