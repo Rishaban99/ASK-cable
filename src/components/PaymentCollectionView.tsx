@@ -394,6 +394,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
       : regBalance;
 
   const parsedPayAmount = parseFloat(payAmount) || 0;
+  const isExceedingDue = currentTargetDue > 0 && parsedPayAmount > currentTargetDue;
   const remainingBalanceAfter = Math.max(0, currentTargetDue - parsedPayAmount);
 
   // Submit Payment Collection
@@ -407,6 +408,16 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
     const addPay = parseFloat(payAmount);
     if (isNaN(addPay) || addPay <= 0) {
       toast.error('Please enter a valid payment amount greater than 0.');
+      return;
+    }
+
+    if (currentTargetDue > 0 && addPay > currentTargetDue) {
+      toast.error(
+        `Extra payment is not allowed. You can only collect up to the exact due amount (${formatMoney(
+          currentTargetDue,
+          currency
+        )}).`
+      );
       return;
     }
 
@@ -769,34 +780,50 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
               </div>
             ) : (
               <>
-                {/* Fast Cash Preset Buttons */}
+                {/* Payment Option: Exact Payment vs Custom Partial */}
                 <div>
-                  <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                    Fast Cash Presets (Quick Tap)
-                  </span>
-                  <div className="grid grid-cols-3 sm:flex sm:items-center gap-2">
-                    {[500, 1000, 1200, 1500, 2000].map((amt) => (
-                      <button
-                        key={amt}
-                        type="button"
-                        onClick={() => setPayAmount(amt.toString())}
-                        className={`py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all border text-center cursor-pointer min-h-[40px] flex items-center justify-center active:scale-95 ${
-                          payAmount === amt.toString()
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
-                        }`}
-                      >
-                        Rs. {amt}
-                      </button>
-                    ))}
-
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                      Payment Option
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      Exact settlement • Extra payment not allowed
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
                     {currentTargetDue > 0 && (
                       <button
                         type="button"
                         onClick={() => setPayAmount(currentTargetDue.toString())}
-                        className="col-span-3 sm:col-span-1 py-2 px-3 rounded-xl text-xs font-mono font-bold bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-center cursor-pointer min-h-[40px] flex items-center justify-center active:scale-95"
+                        className={`py-2 px-3.5 rounded-xl text-xs font-mono font-bold transition-all border flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                          payAmount === currentTargetDue.toString()
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs ring-2 ring-emerald-500/20'
+                            : 'bg-emerald-50/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20'
+                        }`}
                       >
-                        Full Due ({formatMoney(currentTargetDue, currency)})
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Exact Payment ({formatMoney(currentTargetDue, currency)})</span>
+                      </button>
+                    )}
+
+                    {currentTargetDue > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (payAmount === currentTargetDue.toString()) {
+                            setPayAmount('');
+                          }
+                        }}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                          parsedPayAmount > 0 && parsedPayAmount < currentTargetDue
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                        }`}
+                      >
+                        <span>Custom Partial</span>
+                        {parsedPayAmount > 0 && parsedPayAmount < currentTargetDue && (
+                          <span className="font-mono font-bold">({formatMoney(parsedPayAmount, currency)})</span>
+                        )}
                       </button>
                     )}
                   </div>
@@ -806,35 +833,56 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                 <form onSubmit={handleSubmitPayment} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Amount to Collect (LKR) *
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Amount to Collect (LKR) *
+                        </label>
+                        {currentTargetDue > 0 && (
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            Max: {formatMoney(currentTargetDue, currency)}
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="number"
                         step="any"
+                        min="1"
+                        max={currentTargetDue > 0 ? currentTargetDue : undefined}
                         required
                         value={payAmount}
                         onChange={(e) => setPayAmount(e.target.value)}
-                        placeholder="Enter amount..."
-                        className="erp-input font-mono font-black text-lg text-emerald-700 dark:text-emerald-400"
+                        placeholder="Enter exact or partial amount..."
+                        className={`erp-input font-mono font-black text-lg transition-colors ${
+                          isExceedingDue
+                            ? 'text-rose-600 border-rose-400 dark:border-rose-500/50 bg-rose-50/30 dark:bg-rose-950/20 focus:border-rose-500 focus:ring-rose-500/20'
+                            : 'text-emerald-700 dark:text-emerald-400'
+                        }`}
                       />
+                      {isExceedingDue && (
+                        <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-1.5 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>Extra payment not allowed. Maximum is {formatMoney(currentTargetDue, currency)}.</span>
+                        </p>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        {parsedPayAmount > currentTargetDue && currentTargetDue > 0
-                          ? 'Advance / Excess Paid'
-                          : 'Remaining Balance After'}
+                        Remaining Balance After
                       </label>
                       <div
-                        className={`h-10 px-3 rounded-lg flex items-center font-mono font-black text-base border ${
-                          parsedPayAmount > currentTargetDue && currentTargetDue > 0
+                        className={`h-10 px-3 rounded-lg flex items-center font-mono font-black text-base border transition-colors ${
+                          isExceedingDue
+                            ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 text-xs'
+                            : remainingBalanceAfter === 0
                             ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30'
                             : 'bg-slate-100 dark:bg-slate-800 text-rose-700 dark:text-rose-400 border-slate-200 dark:border-white/[0.08]'
                         }`}
                       >
-                        {parsedPayAmount > currentTargetDue && currentTargetDue > 0
-                          ? `+${formatMoney(parsedPayAmount - currentTargetDue, currency)} (Advance)`
+                        {isExceedingDue
+                          ? '⚠️ Exceeds Due (Not Allowed)'
+                          : remainingBalanceAfter === 0
+                          ? `${formatMoney(0, currency)} (Fully Settled)`
                           : formatMoney(remainingBalanceAfter, currency)}
                       </div>
                     </div>
@@ -888,13 +936,17 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                   <div className="pt-2">
                     <button
                       type="submit"
-                      disabled={isSubmitting || !payAmount}
+                      disabled={isSubmitting || !payAmount || parsedPayAmount <= 0 || isExceedingDue}
                       className="w-full btn-teal py-3 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-md"
                     >
                       <Printer className="w-4 h-4" />
                       <span>
                         {isSubmitting
                           ? 'Recording & Generating Slip...'
+                          : isExceedingDue
+                          ? 'Extra Payment Not Allowed'
+                          : parsedPayAmount === currentTargetDue
+                          ? `Collect Exact ${formatMoney(parsedPayAmount, currency)} & Print Receipt`
                           : `Collect ${formatMoney(parsedPayAmount, currency)} & Print Receipt`}
                       </span>
                     </button>

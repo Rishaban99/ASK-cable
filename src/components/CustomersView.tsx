@@ -75,7 +75,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
   const [phoneNo, setPhoneNo] = useState('');
   const [address, setAddress] = useState('');
   const [boxNo, setBoxNo] = useState('');
-  const [totalAmount, setTotalAmount] = useState('9500');
+  const [totalAmount, setTotalAmount] = useState('10500');
   const [paidAmount, setPaidAmount] = useState('');
   const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE' | 'DISCONNECTED'>('ACTIVE');
 
@@ -119,7 +119,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -293,7 +293,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
       setPhoneNo('');
       setAddress('');
       setBoxNo('');
-      setTotalAmount('9500');
+      setTotalAmount('10500');
       setPaidAmount('');
       setStatus('ACTIVE');
       setShowRegistrationForm(false);
@@ -832,11 +832,10 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                 setStatusFilter(st);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                statusFilter === st
-                  ? 'bg-blue-600 text-white font-bold shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-              }`}
+              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${statusFilter === st
+                ? 'bg-blue-600 text-white font-bold shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                }`}
             >
               {st}
             </button>
@@ -956,13 +955,12 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       {/* Status */}
                       <td>
                         <span
-                          className={`badge-status ${
-                            cust.status === 'ACTIVE' || !cust.status
-                              ? 'badge-success'
-                              : cust.status === 'INACTIVE'
+                          className={`badge-status ${cust.status === 'ACTIVE' || !cust.status
+                            ? 'badge-success'
+                            : cust.status === 'INACTIVE'
                               ? 'badge-warning'
                               : 'badge-danger'
-                          }`}
+                            }`}
                         >
                           {cust.status || 'ACTIVE'}
                         </span>
@@ -1064,13 +1062,12 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                       <p className="text-[11px] text-slate-400 truncate mt-0.5">{cust.address || '—'}</p>
                     </div>
                     <span
-                      className={`badge-status shrink-0 text-[10px] ${
-                        cust.status === 'ACTIVE' || !cust.status
-                          ? 'badge-success'
-                          : cust.status === 'INACTIVE'
+                      className={`badge-status shrink-0 text-[10px] ${cust.status === 'ACTIVE' || !cust.status
+                        ? 'badge-success'
+                        : cust.status === 'INACTIVE'
                           ? 'badge-warning'
                           : 'badge-danger'
-                      }`}
+                        }`}
                     >
                       {cust.status || 'ACTIVE'}
                     </span>
@@ -1107,11 +1104,10 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                     <div>
                       <span className="text-[10px] text-slate-400 block font-sans uppercase">Balance</span>
                       <span
-                        className={`font-black text-xs ${
-                          cust.balanceAmount > 0
-                            ? 'text-rose-700 dark:text-rose-400'
-                            : 'text-emerald-700 dark:text-emerald-400'
-                        }`}
+                        className={`font-black text-xs ${cust.balanceAmount > 0
+                          ? 'text-rose-700 dark:text-rose-400'
+                          : 'text-emerald-700 dark:text-emerald-400'
+                          }`}
                       >
                         {formatMoney(cust.balanceAmount, currency)}
                       </span>
