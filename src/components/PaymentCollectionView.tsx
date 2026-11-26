@@ -559,7 +559,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
         <div className="lg:col-span-7 space-y-4">
           {/* Step 1: Subscriber Search & Selection */}
           <div className="erp-card p-5 space-y-3.5">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.04] pb-2.5">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] pb-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>1. Select Subscriber</span>
@@ -621,11 +621,11 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
 
             {/* Selected Subscriber Profile Capsule */}
             {currentCustomer && (
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-white/[0.06] space-y-2">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-300 dark:border-white/[0.14] space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-900 dark:text-white text-sm">{currentCustomer.name}</span>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/25">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-500/35">
                       Box #{currentCustomer.boxNo}
                     </span>
                   </div>
@@ -662,7 +662,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                 </div>
 
                 {/* Dues Summary Badges */}
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-white/[0.04] text-xs">
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-white/[0.08] text-xs">
                   <span className="text-slate-500">Outstanding Balance:</span>
                   <span
                     className={`font-mono font-black ${
@@ -679,7 +679,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
 
           {/* Step 2: Payment Target & Amount */}
           <div className="erp-card p-5 space-y-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-100 dark:border-white/[0.04] pb-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-200 dark:border-white/[0.08] pb-2.5">
               <CreditCard className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
               <span>2. Payment Target & Amount</span>
             </span>
@@ -694,7 +694,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                   className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     paymentTargetType === 'MONTHLY'
                       ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      : 'border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -715,7 +715,7 @@ export const PaymentCollectionView: React.FC<PaymentCollectionViewProps> = ({
                   className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     paymentTargetType === 'REGISTRATION'
                       ? 'border-teal-600 bg-teal-50/60 dark:bg-teal-500/10 text-teal-700 dark:text-teal-300 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      : 'border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center justify-between">

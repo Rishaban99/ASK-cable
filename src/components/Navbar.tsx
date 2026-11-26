@@ -245,7 +245,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Customer Registration Form"
           >
             <UserPlus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Customer Registration</span>
+            <span></span>
           </button>
         )}
 
@@ -321,10 +321,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <div
                       className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${item.type === 'warning'
-                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                          : item.type === 'info'
-                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                        : item.type === 'info'
+                          ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                          : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                         }`}
                     >
                       {item.type === 'warning' ? (
