@@ -58,9 +58,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, theme = 'd
 
   return (
     <div
-      className={`min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200 relative overflow-hidden select-none ${
-        theme === 'light' ? 'theme-light bg-slate-100/80 text-slate-900' : 'bg-[#090D16] text-slate-100'
-      }`}
+      className={`min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 transition-colors duration-200 relative overflow-hidden select-none ${theme === 'light' ? 'theme-light bg-slate-100/80 text-slate-900' : 'bg-[#090D16] text-slate-100'
+        }`}
     >
       {/* Background Micro-Grid & Ambient Radial Glows */}
       <div className="absolute inset-0 bg-[radial-gradient(#1D4ED8_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.07] dark:opacity-[0.12] pointer-events-none" />
@@ -111,45 +110,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, theme = 'd
           </div>
         </div>
 
-        {/* Quick Role Fill Pills */}
-        <div className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl space-y-2">
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <KeyRound className="w-3.5 h-3.5 text-blue-500" />
-              <span>Fast Sign-In Presets:</span>
-            </span>
-            <span className="text-[10px] font-mono text-slate-400">1-Click Auto Fill</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('admin', 'admin123')}
-              className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
-            >
-              <div className="text-[11px] font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center justify-between">
-                <span>Administrator</span>
-                <span className="text-[9px] px-1.5 py-0.2 bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 rounded font-mono">ADMIN</span>
-              </div>
-              <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                admin / admin123
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickFill('staff', 'staff123')}
-              className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/30 border border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-600 rounded-xl text-left transition-all cursor-pointer group shadow-2xs"
-            >
-              <div className="text-[11px] font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 flex items-center justify-between">
-                <span>Staff Operator</span>
-                <span className="text-[9px] px-1.5 py-0.2 bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 rounded font-mono">STAFF</span>
-              </div>
-              <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                staff / staff123
-              </div>
-            </button>
-          </div>
-        </div>
 
         {/* Error Alert */}
         {errorMsg && (

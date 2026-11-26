@@ -30,6 +30,7 @@ import { PackagesView } from './components/PackagesView.js';
 import { SettingsView } from './components/SettingsView.js';
 import { LoginView } from './components/LoginView.js';
 import { RecordModal } from './components/RecordModal.js';
+import { CustomerRegistrationModal } from './components/CustomerRegistrationModal.js';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -120,6 +121,7 @@ export default function App() {
   // UI States
   const [isLoading, setIsLoading] = useState(true);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [isCustomerRegistrationOpen, setIsCustomerRegistrationOpen] = useState(false);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -135,7 +137,7 @@ export default function App() {
       const next = !prev;
       try {
         localStorage.setItem('ask_cable_sidebar_collapsed', String(next));
-      } catch {}
+      } catch { }
       return next;
     });
   };
@@ -250,9 +252,8 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 flex flex-col md:flex-row font-sans selection:bg-blue-500/20 selection:text-blue-600 ${
-      theme === 'light' ? 'theme-light light bg-[#F1F5F9] text-slate-900' : 'dark bg-[#090E17] text-slate-100'
-    }`}>
+    <div className={`min-h-screen transition-colors duration-200 flex flex-col md:flex-row font-sans selection:bg-blue-500/20 selection:text-blue-600 ${theme === 'light' ? 'theme-light light bg-[#F1F5F9] text-slate-900' : 'dark bg-[#090E17] text-slate-100'
+      }`}>
       {/* Side Menu Navigation (Desktop Fixed + Mobile Drawer Overlay) */}
       <Sidebar
         currentTab={currentTab}
@@ -270,9 +271,8 @@ export default function App() {
       />
 
       {/* Main Viewport Container */}
-      <div className={`flex-1 min-w-0 flex flex-col transition-all duration-200 ${
-        isSidebarCollapsed ? 'md:pl-20' : 'md:pl-64 lg:pl-68'
-      }`}>
+      <div className={`flex-1 min-w-0 flex flex-col transition-all duration-200 ${isSidebarCollapsed ? 'md:pl-20' : 'md:pl-64 lg:pl-68'
+        }`}>
         {/* Top Navigation Bar with Global Search, Notifications, Breadcrumbs, Profile */}
         <Navbar
           currentTab={currentTab}
@@ -284,6 +284,7 @@ export default function App() {
           theme={theme}
           onToggleTheme={toggleTheme}
           onOpenRecordModal={() => setIsRecordModalOpen(true)}
+          onOpenCustomerRegistration={() => setIsCustomerRegistrationOpen(true)}
           onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
           onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
           isSidebarCollapsed={isSidebarCollapsed}
@@ -444,6 +445,19 @@ export default function App() {
         categories={categories}
         currency={currency}
         onSuccess={loadData}
+      />
+
+      {/* Customer Registration Modal */}
+      <CustomerRegistrationModal
+        isOpen={isCustomerRegistrationOpen}
+        onClose={() => setIsCustomerRegistrationOpen(false)}
+        currency={currency}
+        onSuccess={loadData}
+        currentUser={currentUser}
+        onViewHistory={(custId) => {
+          setSelectedHistoryCustomerId(custId);
+          setCurrentTab('customer-history');
+        }}
       />
     </div>
   );

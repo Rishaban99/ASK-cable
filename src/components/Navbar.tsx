@@ -22,6 +22,7 @@ import {
   Menu,
   ChevronDown,
   Plus,
+  UserPlus,
   Banknote,
   Tv,
   CheckCircle2,
@@ -41,6 +42,7 @@ interface NavbarProps {
   theme?: 'dark' | 'light';
   onToggleTheme?: () => void;
   onOpenRecordModal?: () => void;
+  onOpenCustomerRegistration?: () => void;
   onOpenGlobalSearch?: () => void;
   onToggleMobileSidebar?: () => void;
   isSidebarCollapsed?: boolean;
@@ -59,6 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   theme = 'dark',
   onToggleTheme,
   onOpenRecordModal,
+  onOpenCustomerRegistration,
   onOpenGlobalSearch,
   onToggleMobileSidebar,
   customers = [],
@@ -97,27 +100,27 @@ export const Navbar: React.FC<NavbarProps> = ({
   const notifications = [
     ...(pendingPaymentsCount > 0
       ? [
-          {
-            id: 'pending-bills',
-            title: `${pendingPaymentsCount} Pending Bills (${currentMonthStr})`,
-            description: `Outstanding balance of ${formatMoney(pendingAmountSum, currency)} awaiting collection`,
-            type: 'warning' as const,
-            tab: 'monthly-payment' as NavTab,
-            time: 'Current Month',
-          },
-        ]
+        {
+          id: 'pending-bills',
+          title: `${pendingPaymentsCount} Pending Bills (${currentMonthStr})`,
+          description: `Outstanding balance of ${formatMoney(pendingAmountSum, currency)} awaiting collection`,
+          type: 'warning' as const,
+          tab: 'monthly-payment' as NavTab,
+          time: 'Current Month',
+        },
+      ]
       : []),
     ...(inactiveCustomersCount > 0
       ? [
-          {
-            id: 'inactive-cust',
-            title: `${inactiveCustomersCount} Inactive Subscribers`,
-            description: 'Subscribers marked Inactive or Disconnected',
-            type: 'info' as const,
-            tab: 'customers' as NavTab,
-            time: 'System Audit',
-          },
-        ]
+        {
+          id: 'inactive-cust',
+          title: `${inactiveCustomersCount} Inactive Subscribers`,
+          description: 'Subscribers marked Inactive or Disconnected',
+          type: 'info' as const,
+          tab: 'customers' as NavTab,
+          time: 'System Audit',
+        },
+      ]
       : []),
     {
       id: 'system-online',
@@ -234,14 +237,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Search className="w-4 h-4" />
         </button>
 
-        {/* Quick Action: Record Transaction (Admin / Staff allowed) */}
-        {onOpenRecordModal && (
+        {/* Quick Action: Customer Registration Form */}
+        {onOpenCustomerRegistration && (
           <button
-            onClick={onOpenRecordModal}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 text-xs font-semibold transition-all cursor-pointer shadow-xs"
+            onClick={onOpenCustomerRegistration}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+            title="Customer Registration Form"
           >
-            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Record Tx</span>
+            <UserPlus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Customer Registration</span>
           </button>
         )}
 
@@ -316,13 +320,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer flex items-start gap-3"
                   >
                     <div
-                      className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${
-                        item.type === 'warning'
+                      className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${item.type === 'warning'
                           ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                           : item.type === 'info'
-                          ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                          : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                      }`}
+                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                        }`}
                     >
                       {item.type === 'warning' ? (
                         <AlertTriangle className="w-3.5 h-3.5" />
@@ -395,9 +398,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </p>
                   <div className="mt-2 flex items-center justify-between">
                     <span
-                      className={`badge-status ${
-                        currentUser.role === 'ADMIN' ? 'badge-royal' : 'badge-teal'
-                      }`}
+                      className={`badge-status ${currentUser.role === 'ADMIN' ? 'badge-royal' : 'badge-teal'
+                        }`}
                     >
                       {currentUser.role === 'ADMIN' ? (
                         <ShieldCheck className="w-3 h-3" />
