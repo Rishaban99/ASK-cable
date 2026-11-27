@@ -77,7 +77,7 @@ const getRegistrationMonth = (createdAt?: string | Date | null, customerId?: str
       const timestamp = parseInt(customerId.substring(0, 8), 16) * 1000;
       const d = new Date(timestamp);
       if (!isNaN(d.getTime())) return d.toISOString().slice(0, 7);
-    } catch {}
+    } catch { }
   }
   return '';
 };
@@ -439,7 +439,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ==================================================================== */}
       {/* 1. DASHBOARD HEADER & BILLING MONTH SWITCHER */}
       {/* ==================================================================== */}
-      <div className="erp-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="erp-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -487,11 +487,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <button
             onClick={() => setSelectedBillingMonth(currentMonthStr)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-              isCurrentMonthSelected
-                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${isCurrentMonthSelected
+              ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-white'
+              }`}
           >
             Current Month
           </button>
@@ -907,9 +906,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">Active Month Net</span>
               <p
-                className={`text-xs font-bold font-mono mt-0.5 ${
-                  isNetPositive ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
-                }`}
+                className={`text-xs font-bold font-mono mt-0.5 ${isNetPositive ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+                  }`}
               >
                 {formatMoney(activeMonthNetSavings, currency)}
               </p>
@@ -1047,9 +1045,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                         <td>
                           <span
-                            className={`badge-status ${
-                              item.txType === 'INCOME' ? 'badge-success' : 'badge-danger'
-                            }`}
+                            className={`badge-status ${item.txType === 'INCOME' ? 'badge-success' : 'badge-danger'
+                              }`}
                           >
                             {item.txType}
                           </span>
@@ -1060,11 +1057,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <td className="text-slate-500 font-mono text-[11px]">{item.paymentMethod || 'CASH'}</td>
                         <td className="text-slate-500 font-mono text-[11px]">{item.date}</td>
                         <td
-                          className={`text-right font-mono font-bold ${
-                            item.txType === 'INCOME'
-                              ? 'text-emerald-700 dark:text-emerald-400'
-                              : 'text-rose-700 dark:text-rose-400'
-                          }`}
+                          className={`text-right font-mono font-bold ${item.txType === 'INCOME'
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : 'text-rose-700 dark:text-rose-400'
+                            }`}
                         >
                           {item.txType === 'INCOME' ? '+' : '-'} {formatMoney(item.amount, currency)}
                         </td>
@@ -1104,11 +1100,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                        act.type === 'PAYMENT'
-                          ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300'
-                          : 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
-                      }`}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${act.type === 'PAYMENT'
+                        ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300'
+                        : 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
+                        }`}
                     >
                       {act.type === 'PAYMENT' ? (
                         <CheckCircle2 className="w-4 h-4" />
@@ -1136,13 +1131,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       {formatMoney(act.amount, currency)}
                     </div>
                     <span
-                      className={`badge-status text-[9px] ${
-                        act.status === 'PAID' || act.status === 'ACTIVE'
-                          ? 'badge-success'
-                          : act.status === 'PARTIAL'
+                      className={`badge-status text-[9px] ${act.status === 'PAID' || act.status === 'ACTIVE'
+                        ? 'badge-success'
+                        : act.status === 'PARTIAL'
                           ? 'badge-warning'
                           : 'badge-danger'
-                      }`}
+                        }`}
                     >
                       {act.status}
                     </span>
@@ -1188,41 +1182,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setSkippedFilterTab('ALL')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    skippedFilterTab === 'ALL'
-                      ? 'bg-blue-600 text-white font-bold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${skippedFilterTab === 'ALL'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
                 >
                   All Reasons ({totalSkippedCount})
                 </button>
                 <button
                   onClick={() => setSkippedFilterTab('NEW_REGISTRATION')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    skippedFilterTab === 'NEW_REGISTRATION'
-                      ? 'bg-blue-600 text-white font-bold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${skippedFilterTab === 'NEW_REGISTRATION'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
                 >
                   New Registrations ({skippedNewRegCount})
                 </button>
                 <button
                   onClick={() => setSkippedFilterTab('INACTIVE_STATUS')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    skippedFilterTab === 'INACTIVE_STATUS'
-                      ? 'bg-blue-600 text-white font-bold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${skippedFilterTab === 'INACTIVE_STATUS'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
                 >
                   Inactive Status ({skippedInactiveCount})
                 </button>
                 <button
                   onClick={() => setSkippedFilterTab('ALREADY_BILLED')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    skippedFilterTab === 'ALREADY_BILLED'
-                      ? 'bg-blue-600 text-white font-bold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${skippedFilterTab === 'ALREADY_BILLED'
+                    ? 'bg-blue-600 text-white font-bold'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
                 >
                   Already Billed ({skippedAlreadyBilledCount})
                 </button>
@@ -1263,13 +1253,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
 
                     <span
-                      className={`badge-status text-[9px] shrink-0 ${
-                        item.category === 'NEW_REGISTRATION'
-                          ? 'badge-royal'
-                          : item.category === 'INACTIVE_STATUS'
+                      className={`badge-status text-[9px] shrink-0 ${item.category === 'NEW_REGISTRATION'
+                        ? 'badge-royal'
+                        : item.category === 'INACTIVE_STATUS'
                           ? 'badge-warning'
                           : 'badge-teal'
-                      }`}
+                        }`}
                     >
                       {item.category.replace('_', ' ')}
                     </span>
