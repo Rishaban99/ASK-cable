@@ -924,7 +924,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
 
                       {/* Package */}
                       <td>
-                        <span className="badge-status badge-teal font-medium">
+                        <span className="badge-status badge-teal font-medium text-center">
                           {custPkg.packageName}
                         </span>
                       </td>

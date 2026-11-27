@@ -63,7 +63,7 @@ const getRegistrationMonth = (createdAt?: string | Date | null, customerId?: str
       const timestamp = parseInt(customerId.substring(0, 8), 16) * 1000;
       const d = new Date(timestamp);
       if (!isNaN(d.getTime())) return d.toISOString().slice(0, 7);
-    } catch {}
+    } catch { }
   }
   return '';
 };
@@ -162,7 +162,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
@@ -196,13 +196,13 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
   const existingDuplicatePayment =
     selectedCustomer && month
       ? monthlyPayments.find(
-          (p) =>
-            p.month === month &&
-            (p.customerId === selectedCustomer.id ||
-              (selectedCustomer.boxNo &&
-                selectedCustomer.boxNo.trim() !== '' &&
-                p.boxNo?.trim().toLowerCase() === selectedCustomer.boxNo.trim().toLowerCase()))
-        )
+        (p) =>
+          p.month === month &&
+          (p.customerId === selectedCustomer.id ||
+            (selectedCustomer.boxNo &&
+              selectedCustomer.boxNo.trim() !== '' &&
+              p.boxNo?.trim().toLowerCase() === selectedCustomer.boxNo.trim().toLowerCase()))
+      )
       : undefined;
 
   // Pre-generation live counts for Bulk Generation
@@ -905,11 +905,10 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                 setStatusFilter(st);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                statusFilter === st
-                  ? 'bg-blue-600 text-white font-bold shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-              }`}
+              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${statusFilter === st
+                ? 'bg-blue-600 text-white font-bold shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                }`}
             >
               {st}
             </button>
@@ -980,7 +979,7 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
 
                       {/* Package */}
                       <td>
-                        <span className="badge-status badge-teal font-medium">
+                        <span className="badge-status badge-teal font-medium text-center">
                           {pmt.packageName || custPkg.packageName}
                         </span>
                       </td>
@@ -1011,13 +1010,12 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                       {/* Status */}
                       <td>
                         <span
-                          className={`badge-status ${
-                            pmt.status === 'PAID'
-                              ? 'badge-success'
-                              : pmt.status === 'PARTIAL'
+                          className={`badge-status ${pmt.status === 'PAID'
+                            ? 'badge-success'
+                            : pmt.status === 'PARTIAL'
                               ? 'badge-warning'
                               : 'badge-danger'
-                          }`}
+                            }`}
                         >
                           {pmt.paidAmount > pmt.monthlyFee
                             ? `PAID (+${formatMoney(pmt.paidAmount - pmt.monthlyFee, currency)} Adv)`
@@ -1122,13 +1120,12 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                       </button>
                     </div>
                     <span
-                      className={`badge-status shrink-0 text-[10px] font-bold ${
-                        pmt.status === 'PAID'
-                          ? 'badge-success'
-                          : pmt.status === 'PARTIAL'
+                      className={`badge-status shrink-0 text-[10px] font-bold ${pmt.status === 'PAID'
+                        ? 'badge-success'
+                        : pmt.status === 'PARTIAL'
                           ? 'badge-warning'
                           : 'badge-danger'
-                      }`}
+                        }`}
                     >
                       {pmt.paidAmount > pmt.monthlyFee
                         ? `PAID (+${formatMoney(pmt.paidAmount - pmt.monthlyFee, currency)} Adv)`
@@ -1168,11 +1165,10 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                       <div>
                         <span className="text-[10px] text-slate-400 block font-sans uppercase font-medium">Balance</span>
                         <span
-                          className={`font-black text-xs ${
-                            pmt.balanceAmount > 0
-                              ? 'text-rose-700 dark:text-rose-400'
-                              : 'text-emerald-700 dark:text-emerald-400'
-                          }`}
+                          className={`font-black text-xs ${pmt.balanceAmount > 0
+                            ? 'text-rose-700 dark:text-rose-400'
+                            : 'text-emerald-700 dark:text-emerald-400'
+                            }`}
                         >
                           {formatMoney(pmt.balanceAmount, currency)}
                         </span>
@@ -1433,13 +1429,12 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                     {editPaidParsed > editFeeParsed ? 'Advance / Excess' : 'Balance Due'}
                   </span>
                   <span
-                    className={`text-base font-black font-mono ${
-                      editPaidParsed > editFeeParsed
-                        ? 'text-emerald-700 dark:text-emerald-400'
-                        : editBalancePreview > 0
+                    className={`text-base font-black font-mono ${editPaidParsed > editFeeParsed
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : editBalancePreview > 0
                         ? 'text-rose-700 dark:text-rose-400'
                         : 'text-emerald-700 dark:text-emerald-400'
-                    }`}
+                      }`}
                   >
                     {editPaidParsed > editFeeParsed
                       ? `+${formatMoney(editPaidParsed - editFeeParsed, currency)} (Advance)`
@@ -1449,15 +1444,14 @@ export const MonthlyPaymentView: React.FC<MonthlyPaymentViewProps> = ({
                 <div className="text-right">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Status</span>
                   <span
-                    className={`badge-status ${
-                      editPaidParsed > editFeeParsed
-                        ? 'badge-emerald'
-                        : editStatusPreview === 'PAID'
+                    className={`badge-status ${editPaidParsed > editFeeParsed
+                      ? 'badge-emerald'
+                      : editStatusPreview === 'PAID'
                         ? 'badge-emerald'
                         : editStatusPreview === 'PARTIAL'
-                        ? 'badge-amber'
-                        : 'badge-rose'
-                    }`}
+                          ? 'badge-amber'
+                          : 'badge-rose'
+                      }`}
                   >
                     {editPaidParsed > editFeeParsed ? 'PAID (ADVANCE)' : editStatusPreview}
                   </span>
